@@ -1,7 +1,11 @@
 <script>
   import AudioClip from "./AudioClip.svelte";
-  import { bpm, zoomLevel } from "../../core/store";
-  import { toggleMute, toggleSolo, removeTrack } from "../../core/store.js";
+  import {
+    changeTrackName,
+    removeTrack,
+    toggleMute,
+    toggleSolo,
+  } from "../../core/store.js";
   import { X } from "lucide-svelte";
 
   export let track;
@@ -17,9 +21,14 @@
     class="track-header flex w-60 shrink-0 flex-col border-r-2 border-r-dark-900 bg-dark-300"
   >
     <div class="flex flex-row items-center justify-between gap-2 bg-dark-200">
-      <div class="truncate p-1 text-xs font-medium text-light">
+      <button
+        class="block w-full truncate p-1 text-left text-xs font-medium text-light"
+        on:click={() => {
+          changeTrackName(track.id, prompt("Enter new track name", track.name));
+        }}
+      >
         {track.name}
-      </div>
+      </button>
 
       <button
         class="p-2 hover:bg-dark-100"
@@ -49,13 +58,7 @@
   </div>
 
   <!-- Clips -->
-  <div
-    class="track-timeline relative w-full"
-    style="
-    background-image: linear-gradient(to right, rgba(0,0,0,0.1) 50%, transparent 50%);
-     background-size: {(60 / $bpm) * $zoomLevel * 100} + '%';
-} 100%;"
-  >
+  <div class="track-timeline relative w-full">
     {#each track.clips as clip}
       <AudioClip {clip} />
     {/each}

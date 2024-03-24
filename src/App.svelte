@@ -1,8 +1,8 @@
 <script>
   import {
     ChevronDown,
-    Circle,
     Drum,
+    Pause,
     Play,
     Search,
     Soup,
@@ -14,26 +14,40 @@
 
   import {
     bpm,
-    createDummyTracks,
-    loadDefaultTracks,
+    playbackState,
+    zoomLevel,
+    timeToPixels,
     tracks,
+    createDummyTracks,
+    pausePlayback,
+    loadDefaultTracks,
+    startPlayback,
+    stopPlayback,
     zoomByDelta,
     zoomIn,
-    zoomLevel,
     zoomOut,
   } from "./core/store.js";
+  import { formatTime } from "./core/audio.js";
   import SegmentGroup from "./lib/SegmentGroup.svelte";
   import IconButton from "./lib/IconButton.svelte";
   import TextDisplay from "./lib/TextDisplay.svelte";
   import TextButton from "./lib/TextButton.svelte";
+  import { onMount } from "svelte";
 
   function handleZoom(event) {
     if (event.shiftKey) {
       event.preventDefault(); // Prevent the page from scrolling horizontally
       zoomByDelta(event.deltaY);
-      tracks.update((currentTracks) => currentTracks); // This is just to trigger reactivity, replace with your actual update logic
     }
   }
+
+  onMount(() => {
+    if ($tracks.length === 0) {
+      createDummyTracks();
+    }
+  });
+
+  $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
 
 <main>
@@ -86,10 +100,23 @@
         </SegmentGroup>
 
         <SegmentGroup>
-          <IconButton icon={Play} />
-          <IconButton icon={Square} />
-          <IconButton icon={Circle} />
+          {#if $playbackState.playing}
+            <IconButton icon={Pause} onClick={pausePlayback} />
+          {:else}
+            <IconButton icon={Play} onClick={startPlayback} />
+          {/if}
+          <IconButton icon={Square} onClick={stopPlayback} />
+
+          {#if $playbackState.playing}
+            <TextDisplay text="Playing" additionalClasses="text-green-500" />
+          {:else if $playbackState.currentTime === 0}
+            <TextDisplay text="Stopped" additionalClasses="text-red-500" />
+          {:else}
+            <TextDisplay text="Paused" additionalClasses="text-yellow-500" />
+          {/if}
         </SegmentGroup>
+
+        <TextDisplay text={formatTime($playbackState.currentTime)} />
 
         <div class="ml-auto">
           <SegmentGroup additionalClasses="mx-8">
@@ -111,7 +138,12 @@
   </section>
 
   <!-- Timeline -->
-  <section class="timeline" on:wheel={handleZoom}>
+  <section class="timeline relative" on:wheel={handleZoom}>
+    <div
+      style="left: {playHeadPosition}px;"
+      class="absolute inset-y-0 z-50 ml-[250px] w-[2px] bg-red-500"
+    ></div>
+
     <!-- Tracks -->
     <div class="flex flex-col gap-4 p-2">
       {#each $tracks as track}

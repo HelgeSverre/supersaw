@@ -1,11 +1,12 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { derived, writable } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
 import {
   createDrumPattern,
   createDubstepPattern,
   createTrancePattern,
 } from "../utils/drumpattern.js";
+import { loadAudioBuffer } from "./audio.js";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
@@ -16,6 +17,8 @@ export const zoomLevel = writable(10);
 export const playbackState = writable({ playing: false, currentTime: 0 });
 export const selectedClip = writable(null);
 export const selectedTrack = writable(null);
+
+export const tracks = writable([]);
 
 export const timeToPixels = derived(
   [bpm, zoomLevel],
@@ -33,7 +36,44 @@ export const pixelsToTime = derived(
     },
 );
 
-export const tracks = writable([]);
+let frame;
+
+export const startPlayback = async () => {
+  const tick = (timestamp) => {
+    // Calculate the elapsed time since the last frame
+    const elapsedTime = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    // Update the current time based on the elapsed time and the BPM
+    playbackState.update((state) => {
+      const newTime = state.currentTime + elapsedTime / 1000; // Convert ms to seconds
+      return { ...state, currentTime: newTime };
+    });
+
+    frame = requestAnimationFrame(tick); // Schedule the next frame
+  };
+
+  let lastTimestamp = performance.now();
+
+  await loadAudioBuffersForAllTracks();
+
+  playbackState.update((state) => ({ ...state, playing: true }));
+  frame = requestAnimationFrame(tick); // Start the playback loop
+};
+
+export const stopPlayback = () => {
+  playbackState.update((state) => ({
+    ...state,
+    playing: false,
+    currentTime: 0,
+  }));
+  cancelAnimationFrame(frame);
+};
+
+export const pausePlayback = () => {
+  playbackState.update((state) => ({ ...state, playing: false }));
+  cancelAnimationFrame(frame);
+};
 
 export const loadDefaultTracks = async () => {
   return Promise.all([
@@ -44,24 +84,21 @@ export const loadDefaultTracks = async () => {
 };
 
 export const createTrackFromUrl = async (trackName, url) => {
-  const audioContext = new AudioContext();
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-  return addTrack({
-    id: crypto.randomUUID(),
-    name: trackName,
-    clips: [
-      {
-        id: crypto.randomUUID(),
-        name: "Audio",
-        audioUrl: url,
-        startTime: 0,
-        duration: audioBuffer.duration,
-        audioBuffer: audioBuffer,
-      },
-    ],
+  loadAudioBuffer(url).then((audioBuffer) => {
+    addTrack({
+      id: crypto.randomUUID(),
+      name: trackName,
+      clips: [
+        {
+          id: crypto.randomUUID(),
+          name: "Audio",
+          audioUrl: url,
+          startTime: 0,
+          duration: audioBuffer.duration,
+          audioBuffer: audioBuffer,
+        },
+      ],
+    });
   });
 };
 
@@ -99,6 +136,55 @@ export const removeTrack = (trackId) => {
 
 export const addTrack = (track) => {
   tracks.update((allTracks) => [...allTracks, track]);
+};
+
+export const changeTrackName = (trackId, newName) => {
+  tracks.update((allTracks) =>
+    allTracks.map((track) =>
+      track.id === trackId ? { ...track, name: newName } : track,
+    ),
+  );
+};
+
+export const loadAudioBuffersForTrack = async (track) => {
+  const clips = track.clips.map(async (clip) => {
+    // If the clip already has an audio buffer, return it as is
+    if (clip.audioBuffer) {
+      return clip;
+    }
+
+    // Otherwise, load the audio buffer from the URL
+    const audioBuffer = await loadAudioBuffer(clip.audioUrl);
+    return { ...clip, audioBuffer };
+  });
+
+  return Promise.all(clips);
+};
+
+export const loadAudioBuffersForAllTracks = async () => {
+  const loadedTracks = [];
+
+  // Get the current state of the tracks
+  const currentTracks = get(tracks); // Get the current value of the tracks store
+
+  for (const track of currentTracks) {
+    const loadedClips = await Promise.all(
+      track.clips.map(async (clip) => {
+        // Only load the buffer if it's not already loaded
+        if (!clip.audioBuffer) {
+          const buffer = await loadAudioBuffer(clip.audioUrl);
+          return { ...clip, audioBuffer: buffer }; // Update the clip with the loaded buffer
+        }
+        return clip; // Return the clip unchanged if it already has a buffer
+      }),
+    );
+
+    loadedTracks.push({ ...track, clips: loadedClips }); // Update the track with the loaded clips
+  }
+
+  // Update the tracks store with the new data
+  tracks.set(loadedTracks);
+  console.log(loadedTracks);
 };
 
 export const addClip = (trackId, clip) => {
@@ -173,22 +259,6 @@ export const seekToTime = (time) => {
   playbackState.update((state) => ({ ...state, currentTime: time }));
 };
 
-export const startPlayback = () => {
-  playbackState.update((state) => ({ ...state, playing: true }));
-};
-
-export const stopPlayback = () => {
-  playbackState.update((state) => ({
-    ...state,
-    playing: false,
-    currentTime: 0,
-  }));
-};
-
-export const pausePlayback = () => {
-  playbackState.update((state) => ({ ...state, playing: false }));
-};
-
 export const selectTrack = (trackId) => {
   selectedTrack.set(trackId);
 };
@@ -229,8 +299,8 @@ export const createDummyTracks = () => {
     baseVolume: 1,
   });
 
-  addTrack(bassDrumPattern);
-  // dubstepPattern.forEach((track) => addTrack(track));
+  // addTrack(bassDrumPattern);
+  dubstepPattern.forEach((track) => addTrack(track));
   // trancePattern.forEach((track) => addTrack(track));
 };
 

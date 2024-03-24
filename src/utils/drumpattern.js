@@ -19,7 +19,7 @@ export const createDrumPattern = ({
   pattern.forEach((beat, index) => {
     if (beat === 1) {
       // For each variation create a clip
-      variations.forEach((variation, varIndex) => {
+      variations.forEach((variation) => {
         const clip = {
           id: crypto.randomUUID(),
           name: `${name} ${variation}`,
