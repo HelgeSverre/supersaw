@@ -33,102 +33,37 @@ export const pixelsToTime = derived(
     },
 );
 
-export const tracks = writable([
-  {
-    id: 1,
-    name: "SoundHelix-Song-1.mp3",
-    clips: [
-      {
-        id: 100,
-        name: "SoundHelix-Song-1.mp3",
-        audioUrl: "/SoundHelix-Song-1.mp3",
-        startTime: 0,
-        duration: 373,
-      },
-    ],
-  },
-  // {
-  //   id: 2,
-  //   name: "SoundHelix-Song-2.mp3",
-  //   clips: [
-  //     {
-  //       id: 200,
-  //       name: "SoundHelix-Song-2.mp3",
-  //       audioUrl: "/SoundHelix-Song-2.mp3",
-  //       startTime: 20,
-  //       duration: 426,
-  //     },
-  //   ],
-  // },
-  {
-    id: 3,
-    name: "808 Kicks",
-    clips: [
-      {
-        id: 1000,
-        name: "BD1000.WAV",
-        audioUrl: "/samples/roland-tr-808/BD/BD1000.WAV",
-        startTime: 0,
-        duration: 2,
-      },
-      {
-        id: 1000,
-        name: "BD1000.WAV",
-        audioUrl: "/samples/roland-tr-808/BD/BD1000.WAV",
-        startTime: 2,
-        duration: 2,
-      },
-      {
-        id: 2000,
-        name: "BD1000.WAV",
-        audioUrl: "/samples/roland-tr-808/BD/BD1000.WAV",
-        startTime: 4,
-        duration: 2,
-      },
-      {
-        id: 3000,
-        name: "BD1000.WAV",
-        audioUrl: "/samples/roland-tr-808/BD/BD1000.WAV",
-        startTime: 12,
-        duration: 2,
-      },
-      {
-        id: 4000,
-        name: "BD1000.WAV",
-        audioUrl: "/samples/roland-tr-808/BD/BD1000.WAV",
-        startTime: 16,
-        duration: 2,
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: "Hihat",
-    clips: Array.from({ length: 16 }, (_, i) => i).map((i) => {
-      return {
-        id: 1000,
-        name: "hihat",
-        audioUrl: "/samples/roland-tr-808/MA/MA.WAV",
-        startTime: i * 0.5,
-        duration: 1,
-      };
-    }),
-  },
+export const tracks = writable([]);
 
-  {
-    id: 5,
-    name: "Snare",
-    clips: Array.from({ length: 16 }, (_, i) => i).map((i) => {
-      return {
-        id: 1000,
-        name: "snare",
-        audioUrl: "/samples/roland-tr-808/SD/SD5010.WAV",
-        startTime: i * 4,
-        duration: 1,
-      };
-    }),
-  },
-]);
+export const loadDefaultTracks = async () => {
+  return Promise.all([
+    createTrackFromUrl("SoundHelix-Song-1.mp3", "/SoundHelix-Song-1.mp3"),
+    createTrackFromUrl("SoundHelix-Song-2.mp3", "/SoundHelix-Song-2.mp3"),
+    createTrackFromUrl("SoundHelix-Song-3.mp3", "/SoundHelix-Song-3.mp3"),
+  ]);
+};
+
+export const createTrackFromUrl = async (trackName, url) => {
+  const audioContext = new AudioContext();
+  const response = await fetch(url);
+  const arrayBuffer = await response.arrayBuffer();
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+  return addTrack({
+    id: crypto.randomUUID(),
+    name: trackName,
+    clips: [
+      {
+        id: crypto.randomUUID(),
+        name: "Audio",
+        audioUrl: url,
+        startTime: 0,
+        duration: audioBuffer.duration,
+        audioBuffer: audioBuffer,
+      },
+    ],
+  });
+};
 
 // Functions for toggling track mute and solo states
 export const toggleMute = (trackId) => {
@@ -259,12 +194,14 @@ export const selectTrack = (trackId) => {
 };
 
 export const selectClip = (clipId) => {
-  const track = tracks.find((track) =>
-    track.clips.find((clip) => clip.id === clipId),
-  );
+  tracks.subscribe((tracks) => {
+    const track = tracks.find((track) =>
+      track.clips.find((clip) => clip.id === clipId),
+    );
 
-  selectedTrack.set(track.id);
-  selectedClip.set(clipId);
+    selectedTrack.set(track.id);
+    selectedClip.set(clipId);
+  });
 };
 
 export const createDummyTracks = () => {
@@ -288,13 +225,13 @@ export const createDummyTracks = () => {
   // Using the function to create a basic trance pattern
   const trancePattern = createTrancePattern({
     bpm: 140,
-    clipLength: 4, // Assuming 4 seconds per bar
+    clipLength: 1, // Assuming 4 seconds per bar
     baseVolume: 1,
   });
 
-  // addTrack(bassDrumPattern);
+  addTrack(bassDrumPattern);
   // dubstepPattern.forEach((track) => addTrack(track));
-  trancePattern.forEach((track) => addTrack(track));
+  // trancePattern.forEach((track) => addTrack(track));
 };
 
 export const zoomIn = () => {

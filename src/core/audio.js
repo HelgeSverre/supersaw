@@ -3,7 +3,6 @@ import { bpm } from "./store.js";
 export const audioContext = new (window.AudioContext ||
   window.webkitAudioContext)();
 
-
 export async function loadAudioBuffer(url) {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();

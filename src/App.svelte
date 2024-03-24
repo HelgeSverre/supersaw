@@ -5,20 +5,22 @@
     Drum,
     Play,
     Search,
+    Soup,
     Square,
     ZoomIn,
-    ZoomOut
+    ZoomOut,
   } from "lucide-svelte";
   import Track from "./lib/ui/Track.svelte";
 
   import {
     bpm,
     createDummyTracks,
+    loadDefaultTracks,
     tracks,
     zoomByDelta,
     zoomIn,
     zoomLevel,
-    zoomOut
+    zoomOut,
   } from "./core/store.js";
   import SegmentGroup from "./lib/SegmentGroup.svelte";
   import IconButton from "./lib/IconButton.svelte";
@@ -92,6 +94,7 @@
         <div class="ml-auto">
           <SegmentGroup additionalClasses="mx-8">
             <IconButton icon={Drum} onClick={createDummyTracks} />
+            <IconButton icon={Soup} onClick={loadDefaultTracks} />
           </SegmentGroup>
 
           <SegmentGroup>

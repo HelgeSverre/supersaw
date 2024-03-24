@@ -1395,11 +1395,6 @@ vitefu@^0.2.5:
   resolved "https://registry.yarnpkg.com/vitefu/-/vitefu-0.2.5.tgz#c1b93c377fbdd3e5ddd69840ea3aa70b40d90969"
   integrity sha512-SgHtMLoqaeeGnd2evZ849ZbACbnwQCIwRH57t18FxcXoZop0uQu0uzlIhJBlF/eWVzuce0sHeqPcDo+evVcg8Q==
 
-wavesurfer.js@^7.7.5:
-  version "7.7.5"
-  resolved "https://registry.yarnpkg.com/wavesurfer.js/-/wavesurfer.js-7.7.5.tgz#fc63eddb734e277366b9cf87a214ab82a4d9702e"
-  integrity sha512-LegTsXbIwbpAp4IbE+yltF+behavUp4OufpPHCWA+NYqv0+Y3T2M1y6MrdF/QmfYnb7ZiUsOLXtSHe2OhgCPiw==
-
 which@^2.0.1:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/which/-/which-2.0.2.tgz#7c6a8dd0a636a0327e10b59c9286eee93f3f51b1"

@@ -21,7 +21,7 @@ export const createDrumPattern = ({
       // For each variation create a clip
       variations.forEach((variation, varIndex) => {
         const clip = {
-          id: `${folder}-${index}-${varIndex}`,
+          id: crypto.randomUUID(),
           name: `${name} ${variation}`,
           audioUrl: `${baseUrl}${folder}${variation}.WAV`,
           startTime: index * beatInterval,
@@ -34,7 +34,7 @@ export const createDrumPattern = ({
   });
 
   return {
-    id: Date.now(), // Ensuring unique ID, you may want to use a better method
+    id: crypto.randomUUID(),
     name: `${name} Pattern`,
     clips: clips,
   };
@@ -48,7 +48,7 @@ export const createDubstepPattern = ({ bpm, clipLength, baseVolume }) => {
   const hiHatPattern = [0, 1, 0, 1, 1, 0, 1, 1]; // Hi-hats can be more frequent for a top rhythm layer
 
   const kickTrack = createDrumPattern({
-    name: "Kick",
+    name: "Dubstep - Kick",
     folder: "BD",
     pattern: kickPattern,
     bpm,
@@ -58,7 +58,7 @@ export const createDubstepPattern = ({ bpm, clipLength, baseVolume }) => {
   });
 
   const snareTrack = createDrumPattern({
-    name: "Snare",
+    name: "Dubstep - Snare",
     folder: "SD",
     pattern: snarePattern,
     bpm,
@@ -68,7 +68,7 @@ export const createDubstepPattern = ({ bpm, clipLength, baseVolume }) => {
   });
 
   const hiHatTrack = createDrumPattern({
-    name: "HiHat",
+    name: "Dubstep - HiHat",
     folder: "CH",
     pattern: hiHatPattern,
     bpm,
@@ -90,7 +90,7 @@ export const createTrancePattern = ({ bpm, clipLength, baseVolume }) => {
   const snarePattern = [0, 1, 0, 1]; // Snares or claps on the 2nd and 4th
 
   const kickTrack = createDrumPattern({
-    name: "Kick",
+    name: "Trance - Kick",
     folder: "BD",
     pattern: kickPattern,
     bpm,
@@ -100,7 +100,7 @@ export const createTrancePattern = ({ bpm, clipLength, baseVolume }) => {
   });
 
   const bassTrack = createDrumPattern({
-    name: "Bass",
+    name: "Trance - Bass",
     folder: "BD", // Assuming you have a suitable bass drum or use a bassline sample
     pattern: bassPattern,
     bpm,
@@ -110,7 +110,7 @@ export const createTrancePattern = ({ bpm, clipLength, baseVolume }) => {
   });
 
   const hiHatTrack = createDrumPattern({
-    name: "HiHat",
+    name: "Trance - HiHat",
     folder: "CH",
     pattern: hiHatPattern,
     bpm,
@@ -120,7 +120,7 @@ export const createTrancePattern = ({ bpm, clipLength, baseVolume }) => {
   });
 
   const snareTrack = createDrumPattern({
-    name: "Snare",
+    name: "Trance - Snare",
     folder: "SD",
     pattern: snarePattern,
     bpm,
