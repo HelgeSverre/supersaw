@@ -162,29 +162,25 @@ export const loadAudioBuffersForTrack = async (track) => {
 };
 
 export const loadAudioBuffersForAllTracks = async () => {
-  const loadedTracks = [];
+  let currentTracks = get(tracks); // Properly access the current value
 
-  // Get the current state of the tracks
-  const currentTracks = get(tracks); // Get the current value of the tracks store
-
-  for (const track of currentTracks) {
-    const loadedClips = await Promise.all(
-      track.clips.map(async (clip) => {
-        // Only load the buffer if it's not already loaded
-        if (!clip.audioBuffer) {
-          const buffer = await loadAudioBuffer(clip.audioUrl);
-          return { ...clip, audioBuffer: buffer }; // Update the clip with the loaded buffer
-        }
-        return clip; // Return the clip unchanged if it already has a buffer
-      }),
-    );
-
-    loadedTracks.push({ ...track, clips: loadedClips }); // Update the track with the loaded clips
+  if (!Array.isArray(currentTracks)) {
+    console.error('loadAudioBuffersForAllTracks: currentTracks is not an array:', currentTracks);
+    currentTracks = []; // Reset to an empty array if it's not an array
   }
 
-  // Update the tracks store with the new data
-  tracks.set(loadedTracks);
-  console.log(loadedTracks);
+  const loadedTracks = await Promise.all(currentTracks.map(async (track) => {
+    const clips = track.clips.map(async (clip) => {
+      if (!clip.audioBuffer) { // Only load if there's no buffer
+        const buffer = await loadAudioBuffer(clip.audioUrl);
+        return { ...clip, audioBuffer: buffer };
+      }
+      return clip; // Return the clip as is if it already has a buffer
+    });
+    return { ...track, clips };
+  }));
+
+  tracks.set(loadedTracks); // Update the tracks store with loaded tracks
 };
 
 export const addClip = (trackId, clip) => {

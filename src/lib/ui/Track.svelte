@@ -2,13 +2,26 @@
   import AudioClip from "./AudioClip.svelte";
   import {
     changeTrackName,
+    pixelsToTime,
     removeTrack,
     toggleMute,
+    moveClipToTime,
     toggleSolo,
   } from "../../core/store.js";
   import { X } from "lucide-svelte";
 
   export let track;
+
+  function handleDrop(event) {
+    const timelineElement = event.currentTarget;
+    const timelineRect = timelineElement.getBoundingClientRect();
+    const relativeX = event.clientX - timelineRect.left;
+
+    const data = JSON.parse(event.dataTransfer.getData("text/plain"));
+    const newStartTime = $pixelsToTime(relativeX);
+
+    moveClipToTime(track.id, data.clipId, newStartTime);
+  }
 </script>
 
 <!-- Track -->
@@ -58,8 +71,12 @@
   </div>
 
   <!-- Clips -->
-  <div class="track-timeline relative w-full">
-    {#each track.clips as clip}
+  <div
+    class="track-timeline relative w-full"
+    on:dragover|preventDefault
+    on:drop|preventDefault={handleDrop}
+  >
+    {#each track.clips as clip (clip.id + clip.startTime)}
       <AudioClip {clip} />
     {/each}
   </div>

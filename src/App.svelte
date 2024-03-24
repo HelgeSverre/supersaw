@@ -145,7 +145,7 @@
     ></div>
 
     <!-- Tracks -->
-    <div class="flex flex-col gap-4 p-2">
+    <div class="flex flex-col gap-1 p-2">
       {#each $tracks as track}
         <Track {track} />
       {/each}

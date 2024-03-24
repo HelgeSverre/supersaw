@@ -27,12 +27,26 @@
     audio.play();
   };
 
+  function handleDragStart(clip) {
+    return function (event) {
+      event.dataTransfer.setData(
+        "text/plain",
+        JSON.stringify({
+          clipId: clip.id,
+          originalStartTime: clip.startTime,
+        }),
+      );
+    };
+  }
+
   $: leftPosition = $timeToPixels(clip.startTime);
   $: width = $timeToPixels(clip.duration);
 </script>
 
 <button
   class="audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-yellow bg-accent-yellow/20"
+  draggable="true"
+  on:dragstart={handleDragStart(clip)}
   on:click={playClip}
   style="left: {leftPosition}px; width: {width}px;"
 >
