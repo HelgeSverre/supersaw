@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* theme */
+  --dark-900: hsl(249, 9%, 10%);
+  --dark-800: hsl(249, 9%, 12%);
+  --dark-700: hsl(249, 9%, 15%);
+  --dark-600: hsl(247, 9%, 17%);
+  --dark-500: hsl(244, 9%, 22%);
+  --dark-400: hsl(244, 9%, 24%);
+  --dark-300: hsl(244, 9%, 23%);
+  --dark-200: hsl(244, 9%, 29%);
+  --dark-100: hsl(246, 9%, 44%);
+
+  --text-primary: #ebebeb;
+  --text-secondary: #d9d9d9;
+  --text-soft: #707271;
+
+  --accent-blue: #4f7fff;
+  --accent-purple: #9876f9;
+  --accent-green: #74d19a;
+  --accent-pink: #e674ce;
+  --accent-red: #fe5c5b;
+  --accent-yellow: #fade6a;
+
+  --black-100: #101010;
+  --black-200: #171718;
+  --black-300: #242426;
+
+  /* Globals */
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: var(--text-primary);
+  background-color: var(--dark-900);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
