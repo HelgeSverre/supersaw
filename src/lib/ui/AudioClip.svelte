@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { timeToPixels } from "../../core/store";
+  import { selectClip, selectedClip, timeToPixels } from "../../core/store";
   import {
     generateSVGWaveform,
     generateWaveform,
@@ -20,8 +20,9 @@
   });
 
   const playClip = () => {
-    console.log("Playing clip", clip);
+    selectClip(clip.id);
 
+    // TODO: refactor this to use the audio store
     const audio = new Audio(clip.audioUrl);
     audio.play();
   };
@@ -30,9 +31,9 @@
   $: width = $timeToPixels(clip.duration);
 </script>
 
-<div
-  on:click={playClip}
+<button
   class="audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-yellow bg-accent-yellow/20"
+  on:click={playClip}
   style="left: {leftPosition}px; width: {width}px;"
 >
   {#if waveformPathData === ""}
@@ -51,4 +52,4 @@
       </svg>
     </div>
   {/if}
-</div>
+</button>

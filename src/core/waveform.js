@@ -49,12 +49,9 @@ export async function generateWaveform(url, samples = 1000) {
   lowerPathData += "L 100 50";
 
   return upperPathData + lowerPathData;
-
 }
 
-
-
-export async function generateSVGWaveform(url, samples =512) {
+export async function generateSVGWaveform(url, samples = 512) {
   // Fetch the audio file
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();
@@ -79,34 +76,37 @@ export async function generateSVGWaveform(url, samples =512) {
   }
 
   // Create an SVG path from the waveform data
-  let path = `M0 ${ (amplitudes[0] * 100)} `;
+  let path = `M0 ${amplitudes[0] * 100} `;
 
   for (let i = 1; i < amplitudes.length; i++) {
-    path += `L${i} ${ (amplitudes[i] * 100)} `;
+    path += `L${i} ${amplitudes[i] * 100} `;
   }
-
-
 
   return path;
   // Create and return the SVG element
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', `0 0 ${2 * amplitudes.length} 256`);
-  svg.setAttribute('width', '100%');
-  svg.setAttribute('height', '256');
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${2 * amplitudes.length} 256`);
+  svg.setAttribute("width", "100%");
+  svg.setAttribute("height", "256");
 
-  const svgPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  svgPath.setAttribute('d', path);
-  svgPath.setAttribute('fill', 'none');
-  svgPath.setAttribute('stroke', 'black');
+  const svgPath = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "path",
+  );
+  svgPath.setAttribute("d", path);
+  svgPath.setAttribute("fill", "none");
+  svgPath.setAttribute("stroke", "black");
 
   svg.appendChild(svgPath);
 
   return svg;
 }
 
-
-
-export async function generateWaveformSVG(url, svgWidth = 500, svgHeight = 100) {
+export async function generateWaveformSVG(
+  url,
+  svgWidth = 500,
+  svgHeight = 100,
+) {
   // Create an audio context
   const audioContext = new AudioContext();
 
@@ -122,7 +122,7 @@ export async function generateWaveformSVG(url, svgWidth = 500, svgHeight = 100) 
   // Calculate wave data (simplified for brevity)
   const step = Math.ceil(leftChannel.length / svgWidth);
   const amp = 100;
-  let pathD = 'M0 ' + amp;
+  let pathD = "M0 " + amp;
 
   for (let i = 0; i < svgWidth; i++) {
     // Average the samples to reduce to one value per pixel
@@ -131,27 +131,36 @@ export async function generateWaveformSVG(url, svgWidth = 500, svgHeight = 100) 
     for (let j = 0; j < step; j++) {
       const sampleIndex = i * step + j;
       if (sampleIndex < leftChannel.length) {
-        const sample = (leftChannel[sampleIndex] + rightChannel[sampleIndex]) / 2; // Averaging stereo channels
+        const sample =
+          (leftChannel[sampleIndex] + rightChannel[sampleIndex]) / 2; // Averaging stereo channels
         min = Math.min(min, sample);
         max = Math.max(max, sample);
       }
     }
     // SVG Y coordinates are flipped, so max comes before min
-    pathD += ' L' + (i + 1) + ' ' + (amp - max * amp) + ' L' + (i + 1) + ' ' + (amp - min * amp);
+    pathD +=
+      " L" +
+      (i + 1) +
+      " " +
+      (amp - max * amp) +
+      " L" +
+      (i + 1) +
+      " " +
+      (amp - min * amp);
   }
 
   // Close the path back at the bottom middle for mirrored effect
 
-  return pathD
+  return pathD;
 
   // Create an SVG element and set its path
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('width', svgWidth);
-  svg.setAttribute('height', svgHeight);
-  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  path.setAttribute('d', pathD);
-  path.setAttribute('stroke', 'black');
-  path.setAttribute('fill', 'none');
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", svgWidth);
+  svg.setAttribute("height", svgHeight);
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", pathD);
+  path.setAttribute("stroke", "black");
+  path.setAttribute("fill", "none");
 
   svg.appendChild(path);
 
