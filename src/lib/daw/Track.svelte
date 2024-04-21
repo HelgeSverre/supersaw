@@ -28,7 +28,9 @@
 
 <!-- Track -->
 <div
-  class="track flex flex-row gap-2 overflow-hidden rounded-sm border border-dark-100 bg-white/5"
+  class="track flex flex-row gap-2 overflow-hidden rounded-sm border border-dark-100 bg-white/5 {track.isMuted
+    ? 'opacity-50'
+    : ''}"
   style="height: 100px; position: relative;"
 >
   <!-- Track header -->
@@ -76,7 +78,7 @@
   <!-- Clips -->
   <div class="track-timeline relative w-full" on:dragover|preventDefault on:drop|preventDefault={handleDrop}>
     {#each track.clips as clip}
-      <AudioClip {clip} />
+      <AudioClip clip={clip} />
     {/each}
   </div>
 </div>

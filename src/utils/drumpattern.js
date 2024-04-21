@@ -27,7 +27,7 @@ export const createDrumPattern = ({
       name: `${name} ${variation}`,
       audioUrl: `${baseUrl}${folder}${variation}.WAV`,
       startTime: startTime,
-      duration:  beatFraction * beatInterval,
+      duration: beatFraction * beatInterval,
       volume: baseVolume,
     };
     clips.push(clip);

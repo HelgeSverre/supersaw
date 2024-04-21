@@ -5,8 +5,13 @@ class AudioManager {
 
   constructor() {
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Mixer -> Pan -> Destination (Speakers)
     this.mixer = this.audioContext.createGain();
-    this.mixer.connect(this.audioContext.destination);
+    this.panNode = this.audioContext.createStereoPanner();
+
+    this.mixer.connect(this.panNode);
+    this.panNode.connect(this.audioContext.destination);
   }
 
   loadAudioBuffer = async (url) => {
@@ -69,10 +74,4 @@ class AudioManager {
   };
 }
 
-// Export an instance of AudioManager
 export const audioManager = new AudioManager();
-
-export function setupTrack(buffer) {
-  // TODO: remove this
-  audioManager.setupAudioSource(buffer);
-}

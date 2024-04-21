@@ -1,12 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 import { derived, get, writable } from "svelte/store";
-import {
-  createDrumPattern,
-  createHousePattern,
-  createTranceEDMPattern,
-  createTrancePattern
-} from "../utils/drumpattern.js";
+import { createDrumPattern, createHousePattern, createTranceEDMPattern } from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
 
 export const PIXELS_PER_BEAT = 10;
@@ -15,11 +10,28 @@ export const ZOOM_FACTOR = 0.05;
 export const bpm = writable(120);
 export const zoomLevel = writable(10);
 
+export const loopRegion = writable({ start: 0.2, end: 1.5, active: false });
 export const playbackState = writable({ playing: false, currentTime: 0 });
 export const selectedClip = writable(null);
 export const selectedTrack = writable(0);
 
 export const tracks = writable([]);
+
+// master volume 0 - 100% (0 - 1)
+export const masterVolume = writable(1);
+
+// master pan (-1 - 1)
+export const masterPan = writable(0);
+
+masterVolume.subscribe(($masterVolume) => {
+  audioManager.mixer.gain.value = $masterVolume;
+});
+
+masterPan.subscribe(($masterPan) => {
+  audioManager.panNode.pan.value = $masterPan;
+
+  console.log("changed pan", $masterPan, audioManager.panNode.pan.value);
+});
 
 export const timeToPixels = derived([bpm, zoomLevel], ([$bpm, $zoomLevel]) => (timeInSeconds) => {
   return timeInSeconds * ($bpm / 60) * PIXELS_PER_BEAT * $zoomLevel;
@@ -105,14 +117,17 @@ let frame;
 export const startPlayback = async () => {
   await loadAudioBuffersForAllTracks();
 
-  const startAudioTime = audioManager.audioContext.currentTime;
+  let startAudioTime = audioManager.audioContext.currentTime;
   playbackState.set({ playing: true, currentTime: startAudioTime });
 
   frame = requestAnimationFrame(function tick() {
+    let newTime = audioManager.audioContext.currentTime - startAudioTime;
+
     playbackState.update((state) => ({
       ...state,
-      currentTime: audioManager.audioContext.currentTime - startAudioTime,
+      currentTime: newTime,
     }));
+
     frame = requestAnimationFrame(tick);
   });
 };
@@ -181,6 +196,10 @@ export const toggleSolo = (trackId) => {
 
 export const changeBpm = (newBpm) => {
   bpm.set(newBpm);
+};
+
+export const clearTracks = () => {
+  tracks.set([]);
 };
 
 export const removeTrack = (trackId) => {
@@ -362,11 +381,11 @@ export const createDummyHouseTracks = () => {
 };
 
 export const zoomIn = () => {
-  zoomLevel.update((level) => level + 1);
+  zoomLevel.update((level) => level + 5);
 };
 
 export const zoomOut = () => {
-  zoomLevel.update((level) => level + -1);
+  zoomLevel.update((level) => level + -5);
 };
 
 export const zoomToLevel = (level) => {

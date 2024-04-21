@@ -62,10 +62,10 @@
       <span class="text-xs font-normal text-white/80">Error</span>
     </div>
   {:else}
-    <div class="absolute top-1 left-1 inline-block rounded bg-white/10 p-0.5 text-xs leading-none">
+    <div class="absolute left-1 top-1 inline-block rounded bg-white/10 p-0.5 text-left text-[10px] leading-none">
       {clip.name ?? "Unnamed"}
     </div>
-    <div class="absolute right-1 top-1 inline-block rounded bg-white/10 p-0.5 text-xs leading-none">
+    <div class="absolute right-1 top-1 inline-block rounded bg-white/10 p-0.5 text-right text-[10px] leading-none">
       {clip.duration.toFixed(2)}s
     </div>
     <div class="h-full w-full overflow-hidden">
