@@ -3,6 +3,8 @@ class AudioManager {
   mixer;
   sources = {};
 
+  cache = {};
+
   constructor() {
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -15,9 +17,43 @@ class AudioManager {
   }
 
   loadAudioBuffer = async (url) => {
+    if (this.cache[url]) {
+      return this.cache[url];
+    }
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
-    return this.audioContext.decodeAudioData(arrayBuffer);
+
+    const decodedAudio = await this.audioContext.decodeAudioData(arrayBuffer);
+    this.cache[url] = decodedAudio;
+    return decodedAudio;
+  };
+
+  generateWaveform = async (audioUrl, numberOfSamples = 1000) => {
+    const decodedAudio = await this.loadAudioBuffer(audioUrl);
+    const isMono = decodedAudio.numberOfChannels === 1;
+
+    const leftChannelData = decodedAudio.getChannelData(0);
+    const rightChannelData = isMono ? leftChannelData : decodedAudio.getChannelData(1);
+
+    const samplingStep = Math.ceil(leftChannelData.length / numberOfSamples);
+    const verticalAmplitude = 50;
+    let svgPath = "M0 " + verticalAmplitude;
+
+    for (let sampleNum = 0; sampleNum < numberOfSamples; sampleNum++) {
+      let peakMin = 0;
+      let peakMax = 0;
+      for (let stepIndex = 0; stepIndex < samplingStep; stepIndex++) {
+        const currentSampleIndex = sampleNum * samplingStep + stepIndex;
+        if (currentSampleIndex < leftChannelData.length) {
+          const monoSampleValue = (leftChannelData[currentSampleIndex] + rightChannelData[currentSampleIndex]) / 2;
+          peakMin = Math.min(peakMin, monoSampleValue);
+          peakMax = Math.max(peakMax, monoSampleValue);
+        }
+      }
+      svgPath += ` L${sampleNum + 1} ${verticalAmplitude - peakMax * verticalAmplitude} L${sampleNum + 1} ${verticalAmplitude - peakMin * verticalAmplitude}`;
+    }
+
+    return svgPath;
   };
 
   setupAudioSource = (buffer) => {

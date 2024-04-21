@@ -232,11 +232,6 @@ export const loadAudioBuffersForTrack = async (track) => {
 export const loadAudioBuffersForAllTracks = async () => {
   let currentTracks = get(tracks); // Properly access the current value
 
-  if (!Array.isArray(currentTracks)) {
-    console.error("loadAudioBuffersForAllTracks: currentTracks is not an array:", currentTracks);
-    currentTracks = []; // Reset to an empty array if it's not an array
-  }
-
   const loadedTracks = await Promise.all(
     currentTracks.map(async (track) => {
       const clipsPromises = track.clips.map(async (clip) => {

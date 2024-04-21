@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
   import { selectClip, timeToPixels } from "../../core/store";
   import { audioManager } from "../../core/audio.js";
-  import { generateWaveformSVG } from "../../core/waveform.js";
 
   export let clip;
 
@@ -16,7 +15,7 @@
       return;
     }
     try {
-      waveformPathData = await generateWaveformSVG(clip.audioUrl, 1000, 100);
+      waveformPathData = await audioManager.generateWaveform(clip.audioUrl, 1000);
       loadingState = "loaded";
     } catch (e) {
       loadingState = "error";

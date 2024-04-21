@@ -32,7 +32,7 @@
   function doResize(event) {
     const newY = event.clientY;
     const newHeight = startHeight - (newY - startY);
-    mixerHeight.set(newHeight > closedHeight ? newHeight : closedHeight); // Set a minimum height
+    mixerHeight.set(newHeight > closedHeight ? newHeight : closedHeight);
   }
 
   function stopResizing() {
