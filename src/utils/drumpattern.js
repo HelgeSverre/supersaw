@@ -36,6 +36,8 @@ export const createDrumPattern = ({
   return {
     id: crypto.randomUUID(),
     name: `${name} Pattern`,
+    isMuted: false,
+    isSolo: false,
     clips: clips,
   };
 };

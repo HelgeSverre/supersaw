@@ -1,11 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { selectClip, selectedClip, timeToPixels } from "../../core/store";
-  import {
-    generateSVGWaveform,
-    generateWaveform,
-    generateWaveformSVG,
-  } from "../../core/waveform.js";
+  import { generateSVGWaveform, generateWaveform, generateWaveformSVG } from "../../core/waveform.js";
 
   export let clip;
 
@@ -22,6 +18,7 @@
   const playClip = () => {
     selectClip(clip.id);
 
+    console.log("playing clip", clip.id, clip.audioUrl);
     // TODO: refactor this to use the audio store
     const audio = new Audio(clip.audioUrl);
     audio.play();
@@ -48,20 +45,14 @@
   draggable="true"
   on:dragstart={handleDragStart(clip)}
   on:click={playClip}
-  style="left: {leftPosition}px; width: {width}px;"
->
+  style="left: {leftPosition}px; width: {width}px;">
   {#if waveformPathData === ""}
     <div class="absolute inset-0 flex items-center justify-center">
       <span class="text-xs font-normal text-white/80">Loading waveform...</span>
     </div>
   {:else}
     <div class="h-full w-full overflow-hidden">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-full w-full"
-        viewBox="0 0 1000 100"
-        preserveAspectRatio="none"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full" viewBox="0 0 1000 100" preserveAspectRatio="none">
         <path d={waveformPathData} stroke="white" fill="none" />
       </svg>
     </div>

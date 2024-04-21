@@ -3,6 +3,7 @@ export const audioContext = new AudioContext();
 const mixer = audioContext.createGain();
 
 mixer.connect(audioContext.destination);
+
 export async function loadAudioBuffer(url) {
   const response = await fetch(url);
   const arrayBuffer = await response.arrayBuffer();

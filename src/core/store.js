@@ -1,11 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 import { derived, get, writable } from "svelte/store";
-import {
-  createDrumPattern,
-  createDubstepPattern,
-  createTrancePattern,
-} from "../utils/drumpattern.js";
+import { createDrumPattern, createDubstepPattern, createTrancePattern } from "../utils/drumpattern.js";
 import { loadAudioBuffer } from "./audio.js";
 
 export const PIXELS_PER_BEAT = 10;
@@ -20,21 +16,13 @@ export const selectedTrack = writable(null);
 
 export const tracks = writable([]);
 
-export const timeToPixels = derived(
-  [bpm, zoomLevel],
-  ([$bpm, $zoomLevel]) =>
-    (timeInSeconds) => {
-      return timeInSeconds * ($bpm / 60) * PIXELS_PER_BEAT * $zoomLevel;
-    },
-);
+export const timeToPixels = derived([bpm, zoomLevel], ([$bpm, $zoomLevel]) => (timeInSeconds) => {
+  return timeInSeconds * ($bpm / 60) * PIXELS_PER_BEAT * $zoomLevel;
+});
 
-export const pixelsToTime = derived(
-  [bpm, zoomLevel],
-  ([$bpm, $zoomLevel]) =>
-    (pixels) => {
-      return pixels / (($bpm / 60) * PIXELS_PER_BEAT * $zoomLevel);
-    },
-);
+export const pixelsToTime = derived([bpm, zoomLevel], ([$bpm, $zoomLevel]) => (pixels) => {
+  return pixels / (($bpm / 60) * PIXELS_PER_BEAT * $zoomLevel);
+});
 
 let frame;
 
@@ -88,6 +76,8 @@ export const createTrackFromUrl = async (trackName, url) => {
     addTrack({
       id: crypto.randomUUID(),
       name: trackName,
+      isMuted: false,
+      isSolo: false,
       clips: [
         {
           id: crypto.randomUUID(),
@@ -105,21 +95,18 @@ export const createTrackFromUrl = async (trackName, url) => {
 // Functions for toggling track mute and solo states
 export const toggleMute = (trackId) => {
   tracks.update((allTracks) =>
-    allTracks.map((track) =>
-      track.id === trackId ? { ...track, isMuted: !track.isMuted } : track,
-    ),
+    allTracks.map((track) => {
+      return track.id === trackId ? { ...track, isMuted: !track.isMuted } : track;
+    }),
   );
 };
 
 export const toggleSolo = (trackId) => {
   tracks.update((allTracks) => {
-    const isAnySolo = allTracks.some(
-      (track) => track.isSolo && track.id !== trackId,
-    );
+    const isAnySolo = allTracks.some((track) => track.isSolo && track.id !== trackId);
     return allTracks.map((track) => ({
       ...track,
-      isSolo:
-        track.id === trackId ? !track.isSolo : isAnySolo ? track.isSolo : false,
+      isSolo: track.id === trackId ? !track.isSolo : isAnySolo ? track.isSolo : false,
     }));
   });
 };
@@ -129,9 +116,7 @@ export const changeBpm = (newBpm) => {
 };
 
 export const removeTrack = (trackId) => {
-  tracks.update((allTracks) =>
-    allTracks.filter((track) => track.id !== trackId),
-  );
+  tracks.update((allTracks) => allTracks.filter((track) => track.id !== trackId));
 };
 
 export const addTrack = (track) => {
@@ -139,11 +124,7 @@ export const addTrack = (track) => {
 };
 
 export const changeTrackName = (trackId, newName) => {
-  tracks.update((allTracks) =>
-    allTracks.map((track) =>
-      track.id === trackId ? { ...track, name: newName } : track,
-    ),
-  );
+  tracks.update((allTracks) => allTracks.map((track) => (track.id === trackId ? { ...track, name: newName } : track)));
 };
 
 export const loadAudioBuffersForTrack = async (track) => {
@@ -165,49 +146,48 @@ export const loadAudioBuffersForAllTracks = async () => {
   let currentTracks = get(tracks); // Properly access the current value
 
   if (!Array.isArray(currentTracks)) {
-    console.error('loadAudioBuffersForAllTracks: currentTracks is not an array:', currentTracks);
+    console.error("loadAudioBuffersForAllTracks: currentTracks is not an array:", currentTracks);
     currentTracks = []; // Reset to an empty array if it's not an array
   }
 
-  const loadedTracks = await Promise.all(currentTracks.map(async (track) => {
-    const clips = track.clips.map(async (clip) => {
-      if (!clip.audioBuffer) { // Only load if there's no buffer
-        const buffer = await loadAudioBuffer(clip.audioUrl);
-        return { ...clip, audioBuffer: buffer };
-      }
-      return clip; // Return the clip as is if it already has a buffer
-    });
-    return { ...track, clips };
-  }));
+  const loadedTracks = await Promise.all(
+    currentTracks.map(async (track) => {
+      const clipsPromises = track.clips.map(async (clip) => {
+        if (!clip.audioBuffer) {
+          const buffer = await loadAudioBuffer(clip.audioUrl);
+          return { ...clip, audioBuffer: buffer };
+        }
+
+        // Already buffered, return as is
+        return clip;
+      });
+
+      const clips = await Promise.all(clipsPromises); // Await all clip promises here
+
+      return { ...track, clips };
+    }),
+  );
 
   tracks.set(loadedTracks); // Update the tracks store with loaded tracks
 };
 
 export const addClip = (trackId, clip) => {
   tracks.update((allTracks) =>
-    allTracks.map((track) =>
-      track.id === trackId
-        ? { ...track, clips: [...track.clips, clip] }
-        : track,
-    ),
+    allTracks.map((track) => (track.id === trackId ? { ...track, clips: [...track.clips, clip] } : track)),
   );
 };
 
 export const removeClip = (trackId, clipId) => {
   tracks.update((allTracks) =>
     allTracks.map((track) =>
-      track.id === trackId
-        ? { ...track, clips: track.clips.filter((clip) => clip.id !== clipId) }
-        : track,
+      track.id === trackId ? { ...track, clips: track.clips.filter((clip) => clip.id !== clipId) } : track,
     ),
   );
 };
 
 export const moveClip = (trackId, clipId, newTrackId) => {
   tracks.update((allTracks) => {
-    const clip = allTracks
-      .find((track) => track.id === trackId)
-      .clips.find((clip) => clip.id === clipId);
+    const clip = allTracks.find((track) => track.id === trackId).clips.find((clip) => clip.id === clipId);
     return allTracks.map((track) =>
       track.id === newTrackId
         ? { ...track, clips: [...track.clips, clip] }
@@ -227,9 +207,7 @@ export const moveClipToTime = (trackId, clipId, newStartTime) => {
       track.id === trackId
         ? {
             ...track,
-            clips: track.clips.map((clip) =>
-              clip.id === clipId ? { ...clip, startTime: newStartTime } : clip,
-            ),
+            clips: track.clips.map((clip) => (clip.id === clipId ? { ...clip, startTime: newStartTime } : clip)),
           }
         : track,
     ),
@@ -242,9 +220,7 @@ export const changeClipDuration = (trackId, clipId, newDuration) => {
       track.id === trackId
         ? {
             ...track,
-            clips: track.clips.map((clip) =>
-              clip.id === clipId ? { ...clip, duration: newDuration } : clip,
-            ),
+            clips: track.clips.map((clip) => (clip.id === clipId ? { ...clip, duration: newDuration } : clip)),
           }
         : track,
     ),
@@ -261,33 +237,38 @@ export const selectTrack = (trackId) => {
 
 export const selectClip = (clipId) => {
   tracks.subscribe((tracks) => {
-    const track = tracks.find((track) =>
-      track.clips.find((clip) => clip.id === clipId),
-    );
+    const track = tracks.find((track) => track.clips.find((clip) => clip.id === clipId));
 
     selectedTrack.set(track.id);
     selectedClip.set(clipId);
   });
 };
 
-export const createDummyTracks = () => {
-  const bassDrumPattern = createDrumPattern({
-    name: "Bass Drum",
-    folder: "BD",
-    pattern: [1, 0, 1, 0, 1, 0, 1, 0], // Basic 4/4 beat
-    bpm: 120,
-    clipLength: 0.5, // Half-second clips
-    baseVolume: 1, // Full volume
-    variations: ["0000", "0050", "0075"], // Three variations of bass drum sounds
-  });
+export const createDummyDrumTracks = () => {
+  addTrack(
+    createDrumPattern({
+      name: "Bass Drum",
+      folder: "BD",
+      pattern: [1, 0, 1, 0, 1, 0, 1, 0], // Basic 4/4 beat
+      bpm: 120,
+      clipLength: 0.5, // Half-second clips
+      baseVolume: 1, // Full volume
+      variations: ["0000", "0050", "0075"], // Three variations of bass drum sounds
+    }),
+  );
+};
 
-  // Using the function to create a basic dubstep pattern
+export const createDummyDubstepTracks = () => {
   const dubstepPattern = createDubstepPattern({
     bpm: 140,
     clipLength: 0.5,
     baseVolume: 1,
   });
 
+  dubstepPattern.forEach((track) => addTrack(track));
+};
+
+export const createDummyTranceTracks = () => {
   // Using the function to create a basic trance pattern
   const trancePattern = createTrancePattern({
     bpm: 140,
@@ -295,9 +276,7 @@ export const createDummyTracks = () => {
     baseVolume: 1,
   });
 
-  // addTrack(bassDrumPattern);
-  dubstepPattern.forEach((track) => addTrack(track));
-  // trancePattern.forEach((track) => addTrack(track));
+  trancePattern.forEach((track) => addTrack(track));
 };
 
 export const zoomIn = () => {

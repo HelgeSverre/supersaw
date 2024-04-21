@@ -7,10 +7,7 @@ export async function generateWaveform(url, samples = 1000) {
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
   const rawDataLeft = audioBuffer.getChannelData(0);
-  const rawDataRight =
-    audioBuffer.numberOfChannels > 1
-      ? audioBuffer.getChannelData(1)
-      : rawDataLeft;
+  const rawDataRight = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1) : rawDataLeft;
   const blockSize = Math.floor(rawDataLeft.length / samples);
   let waveformPoints = [];
 
@@ -89,10 +86,7 @@ export async function generateSVGWaveform(url, samples = 512) {
   svg.setAttribute("width", "100%");
   svg.setAttribute("height", "256");
 
-  const svgPath = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "path",
-  );
+  const svgPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
   svgPath.setAttribute("d", path);
   svgPath.setAttribute("fill", "none");
   svgPath.setAttribute("stroke", "black");
@@ -102,11 +96,7 @@ export async function generateSVGWaveform(url, samples = 512) {
   return svg;
 }
 
-export async function generateWaveformSVG(
-  url,
-  svgWidth = 500,
-  svgHeight = 100,
-) {
+export async function generateWaveformSVG(url, svgWidth = 500, svgHeight = 100) {
   // Create an audio context
   const audioContext = new AudioContext();
 
@@ -131,22 +121,13 @@ export async function generateWaveformSVG(
     for (let j = 0; j < step; j++) {
       const sampleIndex = i * step + j;
       if (sampleIndex < leftChannel.length) {
-        const sample =
-          (leftChannel[sampleIndex] + rightChannel[sampleIndex]) / 2; // Averaging stereo channels
+        const sample = (leftChannel[sampleIndex] + rightChannel[sampleIndex]) / 2; // Averaging stereo channels
         min = Math.min(min, sample);
         max = Math.max(max, sample);
       }
     }
     // SVG Y coordinates are flipped, so max comes before min
-    pathD +=
-      " L" +
-      (i + 1) +
-      " " +
-      (amp - max * amp) +
-      " L" +
-      (i + 1) +
-      " " +
-      (amp - min * amp);
+    pathD += " L" + (i + 1) + " " + (amp - max * amp) + " L" + (i + 1) + " " + (amp - min * amp);
   }
 
   // Close the path back at the bottom middle for mirrored effect
