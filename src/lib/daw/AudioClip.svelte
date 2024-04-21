@@ -1,6 +1,7 @@
 <script>
   import { onMount } from "svelte";
-  import { selectClip, selectedClip, timeToPixels } from "../../core/store";
+  import { selectClip, timeToPixels } from "../../core/store";
+  import { audioManager } from "../../core/audio.js";
   import { generateSVGWaveform, generateWaveform, generateWaveformSVG } from "../../core/waveform.js";
 
   export let clip;
@@ -12,16 +13,13 @@
       return;
     }
 
+    // waveformPathData = await generateWaveformSVG(clip.audioUrl, 1000, 100);
     waveformPathData = await generateWaveformSVG(clip.audioUrl, 1000, 100);
   });
 
   const playClip = () => {
     selectClip(clip.id);
-
-    console.log("playing clip", clip.id, clip.audioUrl);
-    // TODO: refactor this to use the audio store
-    const audio = new Audio(clip.audioUrl);
-    audio.play();
+    audioManager.playPreview(clip.audioUrl);
   };
 
   function handleDragStart(clip) {
@@ -45,7 +43,13 @@
   draggable="true"
   on:dragstart={handleDragStart(clip)}
   on:click={playClip}
-  style="left: {leftPosition}px; width: {width}px;">
+  style="left: {leftPosition}px; width: {width}px;"
+  title={clip.name ?? "Unnamed"}
+>
+  <div class="absolute bottom-1 right-1 inline-block rounded bg-white/10 p-0.5 text-xs leading-none">
+    {clip.name ?? "Unnamed"}
+  </div>
+
   {#if waveformPathData === ""}
     <div class="absolute inset-0 flex items-center justify-center">
       <span class="text-xs font-normal text-white/80">Loading waveform...</span>

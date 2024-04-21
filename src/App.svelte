@@ -1,12 +1,12 @@
 <script>
-  import { ChevronDown, Drum, Pause, Play, Search, Square, ZoomIn, ZoomOut } from "lucide-svelte";
-  import Track from "./lib/ui/Track.svelte";
+  import { ChevronDown, Drum, Pause, Play, Search, Square, SquareScissors, ZoomIn, ZoomOut } from "lucide-svelte";
+  import Track from "./lib/daw/Track.svelte";
 
   import {
     bpm,
     createDummyDrumTracks,
-    createDummyDubstepTracks,
     createDummyTranceTracks,
+    nudge,
     pausePlayback,
     playbackState,
     startPlayback,
@@ -18,12 +18,13 @@
     zoomLevel,
     zoomOut,
   } from "./core/store.js";
-  import { formatTime } from "./core/audio.js";
-  import SegmentGroup from "./lib/SegmentGroup.svelte";
-  import IconButton from "./lib/IconButton.svelte";
-  import TextDisplay from "./lib/TextDisplay.svelte";
-  import TextButton from "./lib/TextButton.svelte";
+  import { formatTime } from "./core/utils.js";
+  import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
+  import IconButton from "./lib/ui/IconButton.svelte";
+  import TextDisplay from "./lib/ui/TextDisplay.svelte";
+  import TextButton from "./lib/ui/TextButton.svelte";
   import { onMount } from "svelte";
+  import TopBar from "./lib/layout/TopBar.svelte";
 
   function handleZoom(event) {
     if (event.shiftKey) {
@@ -34,21 +35,42 @@
 
   onMount(() => {
     if ($tracks.length === 0) {
-      createDummyDrumTracks();
+      createDummyTranceTracks();
     }
   });
+
+  function handleKeydown(event) {
+    const { key, keyCode } = event;
+
+    // Spacebar - Play/Pause globally
+    if (key === " ") {
+      event.preventDefault();
+      if ($playbackState.playing) {
+        pausePlayback();
+      } else {
+        startPlayback();
+      }
+    }
+
+    // Arrow keys - Move playhead left/right by 100 ms, if shift, move by 1 second
+    if (keyCode === 37) {
+      // Left arrow
+      nudge(event.shiftKey ? -1000 : -100);
+    } else if (keyCode === 39) {
+      // Right arrow
+      nudge(event.shiftKey ? 1000 : 100);
+    }
+  }
 
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
 
+<svelte:window on:keydown={handleKeydown} />
+
 <main>
-  <div>
-    <div
-      class="flex h-full w-full items-center justify-between border-b-2 border-dark-900 bg-dark-300 bg-gradient-to-t from-dark-400 via-dark-300 to-dark-300 px-2 py-2">
-      <div class="text-xs font-medium leading-none text-white/40">H-DAW</div>
-      <div class="text-xs font-medium leading-none text-white/40">v0.0.1</div>
-    </div>
-  </div>
+  <TopBar />
+
+  <!-- Control Panel -->
   <section class="bg-dark-600">
     <div class="flex h-14 flex-row items-center">
       <div class="flex h-full w-[250px] shrink-0 items-center border-r-2 border-dark-900 px-2">
@@ -60,7 +82,8 @@
           <input
             type="search"
             placeholder="Instruments, effects audio..."
-            class="h-10 w-full text-ellipsis bg-transparent pl-8 text-sm font-normal placeholder-light-secondary focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent" />
+            class="h-10 w-full text-ellipsis bg-transparent pl-8 text-sm font-normal placeholder-light-secondary focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+          />
         </div>
       </div>
 
@@ -69,7 +92,8 @@
           <TextDisplay text="4/4" />
 
           <span
-            class="inline-flex h-10 items-center justify-center bg-dark-400 px-1 font-bold text-light group-hover:bg-dark-200">
+            class="inline-flex h-10 items-center justify-center bg-dark-400 px-1 font-bold text-light group-hover:bg-dark-200"
+          >
             <ChevronDown size="20" />
           </span>
         </button>
@@ -101,8 +125,7 @@
         <div class="ml-auto">
           <SegmentGroup additionalClasses="mx-8">
             <IconButton icon={Drum} onClick={createDummyDrumTracks} />
-            <IconButton icon={Drum} onClick={createDummyDubstepTracks} />
-            <IconButton icon={Drum} onClick={createDummyTranceTracks} />
+            <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />
           </SegmentGroup>
 
           <SegmentGroup>

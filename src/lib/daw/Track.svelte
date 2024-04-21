@@ -5,6 +5,8 @@
     moveClipToTime,
     pixelsToTime,
     removeTrack,
+    selectedTrack,
+    selectTrack,
     toggleMute,
     toggleSolo,
   } from "../../core/store.js";
@@ -27,7 +29,8 @@
 <!-- Track -->
 <div
   class="track flex flex-row gap-2 overflow-hidden rounded-sm border border-dark-100 bg-white/5"
-  style="height: 100px; position: relative;">
+  style="height: 100px; position: relative;"
+>
   <!-- Track header -->
   <div class="track-header flex w-60 shrink-0 flex-col border-r-2 border-r-dark-900 bg-dark-300">
     <div class="flex flex-row items-center justify-between gap-2 bg-dark-200">
@@ -35,7 +38,8 @@
         class="block w-full truncate p-1 text-left text-xs font-medium text-light"
         on:click={() => {
           changeTrackName(track.id, prompt("Enter new track name", track.name));
-        }}>
+        }}
+      >
         {track.name}
       </button>
 
@@ -51,7 +55,8 @@
           track.isMuted
             ? "bg-accent-yellow text-black-300 hover:bg-accent-yellow/80"
             : "bg-dark-600 text-light hover:bg-dark-500"
-        }`}>
+        }`}
+      >
         Mute
       </button>
 
@@ -61,7 +66,8 @@
           track.isSolo
             ? "bg-accent-yellow text-black-300 hover:bg-accent-yellow/80"
             : "bg-dark-600 text-light hover:bg-dark-500"
-        }`}>
+        }`}
+      >
         Solo
       </button>
     </div>

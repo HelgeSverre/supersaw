@@ -1,45 +1,80 @@
-export const audioContext = new AudioContext();
+class AudioManager {
+  audioContext;
+  mixer;
+  sources = {};
 
-const mixer = audioContext.createGain();
+  constructor() {
+    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    this.mixer = this.audioContext.createGain();
+    this.mixer.connect(this.audioContext.destination);
+  }
 
-mixer.connect(audioContext.destination);
+  loadAudioBuffer = async (url) => {
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    return this.audioContext.decodeAudioData(arrayBuffer);
+  };
 
-export async function loadAudioBuffer(url) {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  return await audioContext.decodeAudioData(arrayBuffer);
+  setupAudioSource = (buffer) => {
+    const source = this.audioContext.createBufferSource();
+    const gainNode = this.audioContext.createGain();
+
+    source.buffer = buffer;
+    source.connect(gainNode);
+
+    gainNode.connect(this.mixer);
+
+    return { source, gainNode };
+  };
+
+  playClip = (clipId, buffer, startTime, duration) => {
+    const { source, gainNode } = this.setupAudioSource(buffer);
+    source.start(this.audioContext.currentTime + startTime, 0, duration);
+    this.sources[clipId] = { source, gainNode };
+  };
+
+  stopClip = (clipId) => {
+    if (this.sources[clipId]) {
+      this.sources[clipId].source.stop();
+      delete this.sources[clipId];
+    }
+  };
+
+  setVolume = (volume) => {
+    this.mixer.gain.value = volume;
+  };
+
+  setGain = (clipId, volume) => {
+    if (this.sources[clipId]) {
+      this.sources[clipId].gainNode.gain.value = volume;
+    }
+  };
+
+  cleanup = () => {
+    Object.keys(this.sources).forEach((id) => this.stopClip(id));
+  };
+
+  playPreview = async (url) => {
+    const buffer = await this.loadAudioBuffer(url);
+    const source = this.audioContext.createBufferSource();
+    source.buffer = buffer;
+    const gainNode = this.audioContext.createGain();
+
+    source.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+
+    source.start(0); // Start immediately
+    source.onended = () => {
+      source.disconnect();
+      gainNode.disconnect();
+    };
+  };
 }
 
-export const getDurationFromUrl = async (url) => {
-  const buffer = await loadAudioBuffer(url);
-  return buffer.duration;
-};
+// Export an instance of AudioManager
+export const audioManager = new AudioManager();
 
 export function setupTrack(buffer) {
-  const source = audioContext.createBufferSource();
-  source.buffer = buffer;
-  const gainNode = audioContext.createGain();
-  source.connect(gainNode);
-
-  // Connect the gain node to the mixer instead of the destination
-  gainNode.connect(mixer);
-
-  return { source, gainNode };
-}
-
-export function formatTime(seconds) {
-  const hours = Math.floor(seconds / 3600)
-    .toString()
-    .padStart(2, "0");
-  const minutes = Math.floor((seconds % 3600) / 60)
-    .toString()
-    .padStart(2, "0");
-  const sec = Math.floor(seconds % 60)
-    .toString()
-    .padStart(2, "0");
-  const ms = Math.floor((seconds % 1) * 1000)
-    .toString()
-    .padStart(3, "0");
-
-  return `${hours}:${minutes}:${sec}.${ms}`;
+  // TODO: remove this
+  audioManager.setupAudioSource(buffer);
 }

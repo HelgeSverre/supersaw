@@ -12,5 +12,5 @@
   "quoteProps": "consistent",
   "semi": true,
   "singleQuote": false,
-  "bracketSameLine": true
+  "bracketSameLine": false
 }

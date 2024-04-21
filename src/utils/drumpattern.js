@@ -1,36 +1,37 @@
 // Utility function to create drum pattern clips
 export const createDrumPattern = ({
-  name, // e.g., "Bass Drum"
-  folder, // e.g., "BD"
-  pattern, // e.g., [1, 0, 1, 0] for "BD" beats on first and third beats
-  bpm, // Beats per minute
-  clipLength, // Length of each clip in seconds
-  baseVolume, // Volume of the clips
-  variations, // Array of variations e.g., ['0000', '0010', '0050']
+  name,
+  folder,
+  pattern, // Now including fractions to denote sub-beats
+  bpm,
+  clipLength,
+  baseVolume,
+  variations,
 }) => {
-  // Base URL for the audio samples
   const baseUrl = `/samples/roland-tr-808/${folder}/`;
-  // Calculate interval between beats (in seconds)
-  const beatInterval = 60 / bpm;
-  // Initialize the clips array
+  const beatInterval = 60 / bpm; // Time for one full beat
   const clips = [];
 
-  // Generate clips based on the pattern
-  pattern.forEach((beat, index) => {
-    if (beat === 1) {
-      // For each variation create a clip
-      variations.forEach((variation) => {
-        const clip = {
-          id: crypto.randomUUID(),
-          name: `${name} ${variation}`,
-          audioUrl: `${baseUrl}${folder}${variation}.WAV`,
-          startTime: index * beatInterval,
-          duration: clipLength,
-          volume: baseVolume,
-        };
-        clips.push(clip);
-      });
+  pattern.forEach((beatFraction, index) => {
+    if (beatFraction === 0) {
+      return; // Skip if no beat is supposed to play
     }
+
+    // Calculate start time using the fraction of the beatInterval
+    const startTime = index * beatInterval * beatFraction; // Adjust start time based on sub-beat fraction
+
+    // Randomly select one variation
+    const variation = variations[Math.floor(Math.random() * variations.length)];
+
+    const clip = {
+      id: crypto.randomUUID(),
+      name: `${name} ${variation}`,
+      audioUrl: `${baseUrl}${folder}${variation}.WAV`,
+      startTime: startTime,
+      duration: beatFraction * beatInterval,
+      volume: baseVolume,
+    };
+    clips.push(clip);
   });
 
   return {
@@ -42,54 +43,23 @@ export const createDrumPattern = ({
   };
 };
 
-// Basic dubstep pattern: Kicks on 1st and just after 2nd beat, snare on 3rd beat
-// Example for a single measure: [1, 0, 0, 0.5, 0, 1, 0, 0] (Here, 0.5 represents a kick halfway between beats)
-export const createDubstepPattern = ({ bpm, clipLength, baseVolume }) => {
-  const kickPattern = [1, 0, 0, 0.5, 0, 1, 0, 0];
-  const snarePattern = [0, 0, 1, 0, 0, 0, 1, 0];
-  const hiHatPattern = [0, 1, 0, 1, 1, 0, 1, 1]; // Hi-hats can be more frequent for a top rhythm layer
-
-  const kickTrack = createDrumPattern({
-    name: "Dubstep - Kick",
-    folder: "BD",
-    pattern: kickPattern,
-    bpm,
-    clipLength,
-    baseVolume,
-    variations: ["0010", "0050"],
-  });
-
-  const snareTrack = createDrumPattern({
-    name: "Dubstep - Snare",
-    folder: "SD",
-    pattern: snarePattern,
-    bpm,
-    clipLength,
-    baseVolume,
-    variations: ["0025", "0050"],
-  });
-
-  const hiHatTrack = createDrumPattern({
-    name: "Dubstep - HiHat",
-    folder: "CH",
-    pattern: hiHatPattern,
-    bpm,
-    clipLength: clipLength / 2, // Hi-hats often play at double speed in dubstep
-    baseVolume,
-    variations: [""], // Assuming only one type of hi-hat sample
-  });
-
-  // Combine all patterns into a single track array
-  return [kickTrack, snareTrack, hiHatTrack];
-};
+function repeat(pattern, times) {
+  return Array(times).fill(pattern).flat();
+}
 
 // Basic trance pattern: Steady kicks, off-beat bass, and rhythmic hi-hats
 // For simplicity: Kicks on every beat, claps or snares on the 2nd and 4th beats, and hi-hats on off-beats
-export const createTrancePattern = ({ bpm, clipLength, baseVolume }) => {
-  const kickPattern = [1, 1, 1, 1]; // Four-on-the-floor kicks
-  const bassPattern = [0, 1, 0, 1]; // Off-beat bass hits
-  const hiHatPattern = [0, 1, 0, 1]; // Hi-hats on off-beats
-  const snarePattern = [0, 1, 0, 1]; // Snares or claps on the 2nd and 4th
+export const createTrancePattern = ({ bpm, clipLength, baseVolume, bars = 1 }) => {
+  // Kick on every beat (4 beats per bar)
+  const kickPattern = [1, 1, 1, 1];
+
+  // Claps or Snares on the 2nd and 4th beats of each bar
+  const snarePattern = [0, 1, 0, 1];
+
+  const hiHatPattern = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25];
+
+  // Bass pattern can follow the off-beat, similar to hi-hats but usually at a different octave or sound
+  const bassPattern = repeat([0, 1, 0, 1], bars); // Off-beat bass hits
 
   const kickTrack = createDrumPattern({
     name: "Trance - Kick",
@@ -116,7 +86,7 @@ export const createTrancePattern = ({ bpm, clipLength, baseVolume }) => {
     folder: "CH",
     pattern: hiHatPattern,
     bpm,
-    clipLength,
+    clipLength: 0.25,
     baseVolume,
     variations: [""], // Assuming only one type of hi-hat sample
   });
@@ -128,7 +98,7 @@ export const createTrancePattern = ({ bpm, clipLength, baseVolume }) => {
     bpm,
     clipLength,
     baseVolume,
-    variations: ["1000"], // Standard snare
+    variations: ["2510"], // Standard snare
   });
 
   // Combine all patterns into a single track array
