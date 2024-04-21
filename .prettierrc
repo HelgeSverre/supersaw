@@ -4,7 +4,8 @@
     {
       "files": "*.svelte",
       "options": {
-        "parser": "svelte"
+        "parser": "svelte",
+        "svelteAllowShorthand": false
       }
     }
   ],
