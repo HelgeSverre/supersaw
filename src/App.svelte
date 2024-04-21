@@ -1,12 +1,20 @@
 <script>
   import {
     ChevronDown,
+    Dice1,
+    Dice2,
+    Dice3,
+    Dice4,
     Drum,
     Pause,
     Play,
+    Repeat,
+    Repeat1,
+    Repeat2,
     Search,
     Square,
     SquareScissors,
+    Trash,
     Warehouse,
     ZoomIn,
     ZoomOut,
@@ -16,9 +24,13 @@
   import {
     bpm,
     changeBpm,
+    clearTracks,
     createDummyDrumTracks,
     createDummyHouseTracks,
     createDummyTranceTracks,
+    loopRegion,
+    expandLoopRegion,
+    addTrack,
     nudge,
     pausePlayback,
     playbackState,
@@ -32,6 +44,7 @@
     zoomOut,
   } from "./core/store.js";
   import { formatTime } from "./core/utils.js";
+  import { createDrumPattern } from "./utils/drumpattern.js";
   import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
   import IconButton from "./lib/ui/IconButton.svelte";
   import TextDisplay from "./lib/ui/TextDisplay.svelte";
@@ -39,6 +52,7 @@
   import { onMount } from "svelte";
   import TopBar from "./lib/layout/TopBar.svelte";
   import MixerPanel from "./lib/daw/MixerPanel.svelte";
+  import Browser from "./lib/daw/Browser.svelte";
 
   function handleZoom(event) {
     if (event.shiftKey) {
@@ -49,7 +63,16 @@
 
   onMount(() => {
     if ($tracks.length === 0) {
-      createDummyHouseTracks();
+      // createDrumPattern({
+      //   name: "Bass Drum",
+      //   folder: "BD",
+      //   pattern: [1, 1, 1, 1], // Basic 4/4 beat
+      //   bpm: $bpm,
+      //   baseVolume: 1, // Full volume
+      //   variations: ["0000"],
+      // }).then((track) => addTrack(track));
+
+      createDummyDrumTracks();
     }
   });
 
@@ -77,28 +100,23 @@
   }
 
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
+  $: looper = {
+    active: $loopRegion.active,
+    left: $timeToPixels($loopRegion.start),
+    right: $timeToPixels($loopRegion.end),
+  };
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
 
-<main>
+<main class="flex flex-1 flex-col">
   <TopBar />
 
   <!-- Control Panel -->
   <section class="bg-dark-600">
     <div class="flex h-14 flex-row items-center">
       <div class="flex h-full w-[250px] shrink-0 items-center border-r-2 border-dark-900 px-2">
-        <div class="relative h-fit w-full rounded bg-dark-400">
-          <div class="absolute inset-y-0 left-2 flex items-center justify-center">
-            <Search size="16" class="text-light-soft" />
-          </div>
-
-          <input
-            type="search"
-            placeholder="Instruments, effects audio..."
-            class="h-10 w-full text-ellipsis bg-transparent pl-8 text-sm font-normal placeholder-light-secondary focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-          />
-        </div>
+        <Browser />
       </div>
 
       <div class="flex w-full flex-row items-center justify-start gap-x-3 px-2 py-2">
@@ -124,22 +142,32 @@
           {/if}
           <IconButton icon={Square} onClick={stopPlayback} />
 
-          {#if $playbackState.playing}
-            <TextDisplay text="Playing" additionalClasses="text-green-500" />
-          {:else if $playbackState.currentTime === 0}
-            <TextDisplay text="Stopped" additionalClasses="text-red-500" />
-          {:else}
-            <TextDisplay text="Paused" additionalClasses="text-yellow-500" />
-          {/if}
+          <!--{#if $playbackState.playing}-->
+          <!--  <TextDisplay text="Playing" additionalClasses="text-green-500" />-->
+          <!--{:else if $playbackState.currentTime === 0}-->
+          <!--  <TextDisplay text="Stopped" additionalClasses="text-red-500" />-->
+          <!--{:else}-->
+          <!--  <TextDisplay text="Paused" additionalClasses="text-yellow-500" />-->
+          <!--{/if}-->
         </SegmentGroup>
 
-        <TextDisplay text={formatTime($playbackState.currentTime)} />
+        <TextDisplay text={formatTime($playbackState.currentTime)} additionalClasses="tabular-nums" />
 
-        <div class="ml-auto">
-          <SegmentGroup additionalClasses="mx-8">
+        <div class="ml-auto flex flex-row items-center justify-end gap-8">
+          <SegmentGroup>
             <IconButton icon={Drum} onClick={createDummyDrumTracks} />
             <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />
             <IconButton icon={Warehouse} onClick={createDummyHouseTracks} />
+          </SegmentGroup>
+
+          <SegmentGroup>
+            <IconButton icon={Dice1} onClick={() => expandLoopRegion(1)} />
+            <IconButton icon={Dice2} onClick={() => expandLoopRegion(2)} />
+            <IconButton icon={Dice3} onClick={() => expandLoopRegion(3)} />
+            <IconButton icon={Dice4} onClick={() => expandLoopRegion(4)} />
+          </SegmentGroup>
+          <SegmentGroup>
+            <IconButton icon={Trash} onClick={clearTracks} />
           </SegmentGroup>
 
           <SegmentGroup>
@@ -153,16 +181,27 @@
   </section>
 
   <!-- Timeline -->
-  <section class="timeline relative" on:wheel={handleZoom}>
-    <div style="left: {playHeadPosition}px;" class="absolute inset-y-0 z-50 ml-[250px] w-[2px] bg-red-500"></div>
+  {#if $tracks.length}
+    <section class="timeline relative" on:wheel={handleZoom}>
+      <div style="left: {playHeadPosition}px;" class="absolute inset-y-0 z-50 ml-[250px] w-[2px] bg-red-500"></div>
 
-    <!-- Tracks -->
-    <div class="flex flex-col gap-2 p-2">
-      {#each $tracks as track}
-        <Track track={track} />
-      {/each}
+      <div
+        style="left: {looper.left}px;width: {looper.right}px;"
+        class="pointer-events-none absolute inset-y-0 z-50 ml-[250px] select-none border-x border-teal-300 bg-teal-300/30"
+      ></div>
+
+      <!-- Tracks -->
+      <div class="flex flex-col gap-2 p-2">
+        {#each $tracks as track}
+          <Track track={track} />
+        {/each}
+      </div>
+    </section>
+  {:else}
+    <div class="m-8 flex flex-1 items-center justify-center">
+      <div class="text-center text-sm text-dark-100">No tracks</div>
     </div>
-  </section>
+  {/if}
 
   <MixerPanel />
 </main>

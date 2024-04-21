@@ -2,11 +2,12 @@
   import AudioClip from "./AudioClip.svelte";
   import {
     changeTrackName,
+    createClipFromUrl,
+    seekToTime,
     moveClipToTime,
     pixelsToTime,
     removeTrack,
-    selectedTrack,
-    selectTrack,
+    addClip,
     toggleMute,
     toggleSolo,
   } from "../../core/store.js";
@@ -15,14 +16,39 @@
   export let track;
 
   function handleDrop(event) {
+    const data = JSON.parse(event.dataTransfer.getData("text/plain"));
+
+    if (data.action === "clip:move") {
+      const timelineElement = event.currentTarget;
+      const timelineRect = timelineElement.getBoundingClientRect();
+      const relativeX = event.clientX - timelineRect.left;
+
+      const newStartTime = $pixelsToTime(relativeX);
+
+      moveClipToTime(track.id, data.clipId, newStartTime);
+    }
+
+    if (data.action === "clip:add") {
+      const timelineElement = event.currentTarget;
+      const timelineRect = timelineElement.getBoundingClientRect();
+      const relativeX = event.clientX - timelineRect.left;
+
+      const newStartTime = $pixelsToTime(relativeX);
+
+      createClipFromUrl(data.path, data.name).then((clip) => {
+        addClip(track.id, { ...clip, startTime: newStartTime });
+      });
+    }
+  }
+
+  function onTrackClick(event) {
     const timelineElement = event.currentTarget;
     const timelineRect = timelineElement.getBoundingClientRect();
     const relativeX = event.clientX - timelineRect.left;
 
-    const data = JSON.parse(event.dataTransfer.getData("text/plain"));
     const newStartTime = $pixelsToTime(relativeX);
 
-    moveClipToTime(track.id, data.clipId, newStartTime);
+    seekToTime(newStartTime);
   }
 </script>
 
@@ -76,7 +102,12 @@
   </div>
 
   <!-- Clips -->
-  <div class="track-timeline relative w-full" on:dragover|preventDefault on:drop|preventDefault={handleDrop}>
+  <div
+    class="track-timeline relative w-full"
+    on:click={onTrackClick}
+    on:dragover|preventDefault
+    on:drop|preventDefault={handleDrop}
+  >
     {#each track.clips as clip}
       <AudioClip clip={clip} />
     {/each}

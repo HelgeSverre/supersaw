@@ -1,16 +1,21 @@
 // noinspection JSUnusedGlobalSymbols
 
 import { derived, get, writable } from "svelte/store";
-import { createDrumPattern, createHousePattern, createTranceEDMPattern } from "../utils/drumpattern.js";
+import {
+  createDeepHousePattern,
+  createDrumPattern,
+  createStepSequencerPattern,
+  createTranceEDMPattern,
+} from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
 
-export const bpm = writable(120);
+export const bpm = writable(140);
 export const zoomLevel = writable(10);
 
-export const loopRegion = writable({ start: 0.2, end: 1.5, active: false });
+export const loopRegion = writable({ start: 0, end: (60 / get(bpm)) * 4, active: false });
 export const playbackState = writable({ playing: false, currentTime: 0 });
 export const selectedClip = writable(null);
 export const selectedTrack = writable(0);
@@ -70,7 +75,7 @@ activeClips.subscribe(($activeClips) => {
 
   Object.keys(sources).forEach((id) => {
     if (!$activeClips.find((clip) => clip.id === id)) {
-      sources[id].source.stop(currentAudioTime + 0.1); // schedule a slight delay to prevent clicks
+      sources[id].source.stop(currentAudioTime); // schedule a slight delay to prevent clicks
       delete sources[id];
     }
   });
@@ -146,6 +151,11 @@ export const pausePlayback = () => {
   cancelAnimationFrame(frame);
 };
 
+export const expandLoopRegion = (beats = 4) => {
+  // end: (60 / get(bpm)) * beats }
+  loopRegion.update((state) => ({ ...state, end: (60 / get(bpm)) * beats }));
+};
+
 export const loadDefaultTracks = async () => {
   return Promise.all([
     createTrackFromUrl("SoundHelix-Song-1.mp3", "/SoundHelix-Song-1.mp3"),
@@ -173,6 +183,19 @@ export const createTrackFromUrl = async (trackName, url) => {
       ],
     });
   });
+};
+
+export const createClipFromUrl = async (url, name = null) => {
+  const audioBuffer = await audioManager.loadAudioBuffer(url);
+
+  return {
+    id: crypto.randomUUID(),
+    name: name,
+    audioUrl: url,
+    startTime: 0,
+    duration: audioBuffer.duration,
+    audioBuffer: audioBuffer,
+  };
 };
 
 // Functions for toggling track mute and solo states
@@ -339,42 +362,6 @@ export const selectClip = (clipId) => {
   });
 };
 
-export const createDummyDrumTracks = () => {
-  addTrack(
-    createDrumPattern({
-      name: "Bass Drum",
-      folder: "BD",
-      pattern: [1, 0, 1, 0, 1, 0, 1, 0], // Basic 4/4 beat
-      bpm: get(bpm),
-      clipLength: 0.5, // Half-second clips
-      baseVolume: 1, // Full volume
-      variations: ["0000", "0050", "0075"],
-    }),
-  );
-};
-
-export const createDummyTranceTracks = () => {
-  // Using the function to create a basic trance pattern
-  const patterns = createTranceEDMPattern({
-    bpm: get(bpm),
-    clipLength: 1 / 4,
-    baseVolume: 1,
-  });
-
-  patterns.forEach((track) => addTrack(track));
-};
-
-export const createDummyHouseTracks = () => {
-  // Using the function to create a basic trance pattern
-  const patterns = createHousePattern({
-    bpm: get(bpm),
-    clipLength: 1 / 4,
-    baseVolume: 1,
-  });
-
-  patterns.forEach((track) => addTrack(track));
-};
-
 export const zoomIn = () => {
   zoomLevel.update((level) => level + 5);
 };
@@ -395,4 +382,55 @@ export const zoomByDelta = (delta) => {
 
     return newZoom;
   });
+};
+
+/// =======================================================
+
+export const createDummyDrumTracks = async () => {
+  clearTracks();
+  changeBpm(100);
+
+  const track = await createDrumPattern({
+    name: "Bass Drum",
+    steps: createStepSequencerPattern(8, 4, [1, 0, 0, 0]),
+    bpm: get(bpm),
+    variations: ["BD/BD0000.WAV"],
+  });
+
+  addTrack(track);
+
+  const track2 = await createDrumPattern({
+    name: "Bass Drum",
+    steps: createStepSequencerPattern(8, 4, [1, 0, 0, 0]),
+    bpm: get(bpm),
+    kit: "roland-tr-909",
+    variations: ["BT0A0A7.WAV"],
+  });
+
+  addTrack(track2);
+};
+
+export const createDummyTranceTracks = async () => {
+  clearTracks();
+  changeBpm(140);
+
+  // Using the function to create a basic trance pattern
+  const patterns = await createTranceEDMPattern({
+    bpm: get(bpm),
+  });
+
+  console.log(patterns);
+
+  patterns.forEach((track) => addTrack(track));
+};
+
+export const createDummyHouseTracks = async () => {
+  clearTracks();
+  changeBpm(115);
+  // Using the function to create a basic trance pattern
+  const patterns = await createDeepHousePattern({
+    bpm: get(bpm),
+  });
+
+  patterns.forEach((track) => addTrack(track));
 };

@@ -1,36 +1,47 @@
-// Utility function to create drum pattern clips
-export const createDrumPattern = ({
-  name,
-  folder,
-  pattern, // Now including fractions to denote sub-beats
-  bpm,
-  baseVolume,
-  variations,
-}) => {
-  const baseUrl = `/samples/roland-tr-808/${folder}/`;
-  const beatInterval = 60 / bpm; // Time for one full beat
+import { audioManager } from "../core/audio.js";
+
+/**
+ * Create a step sequencer pattern for drum machines.
+ * @param {number} stepsPerBar - Number of steps per bar (reflecting the time signature or density).
+ * @param {number} bars - Number of bars over which to repeat the pattern.
+ * @param {Array<number>} hitPattern - Array indicating hits (1) and no-hits (0) for each step.
+ * @returns {Array<number>} - An array representing the full pattern across all bars.
+ */
+export const createStepSequencerPattern = (stepsPerBar, bars, hitPattern) => {
+  // Ensure the hitPattern length matches stepsPerBar or is a divisor of stepsPerBar
+  if (stepsPerBar % hitPattern.length !== 0) {
+    throw new Error("hitPattern length must be a divisor of stepsPerBar.");
+  }
+  const repetitionsPerBar = stepsPerBar / hitPattern.length;
+  const barPattern = Array(repetitionsPerBar).fill(hitPattern).flat();
+  return Array(bars).fill(barPattern).flat();
+};
+
+// export const createStepSequencerPattern = (stepsPerBar, bars, hitsPattern) => {
+//   return Array(bars)
+//     .fill([...hitsPattern])
+//     .flat();
+// };
+
+export const createDrumPattern = async ({ name, kit = "roland-tr-808", steps, bpm, variations }) => {
+  // Each step corresponds to a sixteenth note for 4/4 time
+  const stepInterval = 60 / bpm / 4;
   const clips = [];
 
-  pattern.forEach((beatFraction, index) => {
-    if (beatFraction === 0) {
-      return; // Skip if no beat is supposed to play
-    }
+  steps.forEach((step, index) => {
+    if (step === 0) return; // Skip if there's no hit on this step
 
-    // Calculate start time using the fraction of the beatInterval
-    const startTime = index * beatInterval * beatFraction; // Adjust start time based on sub-beat fraction
+    const startTime = index * stepInterval;
+    const sampleVariant = variations[Math.floor(Math.random() * variations.length)];
+    const audioUrl = `/samples/${kit}/${sampleVariant}`;
 
-    // Randomly select one variation
-    const variation = variations[Math.floor(Math.random() * variations.length)];
-
-    const clip = {
+    clips.push({
       id: crypto.randomUUID(),
-      name: `${name} ${variation}`,
-      audioUrl: `${baseUrl}${folder}${variation}.WAV`,
+      name: `${name} ${sampleVariant}`,
+      audioUrl: audioUrl,
       startTime: startTime,
-      duration: beatFraction * beatInterval,
-      volume: baseVolume,
-    };
-    clips.push(clip);
+      duration: stepInterval,
+    });
   });
 
   return {
@@ -38,189 +49,193 @@ export const createDrumPattern = ({
     name: `${name} Pattern`,
     isMuted: false,
     isSolo: false,
-    clips: clips,
+    clips,
   };
 };
 
-function repeat(pattern, times) {
-  return Array(times).fill(pattern).flat();
-}
+export const createDrumPatternOld = async ({ name, folder, pattern, bpm, variations }) => {
+  const baseUrl = `/samples/roland-tr-808/${folder}/`;
+  const beatInterval = 60 / bpm; // Duration of a single beat in seconds
+  const promises = pattern.map(async (beatFraction, index) => {
+    if (beatFraction === 0) {
+      return null; // Skip if there's no sound on this beat
+    }
 
-export const createTranceEDMPattern = ({ bpm, clipLength, baseVolume }) => {
+    // Calculate start time using the fraction of the beatInterval
+    const startTime = index * beatInterval + (beatFraction - 1) * beatInterval;
+
+    const variation = variations[Math.floor(Math.random() * variations.length)];
+    const audioUrl = `${baseUrl}/${variation}.WAV`;
+    const buffer = await audioManager.loadAudioBuffer(audioUrl);
+
+    return {
+      id: crypto.randomUUID(),
+      name: `${name} ${variation}`,
+      audioUrl: audioUrl,
+      startTime: startTime,
+      duration: buffer.duration,
+    };
+  });
+
+  const loadedClips = await Promise.all(promises);
+
+  const allClips = loadedClips.filter((clip) => clip !== null);
+  return {
+    id: crypto.randomUUID(),
+    name: `${name} Pattern`,
+    isMuted: false,
+    isSolo: false,
+    clips: allClips,
+  };
+};
+
+export const createTranceEDMPattern = async ({ bpm }) => {
   return [
-    createDrumPattern({
+    await createDrumPattern({
       name: "Kick",
-      folder: "BD",
-      pattern: repeat([1, 1, 1, 1], 4), // Steady four-on-the-floor kicks
+      steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]), // Assuming 16 steps per bar
       bpm,
-      clipLength,
-      baseVolume,
-      variations: ["1000"], // Using only the most suitable kick sample
+      variations: ["BD/BD1000.WAV"],
     }),
-    createDrumPattern({
+    await createDrumPattern({
       name: "Snare",
-      folder: "SD",
-      pattern: repeat([0, 1, 0, 1], 4), // Snares on the 2nd and 4th beats
+      steps: createStepSequencerPattern(16, 4, [0, 0, 1, 0, 0, 0, 1, 0]), // Extended to fit the 16 steps per bar
       bpm,
-      clipLength,
-      baseVolume,
-      variations: ["0010", "0050", "0075"], // Multiple snare variants for texture
+      variations: ["SD/SD0010.WAV", "SD/SD0050.WAV", "SD/SD0075.WAV"],
     }),
-    createDrumPattern({
+    await createDrumPattern({
       name: "Clap",
-      folder: "CP",
-      pattern: repeat([0, 1, 0, 1], 4), // Claps layered with snares
+      steps: createStepSequencerPattern(16, 4, [0, 0, 1, 0, 0, 0, 1, 0]),
       bpm,
-      clipLength,
-      baseVolume,
-      variations: [""], // Single classic clap sample
+      variations: ["CP/CP.WAV"],
     }),
-    createDrumPattern({
+    await createDrumPattern({
       name: "Closed HiHat",
-      folder: "CH",
-      pattern: repeat([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 4), // Rapid hi-hats on eighth notes
+      steps: createStepSequencerPattern(16, 4, [0, 1, 0, 1, 0, 1, 0, 1]),
       bpm,
-      clipLength: 0.25,
-      baseVolume,
-      variations: [""], // Consistent closed hi-hat sample
+      variations: ["CH/CH.WAV"],
     }),
-    createDrumPattern({
-      name: "Trance Open HiHat",
-      folder: "OH",
-      pattern: repeat([0, 0, 1, 0], 4), // Open hi-hat every second beat
+    await createDrumPattern({
+      name: "Open HiHat",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 1, 0, 0, 0]),
       bpm,
-      clipLength,
-      baseVolume,
-      variations: ["10", "25", "50"], // Different open hi-hat tones
+      variations: ["OH/OH10.WAV", "OH/OH25.WAV", "OH/OH50.WAV"],
     }),
-    createDrumPattern({
-      name: "Trance Ride",
-      folder: "CY",
-      pattern: repeat([0, 1, 0, 1], 4), // Ride cymbals for additional texture
+    await createDrumPattern({
+      name: "Ride",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 1, 0, 0, 0, 1, 0]),
       bpm,
-      clipLength,
-      baseVolume,
-      variations: ["1000"], // Various ride cymbals for a richer sound
+      variations: ["CY/CY1000.WAV"],
     }),
   ];
 };
 
-// Basic trance pattern: Steady kicks, off-beat bass, and rhythmic hi-hats
-// For simplicity: Kicks on every beat, claps or snares on the 2nd and 4th beats, and hi-hats on off-beats
-export const createTrancePattern = ({ bpm, baseVolume, bars = 1 }) => {
-  // Kick on every beat (4 beats per bar)
-  const kickPattern = [1, 1, 1, 1];
-
-  // Claps or Snares on the 2nd and 4th beats of each bar
-  const snarePattern = [0, 1, 0, 1];
-
-  const hiHatPattern = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25];
-
-  // Bass pattern can follow the off-beat, similar to hi-hats but usually at a different octave or sound
-  const bassPattern = repeat([0, 1, 0, 1], bars); // Off-beat bass hits
-
-  const kickTrack = createDrumPattern({
-    name: "Trance - Kick",
-    folder: "BD",
-    pattern: kickPattern,
-    bpm,
-    baseVolume,
-    variations: ["1000"], // Standard kick
-  });
-
-  const bassTrack = createDrumPattern({
-    name: "Trance - Bass",
-    folder: "BD", // Assuming you have a suitable bass drum or use a bassline sample
-    pattern: bassPattern,
-    bpm,
-    baseVolume,
-    variations: ["0025", "0050"], // Use different samples if available for variation
-  });
-
-  const hiHatTrack = createDrumPattern({
-    name: "Trance - HiHat",
-    folder: "CH",
-    pattern: hiHatPattern,
-    bpm,
-    baseVolume,
-    variations: [""],
-  });
-
-  const snareTrack = createDrumPattern({
-    name: "Trance - Snare",
-    folder: "SD",
-    pattern: snarePattern,
-    bpm,
-    baseVolume,
-    variations: ["2510"], // Standard snare
-  });
-
-  // Combine all patterns into a single track array
-  return [kickTrack, bassTrack, hiHatTrack, snareTrack];
-};
-
-export const createHousePattern = ({ bpm, baseVolume }) => {
-  const kickPattern = [1, 1, 1, 1]; // Steady kicks on every beat
-  const hiHatPattern = [0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5]; // Hi-hats on off-beats (8th notes)
-  const snarePattern = [0, 0, 1, 0]; // Snares on the 2nd and 4th beats
-
+export const createDeepHousePattern = async ({ bpm }) => {
   return [
-    createDrumPattern({
-      name: "House Kick",
-      folder: "BD",
-      pattern: kickPattern,
+    // Kick: Steady four-on-the-floor
+    await createDrumPattern({
+      name: "Kick",
+      steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]), // 16 steps per bar
       bpm,
-      baseVolume,
-      variations: ["0010"],
+      kit: "linndrum",
+      variations: ["kick.wav"], // Using kick.wav from LinnDrum samples
     }),
-    createDrumPattern({
-      name: "House Snare",
-      folder: "SD",
-      pattern: snarePattern,
+
+    // Snare: Light snare on the 2nd and 4th beat
+    await createDrumPattern({
+      name: "Snare",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
       bpm,
-      baseVolume,
-      variations: ["0050"],
+      kit: "linndrum",
+      variations: ["sd.wav"], // Using sd.wav for a less intrusive snare sound
     }),
-    createDrumPattern({
-      name: "House HiHat",
-      folder: "CH",
-      pattern: hiHatPattern,
+
+    // Clap: Layered with snares, but softer and more in the background
+    await createDrumPattern({
+      name: "Clap",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
       bpm,
-      baseVolume,
-      variations: [""],
+      kit: "linndrum",
+      variations: ["clap.wav"], // Using clap.wav, typically reverbed
+    }),
+
+    // Closed Hi-Hat: Playing more complex rhythms for a groovy feel
+    await createDrumPattern({
+      name: "Closed HiHat",
+      steps: createStepSequencerPattern(16, 4, [0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1]),
+      bpm,
+      kit: "linndrum",
+      variations: ["chh.wav"], // Using chh.wav for a consistent, tight hi-hat sound
+    }),
+
+    // Open Hi-Hat: Less frequent to give space to the groove
+    await createDrumPattern({
+      name: "Open HiHat",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]),
+      bpm,
+      kit: "linndrum",
+      variations: ["ohh.wav"], // Using ohh.wav for a subtle open hi-hat effect
+    }),
+
+    // Percussion: Additional elements like shakers or tambourines
+    await createDrumPattern({
+      name: "Percussion",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0]),
+      bpm,
+      kit: "linndrum",
+      variations: ["tamb.wav"], // Using tamb.wav for added percussive texture
     }),
   ];
 };
 
-export const createDubstepPattern = ({ bpm, baseVolume }) => {
-  const kickPattern = [1, 0, 0, 0.5, 0, 1, 0, 0]; // Complex kick pattern
-  const snarePattern = [0, 0, 1, 0, 0, 0, 1, 0]; // Snares on odd placements
-  const hiHatPattern = [0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0]; // More frequent hi-hats
-
+export const createDeepHousePatternWithRoland808 = async ({ bpm }) => {
   return [
-    createDrumPattern({
-      name: "Dubstep Kick",
-      folder: "BD",
-      pattern: kickPattern,
+    // Kick: Steady four-on-the-floor
+    await createDrumPattern({
+      name: "Kick",
+      steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]), // 16 steps per bar
       bpm,
-      baseVolume,
-      variations: ["0010", "0050"],
+      variations: ["BD/BD0025.WAV"], // A softer kick sound typical for deep house
     }),
-    createDrumPattern({
-      name: "Dubstep Snare",
-      folder: "SD",
-      pattern: snarePattern,
+
+    // Snare: Light snare on the 2nd and 4th beat
+    await createDrumPattern({
+      name: "Snare",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
       bpm,
-      baseVolume,
-      variations: ["0025", "0050"],
+      variations: ["SD/SD0050.WAV"], // Using a softer, less intrusive snare sound
     }),
-    createDrumPattern({
-      name: "Dubstep HiHat",
-      folder: "HH",
-      pattern: hiHatPattern,
+
+    // Clap: Layered with snares, but softer and more in the background
+    await createDrumPattern({
+      name: "Clap",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
       bpm,
-      baseVolume,
-      variations: [""],
+      variations: ["CP/CP.WAV"], // Typically a single clap sample, reverbed
+    }),
+
+    // Closed Hi-Hat: Playing more complex rhythms for a groovy feel
+    await createDrumPattern({
+      name: "Closed HiHat",
+      steps: createStepSequencerPattern(16, 4, [0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1]),
+      bpm,
+      variations: ["CH/CH.WAV"], // Consistent, tight hi-hat sound
+    }),
+
+    // Open Hi-Hat: Less frequent to give space to the groove
+    await createDrumPattern({
+      name: "Open HiHat",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]),
+      bpm,
+      variations: ["OH/OH50.WAV"], // Slightly open for a subtle effect
+    }),
+
+    // Percussion: Additional elements like shakers or tambourines
+    await createDrumPattern({
+      name: "Percussion",
+      steps: createStepSequencerPattern(16, 4, [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0]),
+      bpm,
+      variations: ["CL/CL.WAV"], // Random percussive sounds for added texture
     }),
   ];
 };

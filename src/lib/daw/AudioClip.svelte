@@ -33,6 +33,7 @@
       event.dataTransfer.setData(
         "text/plain",
         JSON.stringify({
+          action: "clip:move",
           clipId: clip.id,
           originalStartTime: clip.startTime,
         }),
@@ -42,10 +43,25 @@
 
   $: leftPosition = $timeToPixels(clip.startTime);
   $: width = $timeToPixels(clip.duration);
+
+  function getClassByState(state) {
+    switch (state) {
+      case "loading":
+        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-purple bg-accent-purple/20";
+      case "error":
+        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-red bg-accent-red/20";
+      case "loaded":
+        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-yellow bg-accent-yellow/20";
+      default:
+        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-gray-200";
+    }
+  }
+
+  $: classes = getClassByState(loadingState);
 </script>
 
 <button
-  class="audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-yellow bg-accent-yellow/20"
+  class={classes}
   draggable="true"
   on:dragstart={handleDragStart(clip)}
   on:click={playClip}
