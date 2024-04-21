@@ -157,10 +157,12 @@
     <div style="left: {playHeadPosition}px;" class="absolute inset-y-0 z-50 ml-[250px] w-[2px] bg-red-500"></div>
 
     <!-- Tracks -->
-    <div class="flex flex-col gap-1 p-2">
+    <div class="flex flex-col gap-2 p-2">
       {#each $tracks as track}
-        <Track {track} />
+        <Track track={track} />
       {/each}
     </div>
   </section>
+
+  <MixerPanel />
 </main>
