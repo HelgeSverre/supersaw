@@ -7,5 +7,10 @@
         "parser": "svelte"
       }
     }
-  ]
+  ],
+  "printWidth": 120,
+  "quoteProps": "consistent",
+  "semi": true,
+  "singleQuote": false,
+  "bracketSameLine": true
 }
