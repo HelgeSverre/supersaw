@@ -27,7 +27,7 @@ export const createDrumPattern = ({
       name: `${name} ${variation}`,
       audioUrl: `${baseUrl}${folder}${variation}.WAV`,
       startTime: startTime,
-      duration: beatFraction * beatInterval,
+      duration:  beatFraction * beatInterval,
       volume: baseVolume,
     };
     clips.push(clip);
@@ -45,6 +45,65 @@ export const createDrumPattern = ({
 function repeat(pattern, times) {
   return Array(times).fill(pattern).flat();
 }
+
+export const createTranceEDMPattern = ({ bpm, clipLength, baseVolume }) => {
+  return [
+    createDrumPattern({
+      name: "Kick",
+      folder: "BD",
+      pattern: repeat([1, 1, 1, 1], 4), // Steady four-on-the-floor kicks
+      bpm,
+      clipLength,
+      baseVolume,
+      variations: ["1000"], // Using only the most suitable kick sample
+    }),
+    createDrumPattern({
+      name: "Snare",
+      folder: "SD",
+      pattern: repeat([0, 1, 0, 1], 4), // Snares on the 2nd and 4th beats
+      bpm,
+      clipLength,
+      baseVolume,
+      variations: ["0010", "0050", "0075"], // Multiple snare variants for texture
+    }),
+    createDrumPattern({
+      name: "Clap",
+      folder: "CP",
+      pattern: repeat([0, 1, 0, 1], 4), // Claps layered with snares
+      bpm,
+      clipLength,
+      baseVolume,
+      variations: [""], // Single classic clap sample
+    }),
+    createDrumPattern({
+      name: "Closed HiHat",
+      folder: "CH",
+      pattern: repeat([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5], 4), // Rapid hi-hats on eighth notes
+      bpm,
+      clipLength: 0.25,
+      baseVolume,
+      variations: [""], // Consistent closed hi-hat sample
+    }),
+    createDrumPattern({
+      name: "Trance Open HiHat",
+      folder: "OH",
+      pattern: repeat([0, 0, 1, 0], 4), // Open hi-hat every second beat
+      bpm,
+      clipLength,
+      baseVolume,
+      variations: ["10", "25", "50"], // Different open hi-hat tones
+    }),
+    createDrumPattern({
+      name: "Trance Ride",
+      folder: "CY",
+      pattern: repeat([0, 1, 0, 1], 4), // Ride cymbals for additional texture
+      bpm,
+      clipLength,
+      baseVolume,
+      variations: ["1000"], // Various ride cymbals for a richer sound
+    }),
+  ];
+};
 
 // Basic trance pattern: Steady kicks, off-beat bass, and rhythmic hi-hats
 // For simplicity: Kicks on every beat, claps or snares on the 2nd and 4th beats, and hi-hats on off-beats
@@ -84,7 +143,7 @@ export const createTrancePattern = ({ bpm, baseVolume, bars = 1 }) => {
     pattern: hiHatPattern,
     bpm,
     baseVolume,
-    variations: [""], // Assuming only one type of hi-hat sample
+    variations: [""],
   });
 
   const snareTrack = createDrumPattern({
@@ -124,7 +183,7 @@ export const createHousePattern = ({ bpm, baseVolume }) => {
     }),
     createDrumPattern({
       name: "House HiHat",
-      folder: "HH",
+      folder: "CH",
       pattern: hiHatPattern,
       bpm,
       baseVolume,

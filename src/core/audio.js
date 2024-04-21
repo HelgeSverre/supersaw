@@ -21,7 +21,6 @@ class AudioManager {
 
     source.buffer = buffer;
     source.connect(gainNode);
-
     gainNode.connect(this.mixer);
 
     return { source, gainNode };
@@ -39,7 +38,6 @@ class AudioManager {
       delete this.sources[clipId];
     }
   };
-
   setVolume = (volume) => {
     this.mixer.gain.value = volume;
   };

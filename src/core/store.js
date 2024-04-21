@@ -1,7 +1,12 @@
 // noinspection JSUnusedGlobalSymbols
 
 import { derived, get, writable } from "svelte/store";
-import { createDrumPattern, createTrancePattern } from "../utils/drumpattern.js";
+import {
+  createDrumPattern,
+  createHousePattern,
+  createTranceEDMPattern,
+  createTrancePattern
+} from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
 
 export const PIXELS_PER_BEAT = 10;
@@ -41,8 +46,6 @@ export const activeClips = derived([playbackState, tracks], ([$playbackState, $t
   }
   return active;
 });
-
-// JSDoc for this object (keyed by clip ID) and contains bufferSource and gainNode
 
 /**
  *
@@ -338,13 +341,24 @@ export const createDummyDrumTracks = () => {
 
 export const createDummyTranceTracks = () => {
   // Using the function to create a basic trance pattern
-  const trancePattern = createTrancePattern({
+  const patterns = createTranceEDMPattern({
     bpm: get(bpm),
     clipLength: 1 / 4,
     baseVolume: 1,
   });
 
-  trancePattern.forEach((track) => addTrack(track));
+  patterns.forEach((track) => addTrack(track));
+};
+
+export const createDummyHouseTracks = () => {
+  // Using the function to create a basic trance pattern
+  const patterns = createHousePattern({
+    bpm: get(bpm),
+    clipLength: 1 / 4,
+    baseVolume: 1,
+  });
+
+  patterns.forEach((track) => addTrack(track));
 };
 
 export const zoomIn = () => {

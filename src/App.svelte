@@ -1,10 +1,23 @@
 <script>
-  import { ChevronDown, Drum, Pause, Play, Search, Square, SquareScissors, ZoomIn, ZoomOut } from "lucide-svelte";
+  import {
+    ChevronDown,
+    Drum,
+    Pause,
+    Play,
+    Search,
+    Square,
+    SquareScissors,
+    Warehouse,
+    ZoomIn,
+    ZoomOut,
+  } from "lucide-svelte";
   import Track from "./lib/daw/Track.svelte";
 
   import {
     bpm,
+    changeBpm,
     createDummyDrumTracks,
+    createDummyHouseTracks,
     createDummyTranceTracks,
     nudge,
     pausePlayback,
@@ -25,6 +38,7 @@
   import TextButton from "./lib/ui/TextButton.svelte";
   import { onMount } from "svelte";
   import TopBar from "./lib/layout/TopBar.svelte";
+  import MixerPanel from "./lib/daw/MixerPanel.svelte";
 
   function handleZoom(event) {
     if (event.shiftKey) {
@@ -35,7 +49,7 @@
 
   onMount(() => {
     if ($tracks.length === 0) {
-      createDummyTranceTracks();
+      createDummyHouseTracks();
     }
   });
 
@@ -99,8 +113,7 @@
         </button>
 
         <SegmentGroup>
-          <TextDisplay text="{$bpm} bpm" />
-          <TextButton text="TAP" />
+          <TextButton onClick={() => changeBpm(prompt("Enter new BPM", $bpm))} text="{$bpm} bpm" />
         </SegmentGroup>
 
         <SegmentGroup>
@@ -126,6 +139,7 @@
           <SegmentGroup additionalClasses="mx-8">
             <IconButton icon={Drum} onClick={createDummyDrumTracks} />
             <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />
+            <IconButton icon={Warehouse} onClick={createDummyHouseTracks} />
           </SegmentGroup>
 
           <SegmentGroup>
