@@ -8,10 +8,6 @@
     Drum,
     Pause,
     Play,
-    Repeat,
-    Repeat1,
-    Repeat2,
-    Search,
     Square,
     SquareScissors,
     Trash,
@@ -28,9 +24,8 @@
     createDummyDrumTracks,
     createDummyHouseTracks,
     createDummyTranceTracks,
-    loopRegion,
     expandLoopRegion,
-    addTrack,
+    loopRegion,
     nudge,
     pausePlayback,
     playbackState,
@@ -44,7 +39,6 @@
     zoomOut,
   } from "./core/store.js";
   import { formatTime } from "./core/utils.js";
-  import { createDrumPattern } from "./utils/drumpattern.js";
   import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
   import IconButton from "./lib/ui/IconButton.svelte";
   import TextDisplay from "./lib/ui/TextDisplay.svelte";
@@ -185,10 +179,12 @@
     <section class="timeline relative" on:wheel={handleZoom}>
       <div style="left: {playHeadPosition}px;" class="absolute inset-y-0 z-50 ml-[250px] w-[2px] bg-red-500"></div>
 
-      <div
-        style="left: {looper.left}px;width: {looper.right}px;"
-        class="pointer-events-none absolute inset-y-0 z-50 ml-[250px] select-none border-x border-teal-300 bg-teal-300/30"
-      ></div>
+      {#if looper.active}
+        <div
+          style="left: {looper.left}px;width: {looper.right}px;"
+          class="pointer-events-none absolute inset-y-0 z-50 ml-[250px] select-none border-x border-teal-300 bg-teal-300/30"
+        ></div>
+      {/if}
 
       <!-- Tracks -->
       <div class="flex flex-col gap-2 p-2">
