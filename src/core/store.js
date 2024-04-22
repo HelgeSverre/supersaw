@@ -366,6 +366,13 @@ export const selectClip = (clipId) => {
   tracks.subscribe((tracks) => {
     const track = tracks.find((track) => track.clips.find((clip) => clip.id === clipId));
 
+    // Track was not found, might have gotten removed
+    if (!track) {
+      selectedTrack.set(null);
+      selectedClip.set(null);
+      return;
+    }
+
     selectedTrack.set(track.id);
     selectedClip.set(clipId);
   });

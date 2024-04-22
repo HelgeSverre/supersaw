@@ -1,6 +1,6 @@
 <script>
-  const appName = import.meta.env.VITE_APP_NAME ;
-  const appVersion = import.meta.env.VITE_APP_VERSION ;
+  const appName = import.meta.env.VITE_APP_NAME;
+  const appVersion = import.meta.env.VITE_APP_VERSION;
 </script>
 
 <div>
