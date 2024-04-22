@@ -47,11 +47,11 @@
   function getClassByState(state) {
     switch (state) {
       case "loading":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-purple bg-accent-purple/20";
+        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-purple ring-inset bg-accent-purple/20";
       case "error":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-red bg-accent-red/20";
+        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-red ring-inset bg-accent-red/20";
       case "loaded":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-accent-yellow bg-accent-yellow/20";
+        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-yellow ring-inset bg-accent-yellow/20";
       default:
         return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-gray-200";
     }

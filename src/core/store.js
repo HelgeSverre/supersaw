@@ -13,7 +13,7 @@ export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
 
 export const bpm = writable(140);
-export const zoomLevel = writable(10);
+export const zoomLevel = writable(50);
 
 export const loopRegion = writable({ start: 0, end: (60 / get(bpm)) * 4, active: false });
 export const playbackState = writable({ playing: false, currentTime: 0 });
@@ -34,12 +34,19 @@ masterVolume.subscribe(($masterVolume) => {
 
 masterPan.subscribe(($masterPan) => {
   audioManager.panNode.pan.value = $masterPan;
+});
 
-  console.log("changed pan", $masterPan, audioManager.panNode.pan.value);
+export const pixelsPerBeat = derived([bpm, zoomLevel], ([$bpm, $zoomLevel]) => {
+  return PIXELS_PER_BEAT * $zoomLevel;
+});
+
+export const subdivisionsPerBeat = 4;
+export const pixelsPerBar = derived(pixelsPerBeat, ($pixelsPerBeat) => {
+  return $pixelsPerBeat * subdivisionsPerBeat;
 });
 
 export const timeToPixels = derived([bpm, zoomLevel], ([$bpm, $zoomLevel]) => (timeInSeconds) => {
-  return timeInSeconds * ($bpm / 60) * PIXELS_PER_BEAT * $zoomLevel;
+  return timeInSeconds * (($bpm / 60) * PIXELS_PER_BEAT * $zoomLevel);
 });
 
 export const pixelsToTime = derived([bpm, zoomLevel], ([$bpm, $zoomLevel]) => (pixels) => {
@@ -153,7 +160,7 @@ export const pausePlayback = () => {
 
 export const expandLoopRegion = (beats = 4) => {
   // end: (60 / get(bpm)) * beats }
-  loopRegion.update((state) => ({ ...state, end: (60 / get(bpm)) * beats }));
+  loopRegion.update((state) => ({ ...state, active: true, end: (60 / get(bpm)) * beats }));
 };
 
 export const loadDefaultTracks = async () => {
@@ -367,7 +374,7 @@ export const zoomIn = () => {
 };
 
 export const zoomOut = () => {
-  zoomLevel.update((level) => level + -5);
+  zoomLevel.update((level) => level + -1);
 };
 
 export const zoomToLevel = (level) => {
@@ -378,9 +385,7 @@ export const zoomByDelta = (delta) => {
   zoomLevel.update((level) => {
     let logZoomLevel = Math.log(level);
     let adjustedZoom = logZoomLevel + (delta < 0 ? 1 : -1) * ZOOM_FACTOR;
-    let newZoom = Math.max(0.1, Math.min(Math.exp(adjustedZoom), 100));
-
-    return newZoom;
+    return Math.max(0.1, Math.min(Math.exp(adjustedZoom), 100));
   });
 };
 
@@ -392,8 +397,8 @@ export const createDummyDrumTracks = async () => {
 
   const track = await createDrumPattern({
     name: "Bass Drum",
-    steps: createStepSequencerPattern(8, 4, [1, 0, 0, 0]),
-    bpm: get(bpm),
+    steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]),
+    bpm: 100,
     variations: ["BD/BD0000.WAV"],
   });
 
@@ -401,8 +406,8 @@ export const createDummyDrumTracks = async () => {
 
   const track2 = await createDrumPattern({
     name: "Bass Drum",
-    steps: createStepSequencerPattern(8, 4, [1, 0, 0, 0]),
-    bpm: get(bpm),
+    steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]),
+    bpm: 100,
     kit: "roland-tr-909",
     variations: ["BT0A0A7.WAV"],
   });
@@ -418,8 +423,6 @@ export const createDummyTranceTracks = async () => {
   const patterns = await createTranceEDMPattern({
     bpm: get(bpm),
   });
-
-  console.log(patterns);
 
   patterns.forEach((track) => addTrack(track));
 };
