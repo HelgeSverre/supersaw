@@ -268,7 +268,7 @@
   }
 </script>
 
-<div class="relative w-full">
+<div class="relative w-full" use:clickOutside={() => (open = false)}>
   <!-- File browser tree of samples to drag n drop into tracks -->
   <div class=" h-fit w-full rounded bg-dark-400">
     <div class="absolute inset-y-0 left-2 flex items-center justify-center">
@@ -284,7 +284,7 @@
     />
   </div>
 
-  <div class="file-browser" style="display: {open ? 'block' : 'none'};" use:clickOutside={() => (open = false)}>
+  <div class="file-browser" style="display: {open ? 'block' : 'none'};">
     <div class="file-browser-header">
       <h3>File Browser</h3>
     </div>
