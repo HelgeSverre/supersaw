@@ -63,7 +63,7 @@
 <button
   class={classes}
   draggable="true"
-  on:dragstart={handleDragStart(clip)}
+  on:dragstart|stopPropagation={handleDragStart(clip)}
   on:click={playClip}
   style="left: {leftPosition}px; width: {width}px;"
   title={clip.name ?? "Unnamed"}

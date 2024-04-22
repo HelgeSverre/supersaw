@@ -28,7 +28,9 @@
     loopRegion,
     nudge,
     pausePlayback,
+    pixelsToTime,
     playbackState,
+    setLoopRegion,
     startPlayback,
     stopPlayback,
     timeToPixels,
@@ -93,6 +95,51 @@
     }
   }
 
+  let timeline;
+  let selectionArea;
+  let dragging = false;
+  let startPixels = 0;
+  let endPixels = 0;
+
+  function handleMouseDown(event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    startPixels = event.clientX - rect.left;
+    endPixels = startPixels;
+    dragging = true;
+  }
+
+  function handleMouseMove(event) {
+    if (dragging) {
+      const rect = selectionArea.getBoundingClientRect();
+      endPixels = event.clientX - rect.left;
+      if (endPixels < 0) {
+        endPixels = 0;
+      }
+    }
+  }
+
+  function handleMouseUp(event) {
+    if (!dragging) {
+      return;
+    }
+
+    dragging = false;
+    const rect = selectionArea.getBoundingClientRect();
+    endPixels = event.clientX - rect.left;
+
+    if (startPixels > endPixels) {
+      [startPixels, endPixels] = [endPixels, startPixels];
+    }
+
+    const delta = endPixels - startPixels;
+
+    if (Math.abs(delta) < 5) {
+      return;
+    }
+
+    setLoopRegion($pixelsToTime(startPixels), $pixelsToTime(delta));
+  }
+
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
   $: looper = {
     active: $loopRegion.active,
@@ -101,7 +148,7 @@
   };
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window on:keydown={handleKeydown} on:mousemove={handleMouseMove} on:mouseup={handleMouseUp} />
 
 <main class="flex flex-1 flex-col">
   <TopBar />
@@ -135,17 +182,13 @@
             <IconButton icon={Play} onClick={startPlayback} />
           {/if}
           <IconButton icon={Square} onClick={stopPlayback} />
-
-          <!--{#if $playbackState.playing}-->
-          <!--  <TextDisplay text="Playing" additionalClasses="text-green-500" />-->
-          <!--{:else if $playbackState.currentTime === 0}-->
-          <!--  <TextDisplay text="Stopped" additionalClasses="text-red-500" />-->
-          <!--{:else}-->
-          <!--  <TextDisplay text="Paused" additionalClasses="text-yellow-500" />-->
-          <!--{/if}-->
         </SegmentGroup>
 
         <TextDisplay text={formatTime($playbackState.currentTime)} additionalClasses="tabular-nums" />
+        <TextDisplay
+          text={`${formatTime($loopRegion.start)} - ${formatTime($loopRegion.end)}`}
+          additionalClasses="tabular-nums text-dark-soft"
+        />
 
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
           <SegmentGroup>
@@ -176,21 +219,53 @@
 
   <!-- Timeline -->
   {#if $tracks.length}
-    <section class="timeline relative" on:wheel={handleZoom}>
-      <div style="left: {playHeadPosition}px;" class="absolute inset-y-0 z-50 ml-[250px] w-[2px] bg-red-500"></div>
-
-      {#if looper.active}
+    <section
+      class="timeline relative h-full overflow-hidden"
+      class:select-none={dragging}
+      bind:this={timeline}
+      on:wheel={handleZoom}
+    >
+      <div class="relative">
         <div
-          style="left: {looper.left}px;width: {looper.right}px;"
-          class="pointer-events-none absolute inset-y-0 z-50 ml-[250px] select-none border-x border-teal-300 bg-teal-300/30"
-        ></div>
-      {/if}
+          bind:this={selectionArea}
+          on:mousedown|self={handleMouseDown}
+          aria-hidden="true"
+          class=" relative left-[250px] mt-2 h-6 bg-dark-600"
+        >
+          <!-- todo: allow moving the selection area  -->
+          <!-- Loop selection indication on "minimap" -->
+          <div
+            class="pointer-events-none absolute inset-y-px z-20 border-x border-teal-300 bg-teal-300/50"
+            style:left={dragging ? Math.min(startPixels, endPixels) + "px" : looper.left + "px"}
+            style:width={dragging ? Math.abs(endPixels - startPixels) + "px" : looper.right + "px"}
+          ></div>
+          <div style="left: {playHeadPosition}px;" class="absolute inset-y-0 z-50 w-[1px] bg-red-500"></div>
 
-      <!-- Tracks -->
-      <div class="flex flex-col gap-2 p-2">
-        {#each $tracks as track}
-          <Track track={track} />
-        {/each}
+          <!--{#each $tracks as track}-->
+          <!--  {#each track.clips as clip}-->
+          <!--    <div-->
+          <!--      class="absolute inset-y-0 z-10 bg-accent-yellow/10 border-x border-white "-->
+          <!--      style="left: {$timeToPixels(clip.startTime)}px; width: {$timeToPixels(clip.duration)}px;"-->
+          <!--    ></div>-->
+          <!--  {/each}-->
+          <!--{/each}-->
+        </div>
+
+        <!-- Tracks -->
+        <div class="relative flex flex-col gap-2 p-2">
+          <!-- Loop selection indication on timeline -->
+          <div
+            class="pointer-events-none absolute inset-y-px z-20 ml-[250px] border-x border-teal-300/70 bg-teal-300/10"
+            style:left={dragging ? Math.min(startPixels, endPixels) + "px" : looper.left + "px"}
+            style:width={dragging ? Math.abs(endPixels - startPixels) + "px" : looper.right + "px"}
+          ></div>
+
+          <div style="left: {playHeadPosition}px;" class="absolute inset-y-0 z-50 ml-[250px] w-[1px] bg-red-500"></div>
+
+          {#each $tracks as track}
+            <Track track={track} />
+          {/each}
+        </div>
       </div>
     </section>
   {:else}

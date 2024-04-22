@@ -15,7 +15,7 @@ export const ZOOM_FACTOR = 0.05;
 export const bpm = writable(140);
 export const zoomLevel = writable(50);
 
-export const loopRegion = writable({ start: 0, end: (60 / get(bpm)) * 4, active: false });
+export const loopRegion = writable({ start: 0, end: 0, active: false });
 export const playbackState = writable({ playing: false, currentTime: 0 });
 export const selectedClip = writable(null);
 export const selectedTrack = writable(0);
@@ -156,6 +156,10 @@ export const stopPlayback = () => {
 export const pausePlayback = () => {
   playbackState.update((state) => ({ ...state, playing: false }));
   cancelAnimationFrame(frame);
+};
+
+export const setLoopRegion = (start, end) => {
+  loopRegion.update((state) => ({ ...state, start, end }));
 };
 
 export const expandLoopRegion = (beats = 4) => {

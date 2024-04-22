@@ -5,7 +5,6 @@
     changeTrackName,
     createClipFromUrl,
     moveClipToTime,
-    pixelsPerBar,
     pixelsPerBeat,
     pixelsToTime,
     removeTrack,
@@ -124,9 +123,9 @@
   <div
     aria-hidden="true"
     class="track-timeline relative w-full"
-    on:click={onTrackClick}
     on:dragover|preventDefault
     on:drop|preventDefault={handleDrop}
+    on:click={onTrackClick}
   >
     <div class="track-grid" style={gradientStyle}></div>
 
