@@ -191,7 +191,7 @@
           <IconButton
             icon={Repeat2}
             onClick={toggleLooping}
-            additionalClasses={$loopRegion.active ? "text-accent-yellow" : ""}
+            additionalClasses={$loopRegion.active ? "!text-accent-yellow" : ""}
           />
         </SegmentGroup>
 
