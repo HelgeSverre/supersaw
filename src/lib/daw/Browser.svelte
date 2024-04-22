@@ -277,7 +277,7 @@
 
     <input
       bind:value={search}
-      on:focus|stopPropagation={() => (open = true)}
+      on:focus={() => (open = true)}
       type="search"
       placeholder="Search samples..."
       class="h-10 w-full text-ellipsis bg-transparent pl-8 text-sm font-normal placeholder-light-secondary/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"

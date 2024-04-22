@@ -73,54 +73,45 @@ export const activeClips = derived([playbackState, tracks], ([$playbackState, $t
 
 /**
  *
- * @type {Object<string, {source: AudioBufferSourceNode, gainNode: GainNode}>}
+ * @type {Map<string, {source: AudioBufferSourceNode, gainNode: GainNode}>}
  */
-let sources = {};
+let sources = new Map();
 
 activeClips.subscribe(($activeClips) => {
   const currentAudioTime = audioManager.audioContext.currentTime;
 
-  Object.keys(sources).forEach((id) => {
+  // Stop and delete sources that are no longer active
+  for (let [id, { source }] of sources) {
     if (!$activeClips.find((clip) => clip.id === id)) {
-      sources[id].source.stop(currentAudioTime); // schedule a slight delay to prevent clicks
-      delete sources[id];
+      source.stop(currentAudioTime);
+      sources.delete(id);
     }
-  });
+  }
 
-  $activeClips.forEach((clip) => {
-    if (!sources[clip.id]) {
+  // Add new sources for clips that are active and not already playing
+  for (let clip of $activeClips) {
+    if (!sources.has(clip.id)) {
       const track = get(tracks).find((t) => t.id === clip.trackId);
       if (track && clip.audioBuffer) {
         const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
-        const startTime = clip.startTime - currentAudioTime > 0 ? clip.startTime - currentAudioTime : 0;
-        source.start(currentAudioTime + startTime);
-        sources[clip.id] = { source, gainNode };
+
+        const offset = get(playbackState).currentTime - clip.startTime;
+
+        source.start(0, offset);
+        source.onended = () => sources.delete(clip.id); // Remove source when it ends
+
+        sources.set(clip.id, { source, gainNode });
       }
     }
-  });
-
-  // Add new sources for clips that are active and not already playing
-  $activeClips.forEach((clip) => {
-    if (sources[clip.id]) {
-      return;
-    }
-
-    const track = get(tracks).find((t) => t.id === clip.trackId);
-    if (track && clip.audioBuffer) {
-      const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
-
-      const offset = get(playbackState).currentTime - clip.startTime;
-
-      source.start(0, offset);
-      sources[clip.id] = { source, gainNode };
-    }
-  });
+  }
 });
 
 playbackState.subscribe(($playbackState) => {
   if (!$playbackState.playing) {
-    Object.values(sources).forEach(({ source }) => source.stop());
-    sources = {};
+    for (let { source } of sources.values()) {
+      source.stop();
+    }
+    sources.clear();
   }
 });
 
