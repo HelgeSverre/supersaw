@@ -133,6 +133,11 @@ export const startPlayback = async () => {
   frame = requestAnimationFrame(function tick() {
     let newTime = audioManager.audioContext.currentTime - startAudioTime;
 
+    if (get(loopRegion).active && newTime >= get(loopRegion).end) {
+      newTime = get(loopRegion).start;
+      startAudioTime = audioManager.audioContext.currentTime - newTime;
+    }
+
     playbackState.update((state) => ({
       ...state,
       currentTime: newTime,
@@ -154,6 +159,18 @@ export const stopPlayback = () => {
 export const pausePlayback = () => {
   playbackState.update((state) => ({ ...state, playing: false }));
   cancelAnimationFrame(frame);
+};
+
+export const enableLooping = () => {
+  loopRegion.update((state) => ({ ...state, active: true }));
+};
+
+export const disableLooping = () => {
+  loopRegion.update((state) => ({ ...state, active: false }));
+};
+
+export const toggleLooping = () => {
+  loopRegion.update((state) => ({ ...state, active: !state.active }));
 };
 
 export const setLoopRegion = (start, end) => {

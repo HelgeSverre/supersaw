@@ -6,8 +6,10 @@
     Dice3,
     Dice4,
     Drum,
+    Infinity,
     Pause,
     Play,
+    Repeat2,
     Square,
     SquareScissors,
     Trash,
@@ -33,10 +35,12 @@
     setLoopRegion,
     startPlayback,
     stopPlayback,
+    enableLooping,
     timeToPixels,
     tracks,
     zoomByDelta,
     zoomIn,
+    toggleLooping,
     zoomLevel,
     zoomOut,
   } from "./core/store.js";
@@ -133,18 +137,20 @@
 
     const delta = endPixels - startPixels;
 
-    if (Math.abs(delta) < 5) {
+    // TODO: scale this based on zoom
+    if (Math.abs(delta) < 10) {
       return;
     }
 
-    setLoopRegion($pixelsToTime(startPixels), $pixelsToTime(delta));
+    setLoopRegion($pixelsToTime(startPixels), $pixelsToTime(endPixels));
+    enableLooping();
   }
 
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
   $: looper = {
     active: $loopRegion.active,
     left: $timeToPixels($loopRegion.start),
-    right: $timeToPixels($loopRegion.end),
+    right: $timeToPixels($loopRegion.end - $loopRegion.start),
   };
 </script>
 
@@ -182,6 +188,11 @@
             <IconButton icon={Play} onClick={startPlayback} />
           {/if}
           <IconButton icon={Square} onClick={stopPlayback} />
+          <IconButton
+            icon={Repeat2}
+            onClick={toggleLooping}
+            additionalClasses={$loopRegion.active ? "text-accent-yellow" : ""}
+          />
         </SegmentGroup>
 
         <TextDisplay text={formatTime($playbackState.currentTime)} additionalClasses="tabular-nums" />
@@ -255,6 +266,7 @@
         <div class="relative flex flex-col gap-2 p-2">
           <!-- Loop selection indication on timeline -->
           <div
+            class:hidden={!$loopRegion.active}
             class="pointer-events-none absolute inset-y-px z-20 ml-[250px] border-x border-teal-300/70 bg-teal-300/10"
             style:left={dragging ? Math.min(startPixels, endPixels) + "px" : looper.left + "px"}
             style:width={dragging ? Math.abs(endPixels - startPixels) + "px" : looper.right + "px"}
