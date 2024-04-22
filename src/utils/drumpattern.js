@@ -17,12 +17,6 @@ export const createStepSequencerPattern = (stepsPerBar, bars, hitPattern) => {
   return Array(bars).fill(barPattern).flat();
 };
 
-// export const createStepSequencerPattern = (stepsPerBar, bars, hitsPattern) => {
-//   return Array(bars)
-//     .fill([...hitsPattern])
-//     .flat();
-// };
-
 export const createDrumPattern = async ({ name, kit = "roland-tr-808", steps, bpm, variations }) => {
   // Each step corresponds to a sixteenth note for 4/4 time
   const stepInterval = 60 / bpm / 4;
@@ -95,7 +89,7 @@ export const createTranceEDMPattern = async ({ bpm }) => {
       name: "Kick",
       steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]), // Assuming 16 steps per bar
       bpm,
-      variations: ["BD/BD1000.WAV"],
+      variations: ["BD/BD1025.WAV"],
     }),
     await createDrumPattern({
       name: "Snare",
@@ -105,7 +99,7 @@ export const createTranceEDMPattern = async ({ bpm }) => {
     }),
     await createDrumPattern({
       name: "Clap",
-      steps: createStepSequencerPattern(16, 4, [0, 0, 1, 0, 0, 0, 1, 0]),
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 0, 1, 0, 0]),
       bpm,
       variations: ["CP/CP.WAV"],
     }),
@@ -165,7 +159,7 @@ export const createDeepHousePattern = async ({ bpm }) => {
       steps: createStepSequencerPattern(16, 4, [0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1]),
       bpm,
       kit: "linndrum",
-      variations: ["chh.wav"], // Using chh.wav for a consistent, tight hi-hat sound
+      variations: ["chhs.wav"], // Using chh.wav for a consistent, tight hi-hat sound
     }),
 
     // Open Hi-Hat: Less frequent to give space to the groove
@@ -173,8 +167,8 @@ export const createDeepHousePattern = async ({ bpm }) => {
       name: "Open HiHat",
       steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]),
       bpm,
-      kit: "linndrum",
-      variations: ["ohh.wav"], // Using ohh.wav for a subtle open hi-hat effect
+      kit: "roland-cr-80",
+      variations: ["CR80_Ohh.wav"], // Using ohh.wav for a subtle open hi-hat effect
     }),
 
     // Percussion: Additional elements like shakers or tambourines
