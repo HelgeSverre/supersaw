@@ -23,10 +23,14 @@
 
 <style>
   .vertical-slider {
-    writing-mode: bt-lr; /* IE */
-    -webkit-appearance: slider-vertical; /* WebKit */
+    writing-mode: vertical-lr;
+    direction: rtl;
     width: 8px;
     height: 100px;
+  }
+
+  .vertical-slider::-webkit-slider-runnable-track {
+    background: transparent;
   }
 
   .vertical-slider::-webkit-slider-thumb {
@@ -34,10 +38,8 @@
     appearance: none;
     width: 16px;
     height: 16px;
-  }
-
-  .vertical-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+    border-radius: 50%;
+    background: var(--accent-yellow);
+    cursor: pointer;
   }
 </style>
