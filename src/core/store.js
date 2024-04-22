@@ -121,7 +121,14 @@ export const startPlayback = async () => {
   await loadAudioBuffersForAllTracks();
 
   let startAudioTime = audioManager.audioContext.currentTime;
-  playbackState.set({ playing: true, currentTime: startAudioTime });
+  let offset = get(playbackState).currentTime;
+
+  // If we are not at the beginning, resume from the current time
+  if (offset !== 0) {
+    startAudioTime -= offset;
+  }
+
+  playbackState.set({ playing: true, currentTime: offset });
 
   frame = requestAnimationFrame(function tick() {
     let newTime = audioManager.audioContext.currentTime - startAudioTime;
