@@ -1,13 +1,15 @@
 <script>
   import AudioClip from "./AudioClip.svelte";
   import {
+    addClip,
     changeTrackName,
     createClipFromUrl,
-    seekToTime,
     moveClipToTime,
+    pixelsPerBar,
+    pixelsPerBeat,
     pixelsToTime,
     removeTrack,
-    addClip,
+    seekToTime,
     toggleMute,
     toggleSolo,
   } from "../../core/store.js";
@@ -50,6 +52,23 @@
 
     seekToTime(newStartTime);
   }
+
+  $: gradientStyle = `
+  background:
+     repeating-linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.2) 1px,
+      transparent 1px,
+      transparent ${$pixelsPerBeat}px
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.03),
+      rgba(255, 255, 255, 0.03) 2px,
+      transparent 1px,
+      transparent ${$pixelsPerBeat / 4}px
+    );`;
 </script>
 
 <!-- Track -->
@@ -103,13 +122,25 @@
 
   <!-- Clips -->
   <div
+    aria-hidden="true"
     class="track-timeline relative w-full"
     on:click={onTrackClick}
     on:dragover|preventDefault
     on:drop|preventDefault={handleDrop}
   >
+    <div class="track-grid" style={gradientStyle}></div>
+
     {#each track.clips as clip}
       <AudioClip clip={clip} />
     {/each}
   </div>
 </div>
+
+<style>
+  .track-grid {
+    position: absolute;
+    left: 0;
+    height: 100%;
+    width: 100%;
+  }
+</style>
