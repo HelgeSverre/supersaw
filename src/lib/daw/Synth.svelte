@@ -63,51 +63,62 @@
 
   const waveformTypes = ["sine", "square", "sawtooth", "triangle"];
 
-  let volume = 0.8;
-  let attack = 0.01; // Quick attack
-  let decay = 0.3; // Short decay
-  let sustain = 1; // Low sustain
-  let release = 4; // Long release
-  let selectedWaveform = "sine"; // Sine wave often gives a more bell-like tone
+  let volume = 0.5;
+  let attack = 0.01;
+  let decay = 0.3;
+  let sustain = 0.8;
+  let release = 5.5;
+  let selectedWaveform = "sawtooth";
+  let activeNotes = {};
 
-  let activeNotes = [];
+  let detune = 10;
 
-  function startNote(hz) {
+  function startNote(hz, note) {
     audioManager.audioContext.resume();
 
     let gainNode = audioManager.audioContext.createGain();
-    let oscillator = audioManager.audioContext.createOscillator();
+    gainNode.connect(audioManager.mixer); // Ensure gainNode is connected before the oscillators start.
 
-    oscillator.type = selectedWaveform;
-    oscillator.frequency.value = hz; // Frequency in Hz
-    oscillator.connect(gainNode);
-    gainNode.connect(audioManager.mixer);
+    let oscillators = Array.from({ length: 7 }, () => {
+      let oscillator = audioManager.audioContext.createOscillator();
+      oscillator.type = selectedWaveform;
+      oscillator.frequency.value = hz;
+      oscillator.connect(gainNode);
+      return oscillator;
+    });
+
+    oscillators.forEach((oscillator, index) => {
+      oscillator.detune.value = (index - 3) * detune;
+    });
 
     const now = audioManager.audioContext.currentTime;
     gainNode.gain.setValueAtTime(0.00001, now);
-    gainNode.gain.linearRampToValueAtTime(volume, now + attack);
-    gainNode.gain.linearRampToValueAtTime(sustain, now + attack + decay);
+    gainNode.gain.exponentialRampToValueAtTime(volume, now + attack);
+    gainNode.gain.exponentialRampToValueAtTime(sustain * volume, now + attack + decay);
 
-    oscillator.start();
+    oscillators.forEach((oscillator) => oscillator.start());
 
-    activeNotes.push({ oscillator, gainNode });
+    activeNotes[note] = { oscillators, gainNode };
   }
 
-  function stopNote() {
+  function stopNote(note) {
     audioManager.audioContext.resume();
 
-    activeNotes.forEach(({ oscillator, gainNode }) => {
+    if (activeNotes[note]) {
+      const { oscillators, gainNode } = activeNotes[note];
       const now = audioManager.audioContext.currentTime;
-      gainNode.gain.linearRampToValueAtTime(0.00001, now + release);
+      gainNode.gain.exponentialRampToValueAtTime(0.00001, now + release);
 
       setTimeout(() => {
-        oscillator.stop();
+        oscillators.forEach((oscillator) => {
+          oscillator.stop();
+          oscillator.disconnect();
+        });
         gainNode.disconnect();
-        oscillator.disconnect();
-        oscillator = null;
-        gainNode = null;
       }, release * 1000); // Stop after the release phase has completed
-    });
+
+      delete activeNotes[note];
+    }
   }
 </script>
 
@@ -151,6 +162,22 @@
             class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
           />
         </div>
+
+        <div>
+          <div class="flex flex-row items-center justify-between text-xs">
+            <span>Detune</span>
+            <span>{detune}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="50"
+            step="1"
+            bind:value={detune}
+            title="Detune"
+            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+          />
+        </div>
       </div>
 
       <div
@@ -164,7 +191,7 @@
           <input
             type="range"
             min="0"
-            max="20"
+            max="1"
             step="0.01"
             bind:value={attack}
             title="Attack"
@@ -179,7 +206,7 @@
           <input
             type="range"
             min="0"
-            max="20"
+            max="1"
             step="0.01"
             bind:value={decay}
             title="Decay"
@@ -189,7 +216,7 @@
         <div>
           <div class="flex flex-row items-center justify-between text-xs">
             <span>Sustain</span>
-            <span>{sustain} %</span>
+            <span>{sustain * 100}</span>
           </div>
           <input
             type="range"
@@ -209,7 +236,7 @@
           <input
             type="range"
             min="0"
-            max="20"
+            max="10"
             step="0.01"
             bind:value={release}
             title="Release"
@@ -223,8 +250,8 @@
           {#each Object.entries(frequencies) as [note, hz]}
             <button
               class="note {note.includes('#') ? 'black-key' : 'white-key'}"
-              on:mouseup={stopNote}
-              on:mousedown={() => startNote(hz)}
+              on:mouseup={() => stopNote(note)}
+              on:mousedown={() => startNote(hz, note)}
             >
               <span class="note-name">{note}</span>
             </button>
