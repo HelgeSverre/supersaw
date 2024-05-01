@@ -13,6 +13,7 @@
     toggleSolo,
   } from "../../core/store.js";
   import { X } from "lucide-svelte";
+  import MidiClip from "./MidiClip.svelte";
 
   export let track;
 
@@ -89,6 +90,10 @@
         {track.name}
       </button>
 
+      <span>
+        {track.type === "audio" ? "🔈" : "🎹"}
+      </span>
+
       <button class="p-2 hover:bg-dark-100" on:click={() => removeTrack(track.id)}>
         <X size="14" />
       </button>
@@ -122,15 +127,18 @@
   <!-- Clips -->
   <div
     aria-hidden="true"
-    class="track-timeline relative w-full"
+    class="relative w-full bg-dark-800"
     on:dragover|preventDefault
     on:drop|preventDefault={handleDrop}
     on:click={onTrackClick}
   >
     <div class="track-grid" style={gradientStyle}></div>
 
-    {#each track.clips as clip}
+    {#each track.clips.filter((c) => c.type === "audio") as clip}
       <AudioClip clip={clip} />
+    {/each}
+    {#each track.clips.filter((c) => c.type === "midi") as clip}
+      <MidiClip clip={clip} />
     {/each}
   </div>
 </div>

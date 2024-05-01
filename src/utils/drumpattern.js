@@ -31,6 +31,7 @@ export const createDrumPattern = async ({ name, kit = "roland-tr-808", steps, bp
 
     clips.push({
       id: crypto.randomUUID(),
+      type: "audio",
       name: `${name} ${sampleVariant}`,
       audioUrl: audioUrl,
       startTime: startTime,
@@ -40,6 +41,7 @@ export const createDrumPattern = async ({ name, kit = "roland-tr-808", steps, bp
 
   return {
     id: crypto.randomUUID(),
+    type: "audio",
     name: `${name} Pattern`,
     isMuted: false,
     isSolo: false,
@@ -64,6 +66,7 @@ export const createDrumPatternOld = async ({ name, folder, pattern, bpm, variati
 
     return {
       id: crypto.randomUUID(),
+      type: "audio",
       name: `${name} ${variation}`,
       audioUrl: audioUrl,
       startTime: startTime,
@@ -76,6 +79,7 @@ export const createDrumPatternOld = async ({ name, folder, pattern, bpm, variati
   const allClips = loadedClips.filter((clip) => clip !== null);
   return {
     id: crypto.randomUUID(),
+    type: "audio",
     name: `${name} Pattern`,
     isMuted: false,
     isSolo: false,

@@ -2,7 +2,10 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 
 /** @type {import("tailwindcss").Config} */
 export default {
-  content: ["./src/**/*.{html,js,svelte,ts}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{html,js,svelte,ts}",
+  ],
   theme: {
     extend: {
       fontFamily: {
@@ -11,34 +14,36 @@ export default {
       },
       colors: {
         dark: {
-          900: "hsl(249, 9%, 10%)",
-          800: "hsl(249, 9%, 12%)",
-          700: "hsl(249, 9%, 15%)",
-          600: "hsl(247, 9%, 17%)",
-          500: "hsl(244, 9%, 22%)",
-          400: "hsl(244, 9%, 24%)",
-          300: "hsl(244, 9%, 23%)",
-          200: "hsl(244, 9%, 29%)",
-          100: "hsl(246, 9%, 44%)",
+          900: "rgb(var(--dark-900) / <alpha-value>)",
+          800: "rgb(var(--dark-800) / <alpha-value>)",
+          700: "rgb(var(--dark-700) / <alpha-value>)",
+          600: "rgb(var(--dark-600) / <alpha-value>)",
+          500: "rgb(var(--dark-500) / <alpha-value>)",
+          400: "rgb(var(--dark-400) / <alpha-value>)",
+          300: "rgb(var(--dark-300) / <alpha-value>)",
+          200: "rgb(var(--dark-200) / <alpha-value>)",
+          100: "rgb(var(--dark-100) / <alpha-value>)",
         },
         light: {
-          DEFAULT: "hsl(0,0%,92%)",
-          secondary: "hsl(0,0%,85%)",
-          soft: "hsl(150,1%,44%)",
+          DEFAULT: "rgb(var(--text-primary) / <alpha-value>)",
+          secondary: "rgb(var(--text-secondary) / <alpha-value>)",
+          soft: "rgb(var(--text-soft) / <alpha-value>)",
         },
         accent: {
-          blue: "#4f7fff",
-          purple: "#9876f9",
-          green: "#74d19a",
-          pink: "#e674ce",
-          red: "#fe5c5b",
-          yellow: "#fade6a",
+          blue: "rgb(var(--accent-blue) / <alpha-value>)",
+          purple: "rgb(var(--accent-purple) / <alpha-value>)",
+          green: "rgb(var(--accent-green) / <alpha-value>)",
+          pink: "rgb(var(--accent-pink) / <alpha-value>)",
+          red: "rgb(var(--accent-red) / <alpha-value>)",
+          yellow: "rgb(var(--accent-yellow) / <alpha-value>)",
         },
         black: {
-          100: "#101010",
-          200: "#171718",
-          300: "#242426",
+          100: "rgb(var(--black-100) / <alpha-value>)",
+          200: "rgb(var(--black-200) / <alpha-value>)",
+          300: "rgb(var(--black-300) / <alpha-value>)",
         },
+        foreground: "rgb(var(--foreground) / <alpha-value>)",
+        background: "rgb(var(--background) / <alpha-value>)",
       },
     },
   },

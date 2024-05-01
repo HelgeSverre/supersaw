@@ -200,6 +200,7 @@ export const createTrackFromUrl = async (trackName, url) => {
       clips: [
         {
           id: crypto.randomUUID(),
+          type: "sample",
           name: "Audio",
           audioUrl: url,
           startTime: 0,
@@ -284,7 +285,7 @@ export const loadAudioBuffersForAllTracks = async () => {
   const loadedTracks = await Promise.all(
     currentTracks.map(async (track) => {
       const clipsPromises = track.clips.map(async (clip) => {
-        if (!clip.audioBuffer) {
+        if (!clip.audioBuffer && clip.audioUrl) {
           const buffer = await audioManager.loadAudioBuffer(clip.audioUrl);
           return { ...clip, audioBuffer: buffer };
         }

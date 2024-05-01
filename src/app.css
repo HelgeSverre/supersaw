@@ -2,43 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* theme */
-  --dark-900: hsl(249, 9%, 10%);
-  --dark-800: hsl(249, 9%, 12%);
-  --dark-700: hsl(249, 9%, 15%);
-  --dark-600: hsl(247, 9%, 17%);
-  --dark-500: hsl(244, 9%, 22%);
-  --dark-400: hsl(244, 9%, 24%);
-  --dark-300: hsl(244, 9%, 23%);
-  --dark-200: hsl(244, 9%, 29%);
-  --dark-100: hsl(246, 9%, 44%);
+@layer base {
+  :root {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
 
-  --text-primary: #ebebeb;
-  --text-secondary: #d9d9d9;
-  --text-soft: #707271;
+    --accent-blue: 79 127 255;
+    --accent-purple: 152 118 249;
+    --accent-green: 116 209 154;
+    --accent-pink: 230 116 206;
+    --accent-red: 254 92 91;
+    --accent-yellow: 250 222 106;
 
-  --accent-blue: #4f7fff;
-  --accent-purple: #9876f9;
-  --accent-green: #74d19a;
-  --accent-pink: #e674ce;
-  --accent-red: #fe5c5b;
-  --accent-yellow: #fade6a;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-  --black-100: #101010;
-  --black-200: #171718;
-  --black-300: #242426;
+  .theme-dark {
+    --dark-900: 24 23 28;
+    --dark-800: 29 28 33;
+    --dark-700: 36 35 42;
+    --dark-600: 40 39 47;
+    --dark-500: 52 51 61;
+    --dark-400: 56 56 67;
+    --dark-300: 54 53 64;
+    --dark-200: 68 67 81;
+    --dark-100: 104 102 122;
 
-  /* Globals */
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+    --text-primary: 235 235 235;
+    --text-secondary: 217 217 217;
+    --text-soft: 112 114 113;
 
-  color: var(--text-primary);
-  background-color: var(--dark-900);
+    --black-100: 16 16 16;
+    --black-200: 23 23 24;
+    --black-300: 36 36 38;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    --foreground: 235 235 235;
+    --background: 16 16 16;
+  }
+
+  .theme-light {
+    --dark-900: 218 218 231;
+    --dark-800: 209 209 224;
+    --dark-700: 194 194 214;
+    --dark-600: 179 179 204;
+    --dark-500: 163 163 194;
+    --dark-400: 148 148 184;
+    --dark-300: 133 133 173;
+    --dark-200: 117 117 163;
+    --dark-100: 102 102 153;
+
+    --text-primary: 51 51 51;
+    --text-secondary: 85 85 85;
+    --text-soft: 119 119 119;
+
+    --black-100: 249 249 250;
+    --black-200: 241 241 244;
+    --black-300: 227 227 232;
+
+    --foreground: 0 0 0;
+    --background: 200 200 200;
+  }
 }

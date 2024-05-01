@@ -1,12 +1,8 @@
 <script>
   import {
-    ChevronDown,
-    Dice1,
-    Dice2,
-    Dice3,
-    Dice4,
     Drum,
-    Infinity,
+    KeyboardMusic,
+    Lightbulb,
     Pause,
     Play,
     Repeat2,
@@ -20,13 +16,14 @@
   import Track from "./lib/daw/Track.svelte";
 
   import {
+    addTrack,
     bpm,
     changeBpm,
     clearTracks,
     createDummyDrumTracks,
     createDummyHouseTracks,
     createDummyTranceTracks,
-    expandLoopRegion,
+    enableLooping,
     loopRegion,
     nudge,
     pausePlayback,
@@ -35,12 +32,11 @@
     setLoopRegion,
     startPlayback,
     stopPlayback,
-    enableLooping,
     timeToPixels,
+    toggleLooping,
     tracks,
     zoomByDelta,
     zoomIn,
-    toggleLooping,
     zoomLevel,
     zoomOut,
   } from "./core/store.js";
@@ -72,7 +68,9 @@
       //   variations: ["0000"],
       // }).then((track) => addTrack(track));
 
-      createDummyDrumTracks();
+      createDummyDrumTracks().then(() => {
+        createMidiTrack();
+      });
     }
   });
 
@@ -146,6 +144,35 @@
     enableLooping();
   }
 
+  function createMidiTrack() {
+    addTrack({
+      id: crypto.randomUUID(),
+      type: "instrument",
+      name: "Synth",
+      isMuted: false,
+      isSolo: false,
+      clips: [
+        {
+          id: crypto.randomUUID(),
+          type: "midi",
+          name: "Midi notes",
+          startTime: 0,
+          duration: 1,
+        },
+      ],
+    });
+  }
+
+  function toggleTheme() {
+    if (document.documentElement.classList.contains("theme-dark")) {
+      document.documentElement.classList.remove("theme-dark");
+      document.documentElement.classList.add("theme-light");
+    } else {
+      document.documentElement.classList.remove("theme-light");
+      document.documentElement.classList.add("theme-dark");
+    }
+  }
+
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
   $: looper = {
     active: $loopRegion.active,
@@ -167,16 +194,21 @@
       </div>
 
       <div class="flex w-full flex-row items-center justify-start gap-x-3 px-2 py-2">
-        <button class="group inline-flex flex-row gap-1 overflow-hidden rounded">
-          <TextDisplay text="4/4" />
+        <!--        <button class=" group inline-flex flex-row gap-1 overflow-hidden rounded">-->
+        <!--          <TextDisplay text="4/4" />-->
+        <!---->
+        <!--          <span-->
+        <!--            class="inline-flex h-10 items-center justify-center bg-dark-400 px-1 font-bold text-light group-hover:bg-dark-200"-->
+        <!--          >-->
+        <!--            <ChevronDown size="20" />-->
+        <!--          </span>-->
+        <!--        </button>-->
 
-          <span
-            class="inline-flex h-10 items-center justify-center bg-dark-400 px-1 font-bold text-light group-hover:bg-dark-200"
-          >
-            <ChevronDown size="20" />
-          </span>
-        </button>
-
+        <SegmentGroup>
+          <IconButton icon={ZoomIn} onClick={zoomIn} />
+          <TextDisplay text={`${Math.round($zoomLevel)}%`} additionalClasses="w-14 text-center select-none" />
+          <IconButton icon={ZoomOut} onClick={zoomOut} />
+        </SegmentGroup>
         <SegmentGroup>
           <TextButton onClick={() => changeBpm(prompt("Enter new BPM", $bpm))} text="{$bpm} bpm" />
         </SegmentGroup>
@@ -209,19 +241,9 @@
           </SegmentGroup>
 
           <SegmentGroup>
-            <IconButton icon={Dice1} onClick={() => expandLoopRegion(1)} />
-            <IconButton icon={Dice2} onClick={() => expandLoopRegion(2)} />
-            <IconButton icon={Dice3} onClick={() => expandLoopRegion(3)} />
-            <IconButton icon={Dice4} onClick={() => expandLoopRegion(4)} />
-          </SegmentGroup>
-          <SegmentGroup>
+            <IconButton icon={KeyboardMusic} onClick={createMidiTrack} />
             <IconButton icon={Trash} onClick={clearTracks} />
-          </SegmentGroup>
-
-          <SegmentGroup>
-            <IconButton icon={ZoomIn} onClick={zoomIn} />
-            <TextDisplay text={`${Math.round($zoomLevel)}%`} additionalClasses="w-14 text-center select-none" />
-            <IconButton icon={ZoomOut} onClick={zoomOut} />
+            <IconButton icon={Lightbulb} onClick={toggleTheme} />
           </SegmentGroup>
         </div>
       </div>
@@ -231,7 +253,7 @@
   <!-- Timeline -->
   {#if $tracks.length}
     <section
-      class="timeline relative h-full overflow-hidden"
+      class="relative h-full overflow-hidden"
       class:select-none={dragging}
       bind:this={timeline}
       on:wheel={handleZoom}
