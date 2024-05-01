@@ -5,29 +5,18 @@
 
   export let modal;
 
-  const waveformTypes = ["sine", "square", "sawtooth", "triangle"];
-
-  let volume = 0.8;
-  let attack = 0.01; // Quick attack
-  let decay = 0.3; // Short decay
-  let sustain = 0.1; // Low sustain
-  let release = 0.5; // Long release
-  let selectedWaveform = "sine"; // Sine wave often gives a more bell-like tone
-
-  let oscillator;
-  let gainNode;
-
   const frequencies = {
-    "C#2": 65.41,
+    "C2": 65.41,
+    "C#2": 69.3,
     "D2": 73.42,
     "D#2": 77.78,
     "E2": 82.41,
     "F2": 87.31,
     "F#2": 92.5,
-    "G2": 98.04,
+    "G2": 98.0,
     "G#2": 103.83,
     "A2": 110.0,
-    "A#2": 115.14,
+    "A#2": 116.54,
     "B2": 123.47,
     "C3": 130.81,
     "C#3": 138.59,
@@ -54,14 +43,14 @@
     "A#4": 466.16,
     "B4": 493.88,
     "C5": 523.25,
-    "C5#": 554.37,
+    "C#5": 554.37,
     "D5": 587.33,
     "D#5": 622.25,
-    "E5": 659.26,
+    "E5": 659.25,
     "F5": 698.46,
     "F#5": 739.99,
     "G5": 783.99,
-    "G#5": 831.83,
+    "G#5": 830.61,
     "A5": 880.0,
     "A#5": 932.33,
     "B5": 987.77,
@@ -69,103 +58,175 @@
     "C#6": 1108.73,
     "D6": 1174.66,
     "D#6": 1244.51,
+    "E6": 1318.51,
   };
+
+  const waveformTypes = ["sine", "square", "sawtooth", "triangle"];
+
+  let volume = 0.8;
+  let attack = 0.01; // Quick attack
+  let decay = 0.3; // Short decay
+  let sustain = 1; // Low sustain
+  let release = 4; // Long release
+  let selectedWaveform = "sine"; // Sine wave often gives a more bell-like tone
+
+  let activeNotes = [];
 
   function startNote(hz) {
     audioManager.audioContext.resume();
 
-    gainNode = audioManager.audioContext.createGain();
-    oscillator = audioManager.audioContext.createOscillator();
+    let gainNode = audioManager.audioContext.createGain();
+    let oscillator = audioManager.audioContext.createOscillator();
 
     oscillator.type = selectedWaveform;
     oscillator.frequency.value = hz; // Frequency in Hz
     oscillator.connect(gainNode);
-    gainNode.connect(audioManager.audioContext.destination);
+    gainNode.connect(audioManager.mixer);
 
     const now = audioManager.audioContext.currentTime;
     gainNode.gain.setValueAtTime(0.00001, now);
-    gainNode.gain.exponentialRampToValueAtTime(volume, now + attack);
-    gainNode.gain.exponentialRampToValueAtTime(sustain, now + attack + decay);
+    gainNode.gain.linearRampToValueAtTime(volume, now + attack);
+    gainNode.gain.linearRampToValueAtTime(sustain, now + attack + decay);
 
     oscillator.start();
+
+    activeNotes.push({ oscillator, gainNode });
   }
 
   function stopNote() {
     audioManager.audioContext.resume();
-    const now = audioManager.audioContext.currentTime;
-    gainNode.gain.exponentialRampToValueAtTime(0.00001, now + release);
 
-    setTimeout(() => {
-      oscillator.stop();
-      gainNode.disconnect();
-      oscillator.disconnect();
-      oscillator = null;
-      gainNode = null;
-    }, release * 1000); // Stop after the release phase has completed
+    activeNotes.forEach(({ oscillator, gainNode }) => {
+      const now = audioManager.audioContext.currentTime;
+      gainNode.gain.linearRampToValueAtTime(0.00001, now + release);
+
+      setTimeout(() => {
+        oscillator.stop();
+        gainNode.disconnect();
+        oscillator.disconnect();
+        oscillator = null;
+        gainNode = null;
+      }, release * 1000); // Stop after the release phase has completed
+    });
   }
 </script>
 
 <Modal bind:dialog={modal}>
-  <h2 slot="header" class="font-sans font-semibold">Silenth2</h2>
+  <h2 slot="header">DX77</h2>
 
-  <div>
-    <div class="grid grid-cols-3 gap-6">
-      <div class="flex flex-col gap-3">
-        <div class=" rounded-xl border-dark-100 bg-dark-400 p-2">
-          <label for="waveform">Waveform:</label>
-          <select bind:value={selectedWaveform} class="bg-dark-200">
+  <div class="rounded-lg border border-dark-900 bg-[#181C1D] p-6 pt-4 shadow-2xl shadow-accent-green">
+    <div>
+      <p
+        class="mb-2 inline-block rounded-md border-2 border-accent-green/20 p-1 font-mono text-lg font-black leading-none tracking-tight text-white/70"
+      >
+        DX77
+      </p>
+    </div>
+    <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-lg border border-accent-green/20 bg-accent-green/5 p-2 shadow-lg shadow-accent-green/10">
+          <div class="flex flex-row items-center justify-between text-xs">
+            <span>Wave</span>
+          </div>
+          <select
+            bind:value={selectedWaveform}
+            class="mt-1 w-full appearance-none rounded bg-black-200 p-1 px-2 text-xs"
+          >
             {#each waveformTypes as type}
               <option value={type}>{type}</option>
             {/each}
           </select>
         </div>
-        <div class="rounded-xl border-dark-100 bg-dark-400 p-2">
-          <label for="volume">Volume:</label>
-          <input type="range" min="0" max="1" step="0.01" bind:value={volume} />
+        <div class="rounded-lg border border-accent-green/20 bg-accent-green/5 p-2 shadow-lg shadow-accent-green/10">
+          <div class="flex flex-row items-center justify-between text-xs">
+            <span>Vol</span>
+            <span>{volume}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={volume}
+            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+          />
         </div>
       </div>
-      <div class="col-span-2">
-        <div class="rounded-xl border border-accent-yellow/50 bg-accent-yellow/10 p-2">
-          <label>ADSR Envelope</label>
-          <div>
-            <div class="flex flex-row justify-between">
-              <span>Attack</span>
-              <span>{attack}s</span>
-            </div>
-            <input type="range" min="0" max="1" step="0.01" bind:value={attack} title="Attack" />
+
+      <div
+        class="col-span-2 grid grid-cols-4 gap-6 rounded-lg border border-accent-green/20 bg-accent-green/5 p-2 shadow-lg shadow-accent-green/10"
+      >
+        <div>
+          <div class="flex flex-row items-center justify-between text-xs">
+            <span>Attack</span>
+            <span>{attack}s</span>
           </div>
-          <div>
-            <div class="flex flex-row justify-between">
-              <span>Decay</span>
-              <span>{decay}s</span>
-            </div>
-            <input type="range" min="0" max="1" step="0.01" bind:value={decay} title="Decay" />
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="0.01"
+            bind:value={attack}
+            title="Attack"
+            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+          />
+        </div>
+        <div>
+          <div class="flex flex-row items-center justify-between text-xs">
+            <span>Decay</span>
+            <span>{decay}s</span>
           </div>
-          <div>
-            <div class="flex flex-row justify-between">
-              <span>Sustain</span>
-              <span>{sustain}s</span>
-            </div>
-            <input type="range" min="0" max="1" step="0.01" bind:value={sustain} title="Sustain" />
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="0.01"
+            bind:value={decay}
+            title="Decay"
+            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+          />
+        </div>
+        <div>
+          <div class="flex flex-row items-center justify-between text-xs">
+            <span>Sustain</span>
+            <span>{sustain} %</span>
           </div>
-          <div>
-            <div class="flex flex-row justify-between">
-              <span>Release</span>
-              <span>{release}s</span>
-            </div>
-            <input type="range" min="0" max="1" step="0.01" bind:value={release} title="Release" />
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            bind:value={sustain}
+            title="Sustain"
+            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+          />
+        </div>
+        <div>
+          <div class="flex flex-row items-center justify-between text-xs">
+            <span>Release</span>
+            <span>{release}s</span>
           </div>
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="0.01"
+            bind:value={release}
+            title="Release"
+            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+          />
         </div>
       </div>
-      <div class="col-span-full bg-blue-900 p-4">
+
+      <div class="col-span-full rounded-lg border border-black-200 bg-black-300 p-2">
         <div class="piano">
           {#each Object.entries(frequencies) as [note, hz]}
             <button
-              class={note.includes("#") ? "black-key" : "white-key"}
+              class="note {note.includes('#') ? 'black-key' : 'white-key'}"
               on:mouseup={stopNote}
               on:mousedown={() => startNote(hz)}
             >
-              <span class="note">{note}</span>
+              <span class="note-name">{note}</span>
             </button>
           {/each}
         </div>
@@ -183,12 +244,18 @@
     font-size: 10px;
   }
 
+  .piano .note:hover {
+    opacity: 90%;
+    transition: all 250ms ease-out;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  }
+
   .white-key {
     display: flex;
     align-items: end;
     justify-content: center;
     height: 100%;
-    width: 25px;
+    width: 35px;
     border: 1px solid rgba(0, 0, 0, 0.2);
     border-right: none;
     border-radius: 2px;
@@ -206,39 +273,13 @@
     align-items: end;
     justify-content: center;
     height: 60%;
-    width: 15px;
+    width: 20px;
     background-color: #000;
     position: relative;
-    left: 5px;
-    margin-left: -15px;
+    left: 10px;
+    margin-left: -20px;
 
     z-index: 2;
     color: white;
-  }
-
-  .note {
-  }
-
-  label {
-    display: block;
-    color: var(--accent-yellow);
-    background: linear-gradient(0, var(--dark-900), var(--dark-600));
-    border: 1px solid var(--dark-100);
-    padding: 5px 10px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-  }
-
-  select {
-    padding: 5px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--dark-100);
-    background: linear-gradient(0, var(--dark-900), var(--dark-600));
-    color: var(--accent-yellow);
-  }
-
-  select,
-  input[type="range"] {
-    width: 100%;
   }
 </style>
