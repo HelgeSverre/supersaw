@@ -14,6 +14,8 @@
   } from "../../core/store.js";
   import { X } from "lucide-svelte";
   import MidiClip from "./MidiClip.svelte";
+  import { onMount } from "svelte";
+  import Synth from "./Synth.svelte";
 
   export let track;
 
@@ -53,6 +55,12 @@
     seekToTime(newStartTime);
   }
 
+  let dialog;
+
+  onMount(async () => {
+    // dialog.showModal()
+  });
+
   $: gradientStyle = `
   background:
      repeating-linear-gradient(
@@ -90,9 +98,9 @@
         {track.name}
       </button>
 
-      <span>
+      <button on:click={() => dialog.showModal()}>
         {track.type === "audio" ? "🔈" : "🎹"}
-      </span>
+      </button>
 
       <button class="p-2 hover:bg-dark-100" on:click={() => removeTrack(track.id)}>
         <X size="14" />
@@ -142,6 +150,8 @@
     {/each}
   </div>
 </div>
+
+<Synth bind:modal={dialog} />
 
 <style>
   .track-grid {

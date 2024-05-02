@@ -1,32 +1,17 @@
 <script>
-  import { onMount } from "svelte";
-  import { selectClip, timeToPixels } from "../../core/store";
-  import Synth from "./Synth.svelte";
-  import Modal from "../ui/Modal.svelte";
+  import { selectClip, timeToPixels, toggleView } from "../../core/store";
 
   export let clip;
-  let dialog;
-
-  onMount(async () => {});
-
-  const openSynthModal = () => {
-    selectClip(clip.id);
-    dialog.showModal();
-  };
-
-  const closeSynthModal = () => {
-    dialog.close();
-  };
 
   function handleDragStart(clip) {
-    return function (event) {
+    return function(event) {
       event.dataTransfer.setData(
         "text/plain",
         JSON.stringify({
           action: "clip:move",
           clipId: clip.id,
-          originalStartTime: clip.startTime,
-        }),
+          originalStartTime: clip.startTime
+        })
       );
     };
   }
@@ -39,7 +24,7 @@
   class="audio-clip absolute inset-y-2 overflow-hidden rounded border border-blue-400 bg-accent-blue/20"
   draggable="true"
   on:dragstart|stopPropagation={handleDragStart(clip)}
-  on:click={openSynthModal}
+  on:click={toggleView() && selectClip(clip.id)}
   style="left: {leftPosition}px; width: {width}px;"
   title={clip.name ?? "Unnamed"}
 >
@@ -51,5 +36,3 @@
   </div>
   <div class="h-full w-full overflow-hidden"></div>
 </button>
-
-<Synth bind:modal={dialog} />

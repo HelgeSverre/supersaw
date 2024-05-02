@@ -23,6 +23,7 @@
     createDummyDrumTracks,
     createDummyHouseTracks,
     createDummyTranceTracks,
+    currentView,
     enableLooping,
     loopRegion,
     nudge,
@@ -49,6 +50,7 @@
   import TopBar from "./lib/layout/TopBar.svelte";
   import MixerPanel from "./lib/daw/MixerPanel.svelte";
   import Browser from "./lib/daw/Browser.svelte";
+  import MidiEditor from "./lib/daw/MidiEditor.svelte";
 
   function handleZoom(event) {
     if (event.shiftKey) {
@@ -251,7 +253,7 @@
   </section>
 
   <!-- Timeline -->
-  {#if $tracks.length}
+  {#if $currentView == "timeline" && $tracks.length}
     <section
       class="relative h-full overflow-hidden"
       class:select-none={dragging}
@@ -302,6 +304,9 @@
         </div>
       </div>
     </section>
+  {:else if $currentView == "midi"}
+
+      <MidiEditor />
   {:else}
     <div class="m-8 flex flex-1 items-center justify-center">
       <div class="text-center text-sm text-dark-100">No tracks</div>

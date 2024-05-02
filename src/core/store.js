@@ -20,6 +20,12 @@ export const playbackState = writable({ playing: false, currentTime: 0 });
 export const selectedClip = writable(null);
 export const selectedTrack = writable(0);
 
+export const currentView = writable("midi");
+// toggle between timeline and midi view
+export const toggleView = () => {
+  currentView.update((view) => (view === "timeline" ? "midi" : "timeline"));
+};
+
 export const tracks = writable([]);
 
 // master volume 0 - 100% (0 - 1)

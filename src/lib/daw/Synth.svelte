@@ -58,7 +58,7 @@
     "C#6": 1108.73,
     "D6": 1174.66,
     "D#6": 1244.51,
-    "E6": 1318.51,
+    "E6": 1318.51
   };
 
   const waveformTypes = ["sine", "square", "sawtooth", "triangle"];
@@ -73,13 +73,57 @@
 
   let detune = 10;
 
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  let bpm = 120;
+
+  function midiToFrequency(noteNumber) {
+    const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const octave = Math.floor(noteNumber / 12) - 1;
+    const noteIndex = noteNumber % 12;
+    const noteName = `${noteNames[noteIndex]}${octave}`;
+    return frequencies[noteName];
+  }
+
+  // Function to play a MIDI track
+  function playMidiTrack(track) {
+    track.notes.forEach((note) => {
+      const frequency = midiToFrequency(note.pitch);
+      const startTime = audioManager.audioContext.currentTime + note.time * (60 / bpm);
+      const duration = note.duration * (60 / bpm);
+
+      // Schedule note start
+      setTimeout(() => startNote(frequency, note.pitch), startTime * 1000);
+
+      // Schedule note stop
+      setTimeout(() => stopNote(note.pitch), (startTime + duration) * 1000);
+    });
+  }
+
+  // Example MIDI track
+  let track = {
+    notes: [
+      { pitch: 60, duration: 1, time: 0 },
+      { pitch: 62, duration: 1, time: 1 },
+      { pitch: 64, duration: 1, time: 2 },
+      { pitch: 65, duration: 1, time: 3 },
+      { pitch: 67, duration: 1, time: 4 },
+      { pitch: 69, duration: 1, time: 5 },
+      { pitch: 71, duration: 1, time: 9 },
+      { pitch: 72, duration: 1, time: 7 }
+    ]
+  };
+
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   function startNote(hz, note) {
     audioManager.audioContext.resume();
 
     let gainNode = audioManager.audioContext.createGain();
     gainNode.connect(audioManager.mixer); // Ensure gainNode is connected before the oscillators start.
 
-    let oscillators = Array.from({ length: 7 }, () => {
+    let oscillators = Array.from({ length: 4 }, () => {
       let oscillator = audioManager.audioContext.createOscillator();
       oscillator.type = selectedWaveform;
       oscillator.frequency.value = hz;
@@ -126,12 +170,18 @@
   <h2 slot="header">DX77</h2>
 
   <div class="rounded-lg border border-dark-900 bg-[#181C1D] p-6 pt-4 shadow-2xl shadow-accent-green">
-    <div>
+    <div class="mb-2 flex w-full flex-row items-center justify-between">
       <p
         class="mb-2 inline-block rounded-md border-2 border-accent-green/20 p-1 font-mono text-lg font-black leading-none tracking-tight text-white/70"
       >
         DX77
       </p>
+      <button
+        on:click={() => playMidiTrack(track)}
+        class="inline-block rounded-lg border border-dashed border-white/20 p-1 font-mono text-xs text-white"
+      >
+        trance it up!
+      </button>
     </div>
     <div class="grid grid-cols-3 gap-3">
       <div class="grid grid-cols-2 gap-3">
@@ -263,50 +313,50 @@
 </Modal>
 
 <style>
-  .piano {
-    display: flex;
-    justify-content: center;
-    align-items: start;
-    height: 100px;
-    font-size: 10px;
-  }
+    .piano {
+        display: flex;
+        justify-content: center;
+        align-items: start;
+        height: 100px;
+        font-size: 10px;
+    }
 
-  .piano .note:hover {
-    opacity: 90%;
-    transition: all 250ms ease-out;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
-  }
+    .piano .note:hover {
+        opacity: 90%;
+        transition: all 250ms ease-out;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+    }
 
-  .white-key {
-    display: flex;
-    align-items: end;
-    justify-content: center;
-    height: 100%;
-    width: 35px;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-right: none;
-    border-radius: 2px;
-    background-color: #fff;
-    position: relative;
-    color: black;
-  }
+    .white-key {
+        display: flex;
+        align-items: end;
+        justify-content: center;
+        height: 100%;
+        width: 35px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        border-right: none;
+        border-radius: 2px;
+        background-color: #fff;
+        position: relative;
+        color: black;
+    }
 
-  .white-key:last-child {
-    border-right: 1px solid rgba(0, 0, 0, 0.2);
-  }
+    .white-key:last-child {
+        border-right: 1px solid rgba(0, 0, 0, 0.2);
+    }
 
-  .black-key {
-    display: flex;
-    align-items: end;
-    justify-content: center;
-    height: 60%;
-    width: 20px;
-    background-color: #000;
-    position: relative;
-    left: 10px;
-    margin-left: -20px;
+    .black-key {
+        display: flex;
+        align-items: end;
+        justify-content: center;
+        height: 60%;
+        width: 20px;
+        background-color: #000;
+        position: relative;
+        left: 10px;
+        margin-left: -20px;
 
-    z-index: 2;
-    color: white;
-  }
+        z-index: 2;
+        color: white;
+    }
 </style>
