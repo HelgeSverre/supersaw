@@ -8,7 +8,6 @@
   let noteHeight = 20;
   let ticksPerBeat = 480;
 
-  let midi = [];
   let notesForDisplay = [];
   let highestTime = 0;
   let startTime;
@@ -18,10 +17,10 @@
     audioManager.audioContext.resume();
     // setupAudioContext();
     // loadMidiFile("/midi/ayla.mid");
-    loadMidiFile("/midi/emotions.mid");
+    // loadMidiFile("/midi/emotions.mid");
     // loadMidiFile("/midi/between-worlds.mid");
     // loadMidiFile("/midi/in-our-memories.mid");
-    // loadMidiFile("/midi/moon-loves-the-sun-full.mid");
+    loadMidiFile("/midi/moon-loves-the-sun-full.mid");
     animatePlayhead();
   });
 
@@ -33,23 +32,6 @@
     parseMidi(arrayBuffer);
   }
 
-  function stringToColor(str) {
-    str = str || "Unknown";
-
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-
-    let color = "#";
-    for (let i = 0; i < 3; i++) {
-      let value = (hash >> (i * 8)) & 0xff;
-      color += ("00" + value.toString(16)).substr(-2);
-    }
-
-    return color;
-  }
-
   function ticksToMilliseconds(ticks, ticksPerBeat, bpm) {
     return (ticks / ticksPerBeat) * (60000 / bpm);
   }
@@ -58,7 +40,6 @@
     const data = new Uint8Array(arrayBuffer);
     const parsed = midiManager.parseMidi(data);
 
-    midi = parsed;
     notesForDisplay = [];
 
     ticksPerBeat = parsed.header.ticksPerBeat;
@@ -82,7 +63,6 @@
         if (event.type === "noteOn") {
           notesForDisplay.push({
             track: trackName,
-            color: stringToColor(trackName),
             note: event.noteNumber,
             label: getNoteLabel(event.noteNumber),
             velocity: event.velocity,
@@ -122,14 +102,14 @@
     });
 
     oscillators.forEach((oscillator, index) => {
-      oscillator.detune.value = (index - 1) * 12; // Spread the detune a bit for a richer sound
+      oscillator.detune.value = (index - 1) * 10; // Spread the detune a bit for a richer sound
     });
 
     // ADSR Parameters
     const attackTime = 0.0; // Attack time in seconds
-    const decayTime = 0.1; // Decay time in seconds
-    const sustainLevel = 0.6; // Sustain level (0.0 to 1.0)
-    const releaseTime = 0.1; // Release time in seconds
+    const decayTime = 0.2; // Decay time in seconds
+    const sustainLevel = 0.2; // Sustain level (0.0 to 1.0)
+    const releaseTime = 0.6; // Release time in seconds
 
     // Adjust noteEndTime to ensure it includes the release phase
     const noteEndTime = time + duration;
