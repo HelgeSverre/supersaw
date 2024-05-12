@@ -4,14 +4,14 @@
   export let clip;
 
   function handleDragStart(clip) {
-    return function(event) {
+    return function (event) {
       event.dataTransfer.setData(
         "text/plain",
         JSON.stringify({
           action: "clip:move",
           clipId: clip.id,
-          originalStartTime: clip.startTime
-        })
+          originalStartTime: clip.startTime,
+        }),
       );
     };
   }

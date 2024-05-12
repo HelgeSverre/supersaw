@@ -25,6 +25,9 @@ export const currentView = writable("midi");
 export const toggleView = () => {
   currentView.update((view) => (view === "timeline" ? "midi" : "timeline"));
 };
+export const openMidiEditorView = () => currentView.update((view) => "midi");
+
+export const openTimelineView = () => currentView.update((view) => "timeline");
 
 export const tracks = writable([]);
 

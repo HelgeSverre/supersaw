@@ -58,7 +58,7 @@
     "C#6": 1108.73,
     "D6": 1174.66,
     "D#6": 1244.51,
-    "E6": 1318.51
+    "E6": 1318.51,
   };
 
   const waveformTypes = ["sine", "square", "sawtooth", "triangle"];
@@ -110,10 +110,9 @@
       { pitch: 67, duration: 1, time: 4 },
       { pitch: 69, duration: 1, time: 5 },
       { pitch: 71, duration: 1, time: 9 },
-      { pitch: 72, duration: 1, time: 7 }
-    ]
+      { pitch: 72, duration: 1, time: 7 },
+    ],
   };
-
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -313,50 +312,50 @@
 </Modal>
 
 <style>
-    .piano {
-        display: flex;
-        justify-content: center;
-        align-items: start;
-        height: 100px;
-        font-size: 10px;
-    }
+  .piano {
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    height: 100px;
+    font-size: 10px;
+  }
 
-    .piano .note:hover {
-        opacity: 90%;
-        transition: all 250ms ease-out;
-        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
-    }
+  .piano .note:hover {
+    opacity: 90%;
+    transition: all 250ms ease-out;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  }
 
-    .white-key {
-        display: flex;
-        align-items: end;
-        justify-content: center;
-        height: 100%;
-        width: 35px;
-        border: 1px solid rgba(0, 0, 0, 0.2);
-        border-right: none;
-        border-radius: 2px;
-        background-color: #fff;
-        position: relative;
-        color: black;
-    }
+  .white-key {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    height: 100%;
+    width: 35px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-right: none;
+    border-radius: 2px;
+    background-color: #fff;
+    position: relative;
+    color: black;
+  }
 
-    .white-key:last-child {
-        border-right: 1px solid rgba(0, 0, 0, 0.2);
-    }
+  .white-key:last-child {
+    border-right: 1px solid rgba(0, 0, 0, 0.2);
+  }
 
-    .black-key {
-        display: flex;
-        align-items: end;
-        justify-content: center;
-        height: 60%;
-        width: 20px;
-        background-color: #000;
-        position: relative;
-        left: 10px;
-        margin-left: -20px;
+  .black-key {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    height: 60%;
+    width: 20px;
+    background-color: #000;
+    position: relative;
+    left: 10px;
+    margin-left: -20px;
 
-        z-index: 2;
-        color: white;
-    }
+    z-index: 2;
+    color: white;
+  }
 </style>

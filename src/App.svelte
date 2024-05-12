@@ -1,10 +1,13 @@
 <script>
   import {
+    ArrowDownToDot,
     Drum,
     KeyboardMusic,
     Lightbulb,
+    ListMusic,
     Pause,
     Play,
+    Plus,
     Repeat2,
     Square,
     SquareScissors,
@@ -35,6 +38,7 @@
     stopPlayback,
     timeToPixels,
     toggleLooping,
+    toggleView,
     tracks,
     zoomByDelta,
     zoomIn,
@@ -82,6 +86,12 @@
     // Spacebar - Play/Pause globally
     if (key === " ") {
       event.preventDefault();
+
+      // TODO: change this when midi editor state is global, for now, do nothing when space is pressed
+      if ($currentView === "midi") {
+        return;
+      }
+
       if ($playbackState.playing) {
         pausePlayback();
       } else {
@@ -243,7 +253,8 @@
           </SegmentGroup>
 
           <SegmentGroup>
-            <IconButton icon={KeyboardMusic} onClick={createMidiTrack} />
+            <IconButton icon={$currentView === "timeline" ? ListMusic : KeyboardMusic} onClick={() => toggleView()} />
+            <IconButton icon={Plus} onClick={createMidiTrack} />
             <IconButton icon={Trash} onClick={clearTracks} />
             <IconButton icon={Lightbulb} onClick={toggleTheme} />
           </SegmentGroup>
@@ -305,8 +316,9 @@
       </div>
     </section>
   {:else if $currentView == "midi"}
-
+    <section class="relative h-full overflow-hidden">
       <MidiEditor />
+    </section>
   {:else}
     <div class="m-8 flex flex-1 items-center justify-center">
       <div class="text-center text-sm text-dark-100">No tracks</div>
