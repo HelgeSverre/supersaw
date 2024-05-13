@@ -15,7 +15,6 @@
   import { X } from "lucide-svelte";
   import MidiClip from "./MidiClip.svelte";
   import { onMount } from "svelte";
-  import Synth from "./Synth.svelte";
 
   export let track;
 
@@ -54,12 +53,6 @@
 
     seekToTime(newStartTime);
   }
-
-  let dialog;
-
-  onMount(async () => {
-    // dialog.showModal()
-  });
 
   $: gradientStyle = `
   background:
@@ -150,8 +143,6 @@
     {/each}
   </div>
 </div>
-
-<Synth bind:modal={dialog} />
 
 <style>
   .track-grid {

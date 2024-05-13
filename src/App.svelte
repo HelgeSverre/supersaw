@@ -1,10 +1,10 @@
 <script>
   import {
-    ArrowDownToDot,
     Drum,
     KeyboardMusic,
     Lightbulb,
     ListMusic,
+    Music,
     Pause,
     Play,
     Plus,
@@ -46,6 +46,7 @@
     zoomOut,
   } from "./core/store.js";
   import { formatTime } from "./core/utils.js";
+  import { midiNoteToFrequency } from "./core/audio.js";
   import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
   import IconButton from "./lib/ui/IconButton.svelte";
   import TextDisplay from "./lib/ui/TextDisplay.svelte";
@@ -55,6 +56,22 @@
   import MixerPanel from "./lib/daw/MixerPanel.svelte";
   import Browser from "./lib/daw/Browser.svelte";
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
+  import Synth from "./lib/daw/Synth.svelte";
+
+  let synth;
+  let dialog;
+
+  onMount(async () => {
+    // dialog.showModal();
+  });
+
+  function handleNoteStart(event) {
+    synth.startNote(midiNoteToFrequency(event.detail.note), event.detail.note);
+  }
+
+  function handleNoteEnd(event) {
+    synth.stopNote(event.detail.note);
+  }
 
   function handleZoom(event) {
     if (event.shiftKey) {
@@ -253,7 +270,8 @@
           </SegmentGroup>
 
           <SegmentGroup>
-            <IconButton icon={$currentView === "timeline" ? ListMusic : KeyboardMusic} onClick={() => toggleView()} />
+            <IconButton icon={$currentView === "timeline" ? ListMusic : Music} onClick={() => toggleView()} />
+            <IconButton icon={KeyboardMusic} onClick={() => dialog.showModal()} />
             <IconButton icon={Plus} onClick={createMidiTrack} />
             <IconButton icon={Trash} onClick={clearTracks} />
             <IconButton icon={Lightbulb} onClick={toggleTheme} />
@@ -317,13 +335,15 @@
     </section>
   {:else if $currentView == "midi"}
     <section class="relative h-full overflow-hidden">
-      <MidiEditor />
+      <MidiEditor on:note:start={handleNoteStart} on:note:end={handleNoteEnd} />
     </section>
   {:else}
     <div class="m-8 flex flex-1 items-center justify-center">
       <div class="text-center text-sm text-dark-100">No tracks</div>
     </div>
   {/if}
+
+  <Synth bind:this={synth} bind:modal={dialog} />
 
   <MixerPanel />
 </main>

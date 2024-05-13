@@ -4,6 +4,8 @@
   import TextButton from "../ui/TextButton.svelte";
   import * as midiManager from "midi-file";
   import { bpm, changeBpm, timeToPixels } from "../../core/store.js";
+  import { createEventDispatcher } from "svelte";
+  const dispatch = createEventDispatcher();
 
   let noteHeight = 20;
   let ticksPerBeat = 480;
@@ -17,10 +19,16 @@
     audioManager.audioContext.resume();
     // setupAudioContext();
     // loadMidiFile("/midi/ayla.mid");
-    // loadMidiFile("/midi/emotions.mid");
     // loadMidiFile("/midi/between-worlds.mid");
+    // loadMidiFile("/midi/come-with-me.mid");
+    // loadMidiFile("/midi/emotions.mid");
+    // loadMidiFile("/midi/icarus.mid");
     // loadMidiFile("/midi/in-our-memories.mid");
-    loadMidiFile("/midi/moon-loves-the-sun-full.mid");
+    // loadMidiFile("/midi/man-on-the-run.mid");
+    // loadMidiFile("/midi/man-on-the-run-long.mid");
+    loadMidiFile("/midi/moon-loves-the-sun.mid");
+    // loadMidiFile("/midi/moon-loves-the-sun-full.mid");
+    // loadMidiFile("/midi/orbit-adagio.mid");
     animatePlayhead();
   });
 
@@ -92,24 +100,23 @@
     audioManager.audioContext.resume();
     const frequency = midiNoteToFrequency(note);
 
+    const totalOscillators = 4;
+
     let gainNode = audioManager.audioContext.createGain();
-    let oscillators = Array.from({ length: 4 }, () => {
+    let oscillators = Array.from({ length: totalOscillators }, (_, index) => {
       let oscillator = audioManager.audioContext.createOscillator();
       oscillator.type = "sawtooth";
       oscillator.frequency.setValueAtTime(frequency, audioManager.audioContext.currentTime);
+      oscillator.detune.setValueAtTime((index - 1) * 13, audioManager.audioContext.currentTime);
       oscillator.connect(gainNode);
       return oscillator;
     });
 
-    oscillators.forEach((oscillator, index) => {
-      oscillator.detune.value = (index - 1) * 10; // Spread the detune a bit for a richer sound
-    });
-
     // ADSR Parameters
-    const attackTime = 0.0; // Attack time in seconds
-    const decayTime = 0.2; // Decay time in seconds
-    const sustainLevel = 0.2; // Sustain level (0.0 to 1.0)
-    const releaseTime = 0.6; // Release time in seconds
+    const attackTime = 0.01; // Attack time in seconds
+    const decayTime = 0.1; // Decay time in seconds
+    const sustainLevel = 0.9; // Sustain level (0.0 to 1.0)
+    const releaseTime = 0.3; // Release time in seconds
 
     // Adjust noteEndTime to ensure it includes the release phase
     const noteEndTime = time + duration;
@@ -117,10 +124,10 @@
 
     // Set up ADSR envelope
     gainNode.gain.setValueAtTime(0.0001, time);
-    gainNode.gain.exponentialRampToValueAtTime(1, time + attackTime); // Attack
-    gainNode.gain.exponentialRampToValueAtTime(sustainLevel, time + attackTime + decayTime); // Decay
-    gainNode.gain.setValueAtTime(sustainLevel, noteEndTime); // Sustain until note end
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, finalEndTime); // Release
+    gainNode.gain.linearRampToValueAtTime(1 / totalOscillators, time + attackTime); // Attack
+    gainNode.gain.exponentialRampToValueAtTime(sustainLevel / totalOscillators, time + attackTime + decayTime); // Decay
+    gainNode.gain.setValueAtTime(sustainLevel / totalOscillators, noteEndTime); // Sustain until note end
+    gainNode.gain.linearRampToValueAtTime(0.0001, finalEndTime); // Release
 
     // Connect, start, and schedule stopping of oscillators
     gainNode.connect(audioManager.mixer);
@@ -149,11 +156,15 @@
       const startTimeInSeconds = audioManager.audioContext.currentTime + note.start / 1000;
       const durationInSeconds = note.duration / 1000;
 
-      console.log(
-        `play note ${note.note} at ${startTimeInSeconds} for ${durationInSeconds} seconds on track ${note.track}`,
-      );
+      setTimeout(() => {
+        dispatch("note:start", { note: note.note });
 
-      const noteInstance = startNote(note.note, startTimeInSeconds, durationInSeconds);
+        setTimeout(() => {
+          dispatch("note:end", { note: note.note });
+        }, durationInSeconds * 1000);
+      }, startTimeInSeconds * 1000);
+
+      // const noteInstance = startNote(note.note, startTimeInSeconds, durationInSeconds);
     });
   }
 
@@ -195,6 +206,8 @@
           {#each notesArray as noteNumber}
             <button
               on:mouseenter={() => (highlightedNote = getNoteLabel(noteNumber))}
+              on:mousedown={() => dispatch("note:start", { note: noteNumber })}
+              on:mouseup={() => dispatch("note:end", { note: noteNumber })}
               class="piano-key hover:opacity-80 active:opacity-70 {isBlackKey(noteNumber) ? 'black-key' : 'white-key'}"
             >
               <span class="inline-block pr-2 font-medium">{getNoteLabel(noteNumber)}</span>
@@ -239,6 +252,7 @@
                 <th class="whitespace-nowrap">Tick</th>
                 <th class="whitespace-nowrap">Start</th>
                 <th class="whitespace-nowrap">Duration</th>
+                <th class="whitespace-nowrap">Velocity</th>
                 <th class="whitespace-nowrap">Note Num</th>
                 <th class="whitespace-nowrap">Label</th>
               </tr>
@@ -249,6 +263,7 @@
                   <td class="whitespace-nowrap">{event.tickOffset}</td>
                   <td class="whitespace-nowrap">{event.start}</td>
                   <td class="whitespace-nowrap">{event.duration}</td>
+                  <td class="whitespace-nowrap">{event.velocity}</td>
                   <td class="whitespace-nowrap">{event.note}</td>
                   <td class="whitespace-nowrap">{event.label}</td>
                 </tr>

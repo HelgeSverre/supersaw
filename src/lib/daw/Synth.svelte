@@ -63,58 +63,16 @@
 
   const waveformTypes = ["sine", "square", "sawtooth", "triangle"];
 
-  let volume = 0.5;
+  let volume = 0.8;
   let attack = 0.01;
-  let decay = 0.3;
-  let sustain = 0.8;
-  let release = 5.5;
+  let decay = 0.5;
+  let sustain = 0.2;
+  let release = 0.8;
+  let highPassFrequency = 0;
   let selectedWaveform = "sawtooth";
   let activeNotes = {};
 
   let detune = 10;
-
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  let bpm = 120;
-
-  function midiToFrequency(noteNumber) {
-    const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    const octave = Math.floor(noteNumber / 12) - 1;
-    const noteIndex = noteNumber % 12;
-    const noteName = `${noteNames[noteIndex]}${octave}`;
-    return frequencies[noteName];
-  }
-
-  // Function to play a MIDI track
-  function playMidiTrack(track) {
-    track.notes.forEach((note) => {
-      const frequency = midiToFrequency(note.pitch);
-      const startTime = audioManager.audioContext.currentTime + note.time * (60 / bpm);
-      const duration = note.duration * (60 / bpm);
-
-      // Schedule note start
-      setTimeout(() => startNote(frequency, note.pitch), startTime * 1000);
-
-      // Schedule note stop
-      setTimeout(() => stopNote(note.pitch), (startTime + duration) * 1000);
-    });
-  }
-
-  // Example MIDI track
-  let track = {
-    notes: [
-      { pitch: 60, duration: 1, time: 0 },
-      { pitch: 62, duration: 1, time: 1 },
-      { pitch: 64, duration: 1, time: 2 },
-      { pitch: 65, duration: 1, time: 3 },
-      { pitch: 67, duration: 1, time: 4 },
-      { pitch: 69, duration: 1, time: 5 },
-      { pitch: 71, duration: 1, time: 9 },
-      { pitch: 72, duration: 1, time: 7 },
-    ],
-  };
-
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   function startNote(hz, note) {
     audioManager.audioContext.resume();
@@ -122,11 +80,17 @@
     let gainNode = audioManager.audioContext.createGain();
     gainNode.connect(audioManager.mixer); // Ensure gainNode is connected before the oscillators start.
 
+    // Create the high-pass filter
+    let highPassFilter = audioManager.audioContext.createBiquadFilter();
+    highPassFilter.type = "highpass";
+    highPassFilter.frequency.value = highPassFrequency; // Set the cutoff frequency
+    highPassFilter.connect(gainNode); // Connect filter to gain node
+
     let oscillators = Array.from({ length: 4 }, () => {
       let oscillator = audioManager.audioContext.createOscillator();
       oscillator.type = selectedWaveform;
       oscillator.frequency.value = hz;
-      oscillator.connect(gainNode);
+      oscillator.connect(highPassFilter);
       return oscillator;
     });
 
@@ -163,6 +127,8 @@
       delete activeNotes[note];
     }
   }
+
+  export { startNote, stopNote };
 </script>
 
 <Modal bind:dialog={modal}>
@@ -175,12 +141,6 @@
       >
         DX77
       </p>
-      <button
-        on:click={() => playMidiTrack(track)}
-        class="inline-block rounded-lg border border-dashed border-white/20 p-1 font-mono text-xs text-white"
-      >
-        trance it up!
-      </button>
     </div>
     <div class="grid grid-cols-3 gap-3">
       <div class="grid grid-cols-2 gap-3">
@@ -289,6 +249,21 @@
             step="0.01"
             bind:value={release}
             title="Release"
+            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+          />
+        </div>
+        <div>
+          <div class="flex flex-row items-center justify-between text-xs">
+            <span>HP</span>
+            <span>{highPassFrequency}hz</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="2200"
+            step="1"
+            bind:value={highPassFrequency}
+            title="High Pass Filter Frequency"
             class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
           />
         </div>
