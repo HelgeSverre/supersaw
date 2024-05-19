@@ -39,7 +39,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: var(--accent-yellow);
+    background: rgb(var(--accent-blue));
     cursor: pointer;
   }
 </style>

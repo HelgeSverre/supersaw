@@ -22,7 +22,7 @@
 
     analyser.getByteTimeDomainData(dataArray);
 
-    canvasCtx.fillStyle = "#1c1f26";
+    canvasCtx.fillStyle = "#383843";
     canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
     canvasCtx.lineWidth = 2;
@@ -53,6 +53,6 @@
   }
 </script>
 
-<div class="fixed bottom-0 right-0 z-20 rounded bg-yellow-400 p-4">
-  <canvas bind:this={canvas} width="500" height="200"></canvas>
+<div class="h-10 w-28 overflow-hidden rounded border-2 border-dark-400 bg-dark-400">
+  <canvas bind:this={canvas} class="h-full w-full"></canvas>
 </div>

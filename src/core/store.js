@@ -11,7 +11,7 @@
 /**
  * @typedef {Object} Clip
  * @property {string} id - Unique identifier for the clip.
- * @property {"sample"|"midi"} type - Type of the clip (e.g., 'sample', 'midi').
+ * @property {"audio"|"midi"} type - Type of the clip (e.g., 'audio', 'midi').
  * @property {string} name - Name of the clip.
  * @property {string} audioUrl - URL of the audio file (for sample clips).
  * @property {number} startTime - Start time of the clip in seconds.
@@ -41,35 +41,72 @@ import {
   createTranceEDMPattern,
 } from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
-import { Instrument } from "../instruments/instrument.js";
 import { extractNoteEvents } from "./midi.js";
+import { Instrument } from "../instruments/instrument.js";
+import { loadFromLocalStorage, saveToLocalStorage } from "./local.js";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
 
-export const bpm = writable(140);
-export const zoomLevel = writable(50);
+export const demoMidiFiles = writable([
+  { label: "Ayla - Ayla (Veracocha Remix)", file: "/midi/ayla.mid" },
+  { label: "A-Lusion meets Scope DJ - Between Worlds", file: "/midi/between-worlds.mid" },
+  { label: "Cosmic Gate - Come With Me", file: "/midi/come-with-me.mid" },
+  { label: "Witness Of Wonder - Emotion In Motion (Thrillseekers Remix)", file: "/midi/emotions.mid" },
+  { label: "Flutlicht - Icarus", file: "/midi/icarus.mid" },
+  { label: "Abject - In Our Memories ", file: "/midi/in-our-memories.mid" },
+  { label: "Dash Berlin - Man On The Run (intro)", file: "/midi/man-on-the-run.mid" },
+  { label: "Dash Berlin - Man On The Run (full) ", file: "/midi/man-on-the-run-long.mid" },
+  { label: "Nu NRG - Moon Loves The Sun", file: "/midi/moon-loves-the-sun.mid" },
+  { label: "Nu NRG - Moon Loves The Sun (full)", file: "/midi/moon-loves-the-sun-full.mid" },
+  { label: "System F - Out Of The Blue", file: "/midi/system-f-out-of-e-blue.midi" },
+  { label: "William Orbit - Adagio For Strings", file: "/midi/orbit-adagio.mid" },
+  { label: "B-Front & DV8 - We Will Never Break", file: "/midi/we-will-never-break-wish-outdoor.mid" },
+]);
 
 export const loopRegion = writable({ start: 0, end: 0, active: false });
 export const playbackState = writable({ playing: false, currentTime: 0 });
-export const selectedClip = writable(null);
-export const selectedTrack = writable(0);
 
-export const currentView = writable("timeline");
+export const masterVolume = writable(loadFromLocalStorage("masterVolume", 1));
+export const masterPan = writable(loadFromLocalStorage("masterPan", 0));
+
+export const bpm = writable(loadFromLocalStorage("bpm", 140));
+export const zoomLevel = writable(loadFromLocalStorage("zoomLevel", 50));
+export const selectedClip = writable(loadFromLocalStorage("selectedClip", null));
+export const selectedTrack = writable(loadFromLocalStorage("selectedTrack", 0));
+export const currentView = writable(loadFromLocalStorage("currentView", "timeline"));
+
+export const tracks = writable(loadFromLocalStorage("tracks", []));
+
+tracks.subscribe((value) => {
+  saveToLocalStorage(
+    "tracks",
+    value.map((track) => {
+      return {
+        ...track,
+        clips: track.clips.map((clip) => {
+          return { ...clip, audioBuffer: null };
+        }),
+      };
+    }),
+  );
+});
+
+masterVolume.subscribe((value) => saveToLocalStorage("masterVolume", value));
+masterPan.subscribe((value) => saveToLocalStorage("masterPan", value));
+bpm.subscribe((value) => saveToLocalStorage("bpm", value));
+zoomLevel.subscribe((value) => saveToLocalStorage("zoomLevel", value));
+selectedClip.subscribe((value) => saveToLocalStorage("selectedClip", value));
+selectedTrack.subscribe((value) => saveToLocalStorage("selectedTrack", value));
+currentView.subscribe((value) => saveToLocalStorage("currentView", value));
+
 export const toggleView = () => {
   currentView.update((view) => (view === "timeline" ? "midi" : "timeline"));
 };
 export const openMidiEditorView = () => currentView.update((view) => "midi");
 
 export const openTimelineView = () => currentView.update((view) => "timeline");
-
-export const tracks = writable([]);
-
-// master volume 0 - 100% (0 - 1)
-export const masterVolume = writable(1);
-
-// master pan (-1 - 1)
-export const masterPan = writable(0);
+export const switchView = (newView) => currentView.update((view) => newView);
 
 masterVolume.subscribe(($masterVolume) => {
   audioManager.mixer.gain.value = $masterVolume;
@@ -137,12 +174,13 @@ activeClips.subscribe(($activeClips) => {
       const track = get(tracks).find((t) => t.id === clip.trackId);
 
       // Audio clip
-      if (track && clip.type === "sample" && clip.audioBuffer) {
+      if (track && clip.type === "audio" && clip.audioBuffer) {
         const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
         const offset = get(playbackState).currentTime - clip.startTime;
 
         source.start(0, offset);
         source.onended = () => sources.delete(clip.id); // Remove source when it ends
+
         sources.set(clip.id, { source, gainNode });
       }
 
@@ -175,6 +213,8 @@ playbackState.subscribe(($playbackState) => {
 let frame;
 
 export const startPlayback = async () => {
+  audioManager.audioContext.resume();
+
   await loadAudioBuffersForAllTracks();
 
   let startAudioTime = audioManager.audioContext.currentTime;
@@ -252,12 +292,13 @@ export const createTrackFromUrl = async (trackName, url) => {
     addTrack({
       id: crypto.randomUUID(),
       name: trackName,
+      type: "audio",
       isMuted: false,
       isSolo: false,
       clips: [
         {
           id: crypto.randomUUID(),
-          type: "sample",
+          type: "audio",
           name: "Audio",
           audioUrl: url,
           startTime: 0,
@@ -346,8 +387,9 @@ export const loadAudioBuffersForAllTracks = async () => {
   const loadedTracks = await Promise.all(
     currentTracks.map(async (track) => {
       const clipsPromises = track.clips.map(async (clip) => {
-        if (!clip.audioBuffer && clip.audioUrl) {
+        if (clip.type === "audio" && clip.audioUrl && !clip.audioBuffer) {
           const buffer = await audioManager.loadAudioBuffer(clip.audioUrl);
+
           return { ...clip, audioBuffer: buffer };
         }
 

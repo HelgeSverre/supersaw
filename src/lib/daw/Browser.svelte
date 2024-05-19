@@ -284,7 +284,7 @@
     />
   </div>
 
-  <div class="file-browser" style="display: {open ? 'block' : 'none'};">
+  <div class="file-browser bg-dark-400" style="display: {open ? 'block' : 'none'};">
     <div class="file-browser-header">
       <h3>File Browser</h3>
     </div>
@@ -327,7 +327,6 @@
     width: 100%;
     height: 600px;
     z-index: 1000;
-    background-color: var(--dark-300);
     color: var(--text-primary);
     border: 1px solid var(--dark-100);
     border-radius: 5px;

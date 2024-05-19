@@ -1,5 +1,5 @@
 import * as midiManager from "midi-file";
-import { bpm, changeBpm, timeToPixels } from "./store.js";
+import { bpm, timeToPixels } from "./store.js";
 import { get } from "svelte/store";
 
 export async function createMidiClipFromUrl(url, clipName = "unnamed") {
@@ -67,6 +67,17 @@ function getNoteLabel(noteNumber) {
   return `${noteNames[noteNumber % 12]}${octave}`;
 }
 
+export function getBpmFromMidi(midi) {
+  midi.tracks.forEach((track) => {
+    track.forEach((event) => {
+      if (event.type === "setTempo") {
+        let newBpm = 60000000 / event.microsecondsPerBeat;
+        return Math.floor(newBpm);
+      }
+    });
+  });
+}
+
 export function extractNoteEvents(midi) {
   let notes = [];
 
@@ -81,11 +92,6 @@ export function extractNoteEvents(midi) {
       wallTime += event.deltaTime;
       wallTimeInMilliseconds = ticksToMilliseconds(wallTime, midi.header.ticksPerBeat, get(bpm));
 
-      // if (event.type === "setTempo") {
-      // let newBpm = 60000000 / event.microsecondsPerBeat;
-      // changeBpm(Math.floor(newBpm));
-      // }
-
       if (event.type === "noteOn") {
         notes.push({
           track: trackName,
@@ -106,59 +112,6 @@ export function extractNoteEvents(midi) {
         note.duration = wallTimeInMilliseconds - note?.start;
       }
     });
-  });
-
-  return notes;
-}
-
-export async function parseMidiFile(arrayBuffer) {
-  const data = new Uint8Array(arrayBuffer);
-  const parsed = midiManager.parseMidi(data);
-
-  let highestTime = 0;
-  let notes = [];
-
-  parsed.tracks.forEach((track) => {
-    let wallTime = 0;
-    let wallTimeInMilliseconds = 0;
-
-    let trackName = track.find((event) => event.type === "trackName")?.text || "Unnamed";
-
-    track.forEach((event) => {
-      // Timing
-      wallTime += event.deltaTime;
-      wallTimeInMilliseconds = ticksToMilliseconds(wallTime, ticksPerBeat, $bpm);
-
-      if (event.type === "setTempo") {
-        let newBpm = 60000000 / event.microsecondsPerBeat;
-        changeBpm(Math.floor(newBpm));
-      }
-
-      if (event.type === "noteOn") {
-        notes.push({
-          track: trackName,
-          note: event.noteNumber,
-          label: getNoteLabel(event.noteNumber),
-          velocity: event.velocity,
-          start: wallTimeInMilliseconds,
-          tickOffset: wallTime,
-          duration: 0, // will be changed later
-        });
-      }
-
-      if (event.type === "noteOff") {
-        let note = notes
-
-          .filter((note) => note.start < wallTimeInMilliseconds && note.duration === 0)
-          .find((note) => note.note === event.noteNumber);
-
-        note.duration = wallTimeInMilliseconds - note?.start;
-      }
-    });
-
-    if (wallTime > highestTime) {
-      highestTime = wallTime;
-    }
   });
 
   return notes;

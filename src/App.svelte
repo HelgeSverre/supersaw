@@ -13,8 +13,6 @@
     SquareScissors,
     Trash,
     Warehouse,
-    ZoomIn,
-    ZoomOut,
   } from "lucide-svelte";
   import Track from "./lib/daw/Track.svelte";
 
@@ -36,14 +34,12 @@
     setLoopRegion,
     startPlayback,
     stopPlayback,
+    switchView,
     timeToPixels,
     toggleLooping,
     toggleView,
     tracks,
     zoomByDelta,
-    zoomIn,
-    zoomLevel,
-    zoomOut,
   } from "./core/store.js";
   import { formatTime } from "./core/utils.js";
   import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
@@ -57,6 +53,10 @@
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
   import Synth from "./lib/daw/Synth.svelte";
   import { createMidiClipFromUrl, midiNoteToFrequency } from "./core/midi.js";
+  import AudioVisualizer from "./lib/daw/AudioVisualizer.svelte";
+  import { Cube } from "phosphor-svelte";
+  import Knob from "./lib/ui/Knob.svelte";
+  import DesignSystem from "./lib/ui/DesignSystem.svelte";
 
   let synth;
   let dialog;
@@ -228,21 +228,6 @@
       </div>
 
       <div class="flex w-full flex-row items-center justify-start gap-x-3 px-2 py-2">
-        <!--        <button class=" group inline-flex flex-row gap-1 overflow-hidden rounded">-->
-        <!--          <TextDisplay text="4/4" />-->
-        <!---->
-        <!--          <span-->
-        <!--            class="inline-flex h-10 items-center justify-center bg-dark-400 px-1 font-bold text-light group-hover:bg-dark-200"-->
-        <!--          >-->
-        <!--            <ChevronDown size="20" />-->
-        <!--          </span>-->
-        <!--        </button>-->
-
-        <SegmentGroup>
-          <IconButton icon={ZoomIn} onClick={zoomIn} />
-          <TextDisplay text={`${Math.round($zoomLevel)}%`} additionalClasses="w-14 text-center select-none" />
-          <IconButton icon={ZoomOut} onClick={zoomOut} />
-        </SegmentGroup>
         <SegmentGroup>
           <TextButton onClick={() => changeBpm(prompt("Enter new BPM", $bpm))} text="{$bpm} bpm" />
         </SegmentGroup>
@@ -267,6 +252,8 @@
           additionalClasses="tabular-nums text-dark-soft"
         />
 
+        <AudioVisualizer />
+
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
           <SegmentGroup>
             <IconButton icon={Drum} onClick={createDummyDrumTracks} />
@@ -275,6 +262,7 @@
           </SegmentGroup>
 
           <SegmentGroup>
+            <IconButton icon={Cube} onClick={() => switchView("playground")} />
             <IconButton icon={$currentView === "timeline" ? ListMusic : Music} onClick={() => toggleView()} />
             <IconButton icon={KeyboardMusic} onClick={() => dialog.showModal()} />
             <IconButton icon={Plus} onClick={createMidiTrack} />
@@ -342,6 +330,8 @@
     <section class="relative h-full overflow-hidden">
       <MidiEditor on:note:start={handleNoteStart} on:note:end={handleNoteEnd} />
     </section>
+  {:else if $currentView == "playground"}
+    <DesignSystem />
   {:else}
     <div class="m-8 flex flex-1 items-center justify-center">
       <div class="text-center text-sm text-dark-100">No tracks</div>

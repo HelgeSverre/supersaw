@@ -1,9 +1,8 @@
 <script>
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
-  import TextButton from "../ui/TextButton.svelte";
   import { bpm, changeBpm, getSelectedClip, timeToPixels, zoomByDelta } from "../../core/store.js";
-  import { noteLabel, ticksToMilliseconds } from "../../core/midi.js";
+  import { extractNoteEvents, noteLabel, ticksToMilliseconds } from "../../core/midi.js";
 
   const dispatch = createEventDispatcher();
 
@@ -15,26 +14,12 @@
   let startTime;
   let currentPlayTime = 0;
 
-  let midis = [
-    { label: "Ayla - Ayla (Veracocha Remix)", file: "/midi/ayla.mid" },
-    { label: "A-Lusion meets Scope DJ - Between Worlds", file: "/midi/between-worlds.mid" },
-    { label: "Cosmic Gate - Come With Me", file: "/midi/come-with-me.mid" },
-    { label: "Witness Of Wonder - Emotion In Motion (Thrillseekers Remix)", file: "/midi/emotions.mid" },
-    { label: "Flutlicht - Icarus", file: "/midi/icarus.mid" },
-    { label: "Abject - In Our Memories ", file: "/midi/in-our-memories.mid" },
-    { label: "Dash Berlin - Man On The Run (intro)", file: "/midi/man-on-the-run.mid" },
-    { label: "Dash Berlin - Man On The Run (full) ", file: "/midi/man-on-the-run-long.mid" },
-    { label: "Nu NRG - Moon Loves The Sun", file: "/midi/moon-loves-the-sun.mid" },
-    { label: "Nu NRG - Moon Loves The Sun (full)", file: "/midi/moon-loves-the-sun-full.mid" },
-    { label: "System F - Out Of The Blue", file: "/midi/system-f-out-of-e-blue.midi" },
-    { label: "William Orbit - Adagio For Strings", file: "/midi/orbit-adagio.mid" },
-    { label: "B-Front & DV8 - We Will Never Break", file: "/midi/we-will-never-break-wish-outdoor.mid" },
-  ];
   let pianoRoll;
   let noteArea;
+
   onMount(() => {
     audioManager.audioContext.resume();
-    parseMidi($getSelectedClip.midiData);
+    notesForDisplay = extractNoteEvents($getSelectedClip.midiData);
     scrollToFirstNote();
     animatePlayhead();
   });
@@ -62,16 +47,8 @@
     }
   }
 
-  async function loadMidiFile(url) {
-    const response = await fetch(url);
-    const arrayBuffer = await response.arrayBuffer();
-
-    parseMidi(arrayBuffer);
-  }
-
   function parseMidi(parsed) {
-    notesForDisplay = [];
-
+    return;
     ticksPerBeat = parsed.header.ticksPerBeat;
 
     parsed.tracks.forEach((track) => {
@@ -212,9 +189,9 @@
   class="relative flex h-full min-h-0 flex-col p-2"
 >
   <div class="flex h-full min-h-0 flex-row gap-2 overflow-hidden">
-    <div class="relative flex w-[100px] flex-shrink-0 flex-col bg-dark-100">
-      <div class="flex h-12 flex-shrink-0 items-center justify-center bg-dark-100 text-center">
-        <span class="whitespace-nowrap font-mono text-sm font-medium">{highlightedNote}</span>
+    <div class="relative flex w-[100px] flex-shrink-0 flex-col">
+      <div class="mb-2 flex h-8 flex-shrink-0 items-center justify-center bg-dark-600 text-center">
+        <span class="whitespace-nowrap font-mono text-xs font-medium">{highlightedNote}</span>
       </div>
 
       <div class="relative flex-1">
@@ -236,19 +213,10 @@
         </div>
       </div>
     </div>
-    <div class="flex w-full flex-shrink-0 flex-col bg-dark-900">
-      <div class="flex h-12 items-center gap-2 bg-dark-100 px-2">
-        <TextButton text="Play" onClick={() => play()} />
-        <TextButton text="Debug" onClick={() => (debug = !debug)} />
+    <div class="flex w-full flex-shrink-0 flex-col">
+      <div class="mb-2 flex h-8 items-center gap-2 bg-dark-600 px-2"></div>
 
-        <select class="rounded bg-dark-400 px-1.5 py-2 text-white" on:change={(e) => loadMidiFile(event.target.value)}>
-          {#each midis as midi}
-            <option value={midi.file}>{midi.label}</option>
-          {/each}
-        </select>
-      </div>
-
-      <div class="relative flex-1">
+      <div class="relative flex-1 bg-dark-900">
         <div
           on:scroll={syncVerticalScroll}
           on:wheel={handleZoom}
@@ -269,42 +237,42 @@
             </div>
           {/each}
         </div>
+        {#if debug}
+          <div class="absolute inset-y-0 left-0 w-[900px] overflow-y-scroll border-dark-800 bg-dark-600">
+            <div class="flex-1">
+              <div class="flex h-full flex-col overflow-y-scroll">
+                <table class="text-right">
+                  <thead>
+                    <tr>
+                      <th class="whitespace-nowrap px-1 font-mono text-xs">Tick</th>
+                      <th class="whitespace-nowrap px-1 font-mono text-xs">Start</th>
+                      <th class="whitespace-nowrap px-1 font-mono text-xs">Duration</th>
+                      <th class="whitespace-nowrap px-1 font-mono text-xs">Velocity</th>
+                      <th class="whitespace-nowrap px-1 font-mono text-xs">Note Num</th>
+                      <th class="whitespace-nowrap px-1 font-mono text-xs">Label</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each notesForDisplay as event}
+                      <tr>
+                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.tickOffset}</td>
+                        <td class="whitespace-nowrap px-1 font-mono text-xs">{parseFloat(event.start).toFixed(3)}</td>
+                        <td class="whitespace-nowrap px-1 font-mono text-xs">{parseFloat(event.duration).toFixed(3)}</td
+                        >
+                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.velocity}</td>
+                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.note}</td>
+                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.label}</td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        {/if}
       </div>
     </div>
   </div>
-
-  {#if debug}
-    <div class="absolute inset-y-4 right-4 w-[800px] overflow-y-scroll border-dark-800 bg-dark-600">
-      <div class="flex-1">
-        <div class="flex h-full flex-col overflow-y-scroll">
-          <table class="text-right">
-            <thead>
-              <tr>
-                <th class="whitespace-nowrap">Tick</th>
-                <th class="whitespace-nowrap">Start</th>
-                <th class="whitespace-nowrap">Duration</th>
-                <th class="whitespace-nowrap">Velocity</th>
-                <th class="whitespace-nowrap">Note Num</th>
-                <th class="whitespace-nowrap">Label</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each notesForDisplay as event}
-                <tr>
-                  <td class="whitespace-nowrap">{event.tickOffset}</td>
-                  <td class="whitespace-nowrap">{event.start}</td>
-                  <td class="whitespace-nowrap">{event.duration}</td>
-                  <td class="whitespace-nowrap">{event.velocity}</td>
-                  <td class="whitespace-nowrap">{event.note}</td>
-                  <td class="whitespace-nowrap">{event.label}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  {/if}
 </div>
 
 <style>
