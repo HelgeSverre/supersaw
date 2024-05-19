@@ -58,6 +58,7 @@
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
   import Synth from "./lib/daw/Synth.svelte";
   import { createMidiClipFromUrl } from "./core/midi.js";
+  import AudioVisualizer from "./lib/daw/AudioVisualizer.svelte";
 
   let synth;
   let dialog;
@@ -186,12 +187,11 @@
       });
     });
 
-
-    createMidiClipFromUrl("/midi/till-the-sky-falls.mid", "Till the sky falls").then((clip) => {
+    createMidiClipFromUrl("/midi/between-worlds.mid", "Between Worlds").then((clip) => {
       addTrack({
         id: crypto.randomUUID(),
         type: "instrument",
-        name: "Till the sky falls",
+        name: "Between Worlds",
         isMuted: false,
         isSolo: false,
         clips: [clip],
@@ -286,6 +286,10 @@
         </div>
       </div>
     </div>
+  </section>
+
+  <section>
+    <AudioVisualizer />
   </section>
 
   <!-- Timeline -->

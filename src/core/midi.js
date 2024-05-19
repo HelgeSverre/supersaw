@@ -122,6 +122,7 @@ export async function parseMidiFile(arrayBuffer) {
 
 export function renderMidiToSvg(midiData) {
   let highestTime = 0;
+  let duration = 0;
   let notes = [];
 
   midiData.tracks.forEach((track) => {
@@ -153,12 +154,14 @@ export function renderMidiToSvg(midiData) {
       }
     });
 
-    if (wallTime > highestTime) {
-      highestTime = wallTime;
+    if (wallTimeInMilliseconds > highestTime) {
+      highestTime = wallTimeInMilliseconds;
     }
   });
 
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full" viewBox="0 0 1000 100" preserveAspectRatio="none" >`;
+  duration = highestTime + notes[notes.length - 1].duration;
+
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" class="absolute inset-0 h-full w-full" viewBox="0 0 ${duration} 100" preserveAspectRatio="none">`;
 
   notes.forEach((note) => {
     svg += `<rect x="${note.start}" y="${note.note}" width="${note.duration}" height="3" fill="currentColor" />`;

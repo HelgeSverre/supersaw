@@ -79,7 +79,7 @@
     <div class="absolute right-1 top-1 inline-block rounded bg-white/10 p-0.5 text-right text-[10px] leading-none">
       {clip.duration.toFixed(2)}s
     </div>
-    <div class="h-full w-full overflow-hidden">
+    <div class="relative h-full">
       {@html svgPathData}
     </div>
   {/if}

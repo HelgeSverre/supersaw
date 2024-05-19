@@ -100,7 +100,7 @@ class AudioManager {
     const gainNode = this.audioContext.createGain();
 
     source.connect(gainNode);
-    gainNode.connect(this.audioContext.destination);
+    gainNode.connect(this.mixer);
 
     source.start(0); // Start immediately
     source.onended = () => {
