@@ -8,6 +8,8 @@
   import SegmentGroup from "./SegmentGroup.svelte";
   import Fader from "./Fader.svelte";
   import TextDisplay from "./TextDisplay.svelte";
+  import Select from "./Input/Select.svelte";
+  import { demoMidiFiles } from "../../core/store.js";
 
   let knobValue = 30;
 </script>
@@ -102,6 +104,10 @@
       <div class="flex flex-col gap-1">
         <SearchInput />
         <TextInput placeholder="Enter some text..." />
+        <Select
+          placeholder="Pick a file..."
+          options={$demoMidiFiles.map((demo) => ({ label: demo.label, value: demo.file }))}
+        />
       </div>
 
       <div class="flex flex-col gap-4">
