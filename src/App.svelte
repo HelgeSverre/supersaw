@@ -226,13 +226,13 @@
 
 <main class="flex flex-1 flex-col">
   <!-- Control Panel -->
-  <section class="bg-dark-600">
-    <div class="flex h-14 flex-row items-center">
-      <div class="flex h-full w-[250px] shrink-0 items-center border-r-2 border-dark-900 px-2">
+  <section class="bg-dark-600 px-2">
+    <div class="flex h-14 flex-row items-center gap-2">
+      <div class="flex h-full w-[250px] shrink-0 items-center">
         <Browser />
       </div>
 
-      <div class="flex w-full flex-row items-center justify-start gap-x-3 px-2 py-2">
+      <div class="flex w-full flex-row items-center justify-start gap-x-2 py-2">
         <SegmentGroup>
           <TextButton onClick={() => changeBpm(prompt("Enter new BPM", $bpm))} text="{$bpm} bpm" />
         </SegmentGroup>

@@ -41,9 +41,9 @@ import {
   createTranceEDMPattern,
 } from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
-import { extractNoteEvents } from "./midi.js";
 import { Instrument } from "../instruments/instrument.js";
 import { loadFromLocalStorage, saveToLocalStorage } from "./local.js";
+import { extractNoteEvents } from "./midi.js";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
@@ -92,6 +92,14 @@ tracks.subscribe((value) => {
   );
 });
 
+tracks.subscribe((value) => {
+  if (get(playbackState).playing) {
+    clearScheduledClips();
+    // TODO: bug here, clips are not scheduled correctly
+    scheduleAllClips(audioManager.audioContext.currentTime);
+  }
+});
+
 masterVolume.subscribe((value) => saveToLocalStorage("masterVolume", value));
 masterPan.subscribe((value) => saveToLocalStorage("masterPan", value));
 bpm.subscribe((value) => saveToLocalStorage("bpm", value));
@@ -103,8 +111,8 @@ currentView.subscribe((value) => saveToLocalStorage("currentView", value));
 export const toggleView = () => {
   currentView.update((view) => (view === "timeline" ? "midi" : "timeline"));
 };
-export const openMidiEditorView = () => currentView.update((view) => "midi");
 
+export const openMidiEditorView = () => currentView.update((view) => "midi");
 export const openTimelineView = () => currentView.update((view) => "timeline");
 export const switchView = (newView) => currentView.update((view) => newView);
 
@@ -133,128 +141,117 @@ export const pixelsToTime = derived([bpm, zoomLevel], ([$bpm, $zoomLevel]) => (p
   return pixels / (($bpm / 60) * PIXELS_PER_BEAT * $zoomLevel);
 });
 
-export const activeClips = derived([playbackState, tracks], ([$playbackState, $tracks]) => {
-  const active = [];
-  if ($playbackState.playing) {
-    const currentTime = $playbackState.currentTime;
-    $tracks.forEach((track) => {
-      track.clips.forEach((clip) => {
-        if (!track.isMuted && (track.isSolo || !$tracks.some((t) => t.isSolo))) {
-          const clipEnd = clip.startTime + clip.duration + 1;
-          if (clip.startTime <= currentTime && currentTime <= clipEnd) {
-            active.push({ ...clip, trackId: track.id });
-          }
-        }
-      });
-    });
-  }
-  return active;
-});
-
 /**
- *
  * @type {Map<string, {source: AudioBufferSourceNode, gainNode: GainNode}>}
  */
-let sources = new Map();
+const sources = new Map();
 
-activeClips.subscribe(($activeClips) => {
-  const currentAudioTime = audioManager.audioContext.currentTime;
-
-  // Stop and delete sources that are no longer active
-  for (let [id, { source }] of sources) {
-    if (!$activeClips.find((clip) => clip.id === id)) {
-      source.stop(currentAudioTime);
-      sources.delete(id);
-    }
-  }
-
-  // Add new sources for clips that are active and not already playing
-  for (let clip of $activeClips) {
-    if (!sources.has(clip.id)) {
-      const track = get(tracks).find((t) => t.id === clip.trackId);
-
-      // Audio clip
-      if (track && clip.type === "audio" && clip.audioBuffer) {
-        const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
-        const offset = get(playbackState).currentTime - clip.startTime;
-
-        source.start(0, offset);
-        source.onended = () => sources.delete(clip.id); // Remove source when it ends
-
-        sources.set(clip.id, { source, gainNode });
-      }
-
-      // Midi clip
-      if (track && clip.type === "midi" && clip.midiData) {
-        const midiInstrument = new Instrument(audioManager.audioContext, audioManager.mixer);
-
-        let notes = extractNoteEvents(clip.midiData);
-
-        notes.forEach((event) => {
-          const time = audioManager.audioContext.currentTime + event.start / 1000;
-          midiInstrument.playNote(event.note, time, event.duration / 1000);
-        });
-
-        sources.set(clip.id, { source: null, gainNode: null }); // Placeholder to mark MIDI clips as active
-      }
-    }
-  }
-});
-
-playbackState.subscribe(($playbackState) => {
-  if (!$playbackState.playing) {
-    for (let { source } of sources.values()) {
-      source.stop();
-    }
-    sources.clear();
-  }
-});
+/**
+ * @type {Map<string, {instrument: Instrument}>}
+ */
+const instruments = new Map();
 
 let frame;
 
-export const startPlayback = async () => {
-  audioManager.audioContext.resume();
+const scheduleClipPlayback = (clip, startingFrom) => {
+  const currentAudioTime = audioManager.audioContext.currentTime;
+  let clipStartTime = currentAudioTime + clip.startTime;
+  let offset = 0;
 
-  await loadAudioBuffersForAllTracks();
-
-  let startAudioTime = audioManager.audioContext.currentTime;
-  let offset = get(playbackState).currentTime;
-
-  // If we are not at the beginning, resume from the current time
-  if (offset !== 0) {
-    startAudioTime -= offset;
+  if (startingFrom > clip.startTime && startingFrom < clip.startTime + clip.duration) {
+    clipStartTime = currentAudioTime + (startingFrom - clip.startTime);
+    offset = startingFrom - clip.startTime;
   }
 
-  playbackState.set({ playing: true, currentTime: offset });
+  if (clip.type === "audio" && clip.audioBuffer) {
+    const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
 
-  frame = requestAnimationFrame(function tick() {
-    let newTime = audioManager.audioContext.currentTime - startAudioTime;
+    source.start(clipStartTime, offset);
+    sources.set(clip.id, { source, gainNode });
+    return;
+  }
 
-    if (get(loopRegion).active && newTime >= get(loopRegion).end) {
-      newTime = get(loopRegion).start;
-      startAudioTime = audioManager.audioContext.currentTime - newTime;
-    }
+  if (clip.type === "midi" && clip.midiData) {
+    const instrument = new Instrument(audioManager.audioContext, audioManager.mixer);
 
-    playbackState.update((state) => ({
-      ...state,
-      currentTime: newTime,
-    }));
+    instrument.setVolume(0.1);
+    let notes = extractNoteEvents(clip.midiData);
 
-    frame = requestAnimationFrame(tick);
+    notes.forEach((midiEvent) => {
+      let eventStart = clip.startTime + midiEvent.start / 1000;
+      if (eventStart >= startingFrom) {
+        let time = currentAudioTime + (eventStart - startingFrom);
+        instrument.playNote(midiEvent.note, time, midiEvent.duration / 1000);
+      }
+    });
+    instruments.set(clip.id, { instrument });
+  }
+};
+
+const clearScheduledClips = () => {
+  sources.forEach(({ source }) => source.stop());
+  sources.clear();
+  instruments.forEach(({ instrument }) => instrument.stop());
+  instruments.clear();
+};
+
+const scheduleAllClips = (startingFrom) => {
+  const currentTracks = get(tracks);
+
+  currentTracks.forEach((track) => {
+    track.clips.forEach((clip) => {
+      const noOtherSolo = !currentTracks.some((t) => t.isSolo);
+
+      // TODO: Explain better what this does, basically, checks if track should be played
+      if (track.isMuted === false && (track.isSolo || noOtherSolo)) {
+        scheduleClipPlayback(clip, startingFrom);
+      }
+    });
   });
 };
 
+export const startPlayback = async () => {
+  await audioManager.audioContext.resume();
+
+  await loadAudioBuffersForAllTracks();
+
+  const currentState = get(playbackState);
+  const startTime = audioManager.audioContext.currentTime - (currentState.pausedAt || 0);
+  playbackState.set({ playing: true, currentTime: startTime, pausedAt: null });
+
+  scheduleAllClips(currentState.pausedAt || startTime);
+
+  function tick() {
+    playbackState.update((state) => ({
+      ...state,
+      currentTime: audioManager.audioContext.currentTime - startTime,
+    }));
+
+    frame = requestAnimationFrame(tick);
+  }
+
+  tick();
+};
+
 export const stopPlayback = () => {
+  clearScheduledClips();
   playbackState.update((state) => ({
     ...state,
     playing: false,
     currentTime: 0,
+    pausedAt: null,
   }));
   cancelAnimationFrame(frame);
 };
 
 export const pausePlayback = () => {
-  playbackState.update((state) => ({ ...state, playing: false }));
+  clearScheduledClips();
+  const currentTime = audioManager.audioContext.currentTime;
+  playbackState.update((state) => ({
+    ...state,
+    playing: false,
+    pausedAt: state.currentTime,
+  }));
   cancelAnimationFrame(frame);
 };
 
@@ -525,6 +522,51 @@ export const zoomByDelta = (delta) => {
 
 /// =======================================================
 
+export const createDummyHardstyleTracks = async () => {
+  clearTracks();
+  changeBpm(150);
+
+  const kicks = await createDrumPattern({
+    name: "Bass Drum",
+    steps: createStepSequencerPattern(16 * 2, 4, [1, 0, 0, 0]),
+    kit: "freesound",
+    bpm: 150,
+    variations: ["hardstyle-kick-249.wav"],
+  });
+
+  // Snare: Hardstyle snares typically hit on the 2nd and 4th beat with a stronger presence
+  let snare = await createDrumPattern({
+    name: "Snare",
+    steps: createStepSequencerPattern(16 * 2, 4, [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
+    bpm: 150,
+    kit: "freesound",
+    variations: ["hardstyle-short-snare_A_major.wav"],
+  });
+
+  // Clap: Syncing with the snares for a pronounced layer effect
+  let clap = await createDrumPattern({
+    name: "Clap",
+    steps: createStepSequencerPattern(16 * 2, 4, [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
+    bpm: 150,
+    kit: "freesound",
+    variations: ["hardstyle-clap-strong-2_A_major.wav"],
+  });
+
+  // Closed Hi-Hat: Keeping the rhythm tight and consistent
+  let closed = await createDrumPattern({
+    name: "Closed HiHat",
+    steps: createStepSequencerPattern(16 * 2, 4, [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]),
+    bpm: 150,
+    kit: "linndrum",
+    variations: ["chhs.wav"],
+  });
+
+  addTrack(kicks);
+  addTrack(snare);
+  addTrack(clap);
+  addTrack(closed);
+};
+
 export const createDummyDrumTracks = async () => {
   clearTracks();
   changeBpm(100);
@@ -551,7 +593,7 @@ export const createDummyDrumTracks = async () => {
 
 export const createDummyTranceTracks = async () => {
   clearTracks();
-  changeBpm(140);
+  changeBpm(120);
 
   // Using the function to create a basic trance pattern
   const patterns = await createTranceEDMPattern({
