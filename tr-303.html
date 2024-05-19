@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TB-303 Emulator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #333;
+        color: #fff;
+        padding: 20px;
+      }
+
+      input,
+      button {
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>TB-303 Synth Emulator</h1>
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>TB-303 Clone</title>
+      </head>
+      <body>
+        <h1>TB-303 Clone</h1>
+        <button onclick="playNote()">Play Note</button>
+        <button onclick="stopNote()">Stop Note</button>
+
+        <script src="tr-303-clone.js"></script>
+      </body>
+    </html>
+
+    <script>
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+      let oscillator, filter, envelope, gainNode;
+      let currentStep = 0;
+      let isPlaying = false;
+      const tempo = 200; // BPM
+      const pattern = [65.41, 65.41, 65.41, 65.41, 65.41, 98.0, 87.31];
+      const intervalTime = 60 / tempo / 2; // time for each 16th note
+
+      function createOscillator(frequency) {
+        oscillator = audioContext.createOscillator();
+        oscillator.type = "sawtooth";
+        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+        oscillator.start();
+      }
+
+      function createFilter() {
+        filter = audioContext.createBiquadFilter();
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+        filter.Q.setValueAtTime(8, audioContext.currentTime); // Emulate TB-303 resonance
+      }
+
+      function createEnvelope() {
+        envelope = audioContext.createGain();
+        envelope.gain.setValueAtTime(0.00001, audioContext.currentTime);
+        envelope.gain.exponentialRampToValueAtTime(1, audioContext.currentTime + 0.01);
+        envelope.gain.exponentialRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+        envelope.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+      }
+
+      function createGainNode() {
+        gainNode = audioContext.createGain();
+        gainNode.gain.setValueAtTime(0.9, audioContext.currentTime);
+      }
+
+      function playNote() {
+        if (currentStep >= pattern.length) {
+          currentStep = 0;
+        }
+
+        createOscillator(pattern[currentStep]); // Get the frequency from the pattern
+        createFilter();
+        createEnvelope();
+        createGainNode();
+
+        oscillator.connect(filter);
+        filter.connect(envelope);
+        envelope.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        stopNoteAfterDuration();
+
+        currentStep++;
+      }
+
+      setInterval(() => startPattern(), intervalTime); // Start the pattern
+
+      function stopNoteAfterDuration() {
+        envelope.gain.cancelScheduledValues(audioContext.currentTime);
+        envelope.gain.setValueAtTime(envelope.gain.value, audioContext.currentTime);
+        envelope.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+        oscillator.stop(audioContext.currentTime + 0.1);
+      }
+
+      function startPattern() {
+        if (!isPlaying) {
+          isPlaying = true;
+          playPattern();
+        }
+      }
+
+      function playPattern() {
+        if (isPlaying) {
+          playNote();
+          setTimeout(playPattern, intervalTime * 1000); // Schedule the next note
+        }
+      }
+
+      function stopPattern() {
+        isPlaying = false;
+      }
+    </script>
+  </body>
+</html>
