@@ -91,39 +91,24 @@ export const createTranceEDMPattern = async ({ bpm }) => {
   return [
     await createDrumPattern({
       name: "Kick",
-      steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]), // Assuming 16 steps per bar
-      bpm,
-      variations: ["BD/BD1025.WAV"],
-    }),
-    await createDrumPattern({
-      name: "Snare",
-      steps: createStepSequencerPattern(16, 4, [0, 0, 1, 0, 0, 0, 1, 0]), // Extended to fit the 16 steps per bar
-      bpm,
-      variations: ["SD/SD0010.WAV", "SD/SD0050.WAV", "SD/SD0075.WAV"],
+      steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]),
+      bpm: bpm,
+      kit: "trance",
+      variations: ["Supreme Kick.wav"],
     }),
     await createDrumPattern({
       name: "Clap",
-      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 0, 1, 0, 0]),
-      bpm,
-      variations: ["CP/CP.WAV"],
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]),
+      bpm: bpm,
+      kit: "trance",
+      variations: ["MaxV - Roland808 - 808Cp 05.wav"],
     }),
     await createDrumPattern({
       name: "Closed HiHat",
-      steps: createStepSequencerPattern(16, 4, [0, 1, 0, 1, 0, 1, 0, 1]),
-      bpm,
-      variations: ["CH/CH.WAV"],
-    }),
-    await createDrumPattern({
-      name: "Open HiHat",
-      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 1, 0, 0, 0]),
-      bpm,
-      variations: ["OH/OH10.WAV", "OH/OH25.WAV", "OH/OH50.WAV"],
-    }),
-    await createDrumPattern({
-      name: "Ride",
-      steps: createStepSequencerPattern(16, 4, [0, 0, 1, 0, 0, 0, 1, 0]),
-      bpm,
-      variations: ["CY/CY1000.WAV"],
+      steps: createStepSequencerPattern(16, 4, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
+      bpm: bpm,
+      kit: "trance",
+      variations: ["TR-808Hat_C05.wav"],
     }),
   ];
 };
