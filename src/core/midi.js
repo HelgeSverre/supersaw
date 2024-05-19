@@ -39,7 +39,7 @@ export async function createMidiClipFromFile(file) {
   return clip;
 }
 
-function ticksToMilliseconds(ticks, ticksPerBeat, bpm) {
+export function ticksToMilliseconds(ticks, ticksPerBeat, bpm) {
   return (ticks / ticksPerBeat) * (60000 / bpm);
 }
 
@@ -81,10 +81,10 @@ export function extractNoteEvents(midi) {
       wallTime += event.deltaTime;
       wallTimeInMilliseconds = ticksToMilliseconds(wallTime, midi.header.ticksPerBeat, get(bpm));
 
-      if (event.type === "setTempo") {
-        let newBpm = 60000000 / event.microsecondsPerBeat;
-        changeBpm(Math.floor(newBpm));
-      }
+      // if (event.type === "setTempo") {
+      // let newBpm = 60000000 / event.microsecondsPerBeat;
+      // changeBpm(Math.floor(newBpm));
+      // }
 
       if (event.type === "noteOn") {
         notes.push({
@@ -221,4 +221,10 @@ export function renderMidiToSvg(midiData) {
 
 export function midiNoteToFrequency(note) {
   return 440 * Math.pow(2, (note - 69) / 12);
+}
+
+export function noteLabel(midiNoteNumber) {
+  const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const octave = Math.floor(midiNoteNumber / 12) - 1;
+  return `${noteNames[midiNoteNumber % 12]}${octave}`;
 }
