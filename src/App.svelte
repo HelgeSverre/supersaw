@@ -46,7 +46,6 @@
     zoomOut,
   } from "./core/store.js";
   import { formatTime } from "./core/utils.js";
-  import { midiNoteToFrequency } from "./core/audio.js";
   import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
   import IconButton from "./lib/ui/IconButton.svelte";
   import TextDisplay from "./lib/ui/TextDisplay.svelte";
@@ -176,7 +175,7 @@
   }
 
   function createMidiTrack() {
-    createMidiClipFromUrl("/midi/system-f-out-of-the-blue.mid", "Out of the blue").then((clip) => {
+    createMidiClipFromUrl("/midi/moon-loves-the-sun.mid", "Out of the blue").then((clip) => {
       addTrack({
         id: crypto.randomUUID(),
         type: "instrument",
@@ -187,16 +186,16 @@
       });
     });
 
-    createMidiClipFromUrl("/midi/between-worlds.mid", "Between Worlds").then((clip) => {
-      addTrack({
-        id: crypto.randomUUID(),
-        type: "instrument",
-        name: "Between Worlds",
-        isMuted: false,
-        isSolo: false,
-        clips: [clip],
-      });
-    });
+    //   createMidiClipFromUrl("/midi/between-worlds.mid", "Between Worlds").then((clip) => {
+    //     addTrack({
+    //       id: crypto.randomUUID(),
+    //       type: "instrument",
+    //       name: "Between Worlds",
+    //       isMuted: false,
+    //       isSolo: false,
+    //       clips: [clip],
+    //     });
+    //   });
   }
 
   function toggleTheme() {
@@ -327,7 +326,7 @@
         </div>
 
         <!-- Tracks -->
-        <div class="relative flex flex-col gap-2 p-2">
+        <div class="relative flex flex-col gap-2 overflow-x-scroll p-2">
           <!-- Loop selection indication on timeline -->
           <div
             class:hidden={!$loopRegion.active}

@@ -172,15 +172,15 @@
       const startTimeInSeconds = audioManager.audioContext.currentTime + note.start / 1000;
       const durationInSeconds = note.duration / 1000;
 
-      setTimeout(() => {
-        dispatch("note:start", { note: note.note });
+      // setTimeout(() => {
+      //   dispatch("note:start", { note: note.note });
+      //
+      //   setTimeout(() => {
+      //     dispatch("note:end", { note: note.note });
+      //   }, durationInSeconds * 1000);
+      // }, startTimeInSeconds * 1000);
 
-        setTimeout(() => {
-          dispatch("note:end", { note: note.note });
-        }, durationInSeconds * 1000);
-      }, startTimeInSeconds * 1000);
-
-      // const noteInstance = startNote(note.note, startTimeInSeconds, durationInSeconds);
+      const noteInstance = startNote(note.note, startTimeInSeconds, durationInSeconds);
     });
   }
 

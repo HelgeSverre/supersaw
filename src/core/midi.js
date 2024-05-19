@@ -1,5 +1,5 @@
 import * as midiManager from "midi-file";
-import { bpm, changeBpm } from "./store.js";
+import { bpm, changeBpm, timeToPixels } from "./store.js";
 import { get } from "svelte/store";
 
 export async function createMidiClipFromUrl(url, clipName = "unnamed") {
@@ -65,6 +65,50 @@ function getNoteLabel(noteNumber) {
   const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   const octave = Math.floor(noteNumber / 12) - 1;
   return `${noteNames[noteNumber % 12]}${octave}`;
+}
+
+export function extractNoteEvents(midi) {
+  let notes = [];
+
+  midi.tracks.forEach((track) => {
+    let wallTime = 0;
+    let wallTimeInMilliseconds = 0;
+
+    let trackName = track.find((event) => event.type === "trackName")?.text || "Unnamed";
+
+    track.forEach((event) => {
+      // Timing
+      wallTime += event.deltaTime;
+      wallTimeInMilliseconds = ticksToMilliseconds(wallTime, midi.header.ticksPerBeat, get(bpm));
+
+      if (event.type === "setTempo") {
+        let newBpm = 60000000 / event.microsecondsPerBeat;
+        changeBpm(Math.floor(newBpm));
+      }
+
+      if (event.type === "noteOn") {
+        notes.push({
+          track: trackName,
+          note: event.noteNumber,
+          label: getNoteLabel(event.noteNumber),
+          velocity: event.velocity,
+          start: wallTimeInMilliseconds,
+          duration: 0, // will be changed later
+        });
+      }
+
+      if (event.type === "noteOff") {
+        let note = notes
+
+          .filter((note) => note.start < wallTimeInMilliseconds && note.duration === 0)
+          .find((note) => note.note === event.noteNumber);
+
+        note.duration = wallTimeInMilliseconds - note?.start;
+      }
+    });
+  });
+
+  return notes;
 }
 
 export async function parseMidiFile(arrayBuffer) {
@@ -163,11 +207,18 @@ export function renderMidiToSvg(midiData) {
 
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" class="absolute inset-0 h-full w-full" viewBox="0 0 ${duration} 100" preserveAspectRatio="none">`;
 
+  let wip = get(timeToPixels);
+
   notes.forEach((note) => {
-    svg += `<rect x="${note.start}" y="${note.note}" width="${note.duration}" height="3" fill="currentColor" />`;
+    console.log();
+    svg += `<rect x="${wip(note.start / 10000)}" y="${127 - note.note}" width="${wip(note.duration / 10000)}" height="3" fill="currentColor" />`;
   });
 
   svg += `</svg>`;
 
   return svg;
+}
+
+export function midiNoteToFrequency(note) {
+  return 440 * Math.pow(2, (note - 69) / 12);
 }

@@ -1,21 +1,17 @@
 <script>
-  import { selectClip, timeToPixels, toggleView } from "../../core/store";
+  import { bpm, selectClip, timeToPixels, toggleView } from "../../core/store";
   import { onMount } from "svelte";
-  import { renderMidiToSvg } from "../../core/midi.js";
+  import { get } from "svelte/store";
 
   export let clip;
 
-  let loadingState = "loading";
-
-  let svgPathData = "";
+  let notes = [];
+  let highestTime = 0;
+  let loadingState = "loaded";
 
   onMount(() => {
-    try {
-      svgPathData = renderMidiToSvg(clip.midiData, 1000);
-
-      loadingState = "loaded";
-    } catch (e) {
-      loadingState = "error";
+    if (clip.midiData) {
+      processMidiData(clip.midiData);
     }
   });
 
@@ -30,6 +26,43 @@
         }),
       );
     };
+  }
+
+  function processMidiData(midiData) {
+    notes = [];
+
+    midiData.tracks.forEach((track) => {
+      let wallTime = 0;
+      let wallTimeInMilliseconds = 0;
+
+      track.forEach((event) => {
+        wallTime += event.deltaTime;
+        wallTimeInMilliseconds = (wallTime / midiData.header.ticksPerBeat) * (60000 / $bpm);
+
+        if (event.type === "noteOn") {
+          notes.push({
+            note: event.noteNumber,
+            velocity: event.velocity,
+            start: wallTimeInMilliseconds,
+            duration: 0, // will be changed later
+          });
+        }
+
+        if (event.type === "noteOff") {
+          let note = notes.find(
+            (note) => note.start < wallTimeInMilliseconds && note.duration === 0 && note.note === event.noteNumber,
+          );
+
+          if (note) {
+            note.duration = wallTimeInMilliseconds - note.start;
+          }
+        }
+      });
+
+      if (wallTimeInMilliseconds > highestTime) {
+        highestTime = wallTimeInMilliseconds;
+      }
+    });
   }
 
   $: leftPosition = $timeToPixels(clip.startTime);
@@ -64,7 +97,7 @@
   style="left: {leftPosition}px; width: {width}px;"
   title={clip.name ?? "Unnamed"}
 >
-  {#if loadingState === "loading" && svgPathData === ""}
+  {#if loadingState === "loading"}
     <div class="absolute inset-0 flex items-center justify-center">
       <span class="text-xs font-normal text-white/80">Loading waveform...</span>
     </div>
@@ -80,7 +113,23 @@
       {clip.duration.toFixed(2)}s
     </div>
     <div class="relative h-full">
-      {@html svgPathData}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-full w-full"
+        viewBox={`0 0 ${$timeToPixels(highestTime / 1000)} 127`}
+        preserveAspectRatio="none"
+        fill="currentColor"
+      >
+        {#each notes as note}
+          <rect
+            class="note"
+            x={$timeToPixels(note.start / 1000)}
+            y={127 - note.note}
+            width={$timeToPixels(note.duration / 1000)}
+            height="3"
+          />
+        {/each}
+      </svg>
     </div>
   {/if}
 </button>

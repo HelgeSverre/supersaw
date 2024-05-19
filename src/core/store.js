@@ -8,6 +8,8 @@ import {
   createTranceEDMPattern,
 } from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
+import { Instrument } from "../instruments/instrument.js";
+import { extractNoteEvents } from "./midi.js";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
@@ -101,15 +103,29 @@ activeClips.subscribe(($activeClips) => {
   for (let clip of $activeClips) {
     if (!sources.has(clip.id)) {
       const track = get(tracks).find((t) => t.id === clip.trackId);
-      if (track && clip.audioBuffer) {
-        const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
 
+      // Audio clip
+      if (track && clip.type === "sample" && clip.audioBuffer) {
+        const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
         const offset = get(playbackState).currentTime - clip.startTime;
 
         source.start(0, offset);
         source.onended = () => sources.delete(clip.id); // Remove source when it ends
-
         sources.set(clip.id, { source, gainNode });
+      }
+
+      // Midi clip
+      if (track && clip.type === "midi" && clip.midiData) {
+        const midiInstrument = new Instrument(audioManager.audioContext, audioManager.mixer);
+
+        let notes = extractNoteEvents(clip.midiData);
+
+        notes.forEach((event) => {
+          const time = audioManager.audioContext.currentTime + event.start / 1000;
+          midiInstrument.playNote(event.note, time, event.duration / 1000);
+        });
+
+        sources.set(clip.id, { source: null, gainNode: null }); // Placeholder to mark MIDI clips as active
       }
     }
   }
