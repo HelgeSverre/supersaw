@@ -2,7 +2,7 @@
  * @typedef {Object} Track
  * @property {string} id - Unique identifier for the track.
  * @property {string} name - Name of the track.
- * @property {'audio'|'midi'} type - Type of the track (e.g., 'audio', 'midi').
+ * @property {"audio"|"instrument"} type - Type of the track (e.g., 'audio', 'midi').
  * @property {boolean} isMuted - Whether the track is muted.
  * @property {boolean} isSolo - Whether the track is soloed.
  * @property {Clip[]} clips - Array of clips in the track.
@@ -16,9 +16,9 @@
  * @property {string} audioUrl - URL of the audio file (for sample clips).
  * @property {number} startTime - Start time of the clip in seconds.
  * @property {number} duration - Duration of the clip in seconds.
- * @property {AudioBuffer} [audioBuffer] - Audio buffer for the clip (if preloaded).
- * @property {MidiNote[]} [notes] - Array of midi notes (for midi clips).
- * @property {MidiData} [midiData] - Parsed midi data
+ * @property {AudioBuffer} audioBuffer - Audio buffer for the clip (if preloaded).
+ * @property {import("midi-file").MidiData} midiData - Parsed midi data
+ * @property {MidiNote[]} notes - Array of midi notes.
  */
 
 /**
@@ -56,7 +56,6 @@ export const selectedClip = writable(null);
 export const selectedTrack = writable(0);
 
 export const currentView = writable("timeline");
-// toggle between timeline and midi view
 export const toggleView = () => {
   currentView.update((view) => (view === "timeline" ? "midi" : "timeline"));
 };
@@ -314,6 +313,10 @@ export const removeTrack = (trackId) => {
   tracks.update((allTracks) => allTracks.filter((track) => track.id !== trackId));
 };
 
+/**
+ *
+ * @param {Track} track
+ */
 export const addTrack = (track) => {
   tracks.update((allTracks) => [...allTracks, track]);
 };
