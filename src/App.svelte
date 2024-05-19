@@ -21,7 +21,7 @@
     bpm,
     changeBpm,
     clearTracks,
-    createDummyDrumTracks,
+    createDummyHardstyleTracks,
     createDummyHouseTracks,
     createDummyTranceTracks,
     currentView,
@@ -55,7 +55,6 @@
   import { createMidiClipFromUrl, midiNoteToFrequency } from "./core/midi.js";
   import AudioVisualizer from "./lib/daw/AudioVisualizer.svelte";
   import { Cube } from "phosphor-svelte";
-  import Knob from "./lib/ui/Knob.svelte";
   import DesignSystem from "./lib/ui/DesignSystem.svelte";
 
   let synth;
@@ -91,7 +90,7 @@
       //   variations: ["0000"],
       // }).then((track) => addTrack(track));
 
-      createDummyDrumTracks().then(() => {
+      createDummyTranceTracks().then(() => {
         createMidiTrack();
       });
     }
@@ -164,7 +163,6 @@
 
     const delta = endPixels - startPixels;
 
-    // TODO: scale this based on zoom
     if (Math.abs(delta) < 10) {
       return;
     }
@@ -174,7 +172,7 @@
   }
 
   function createMidiTrack() {
-    createMidiClipFromUrl("/midi/silentium.mid", "Midi notes").then((clip) => {
+    createMidiClipFromUrl("/midi/emotions.mid", "Midi notes").then((clip) => {
       addTrack({
         id: crypto.randomUUID(),
         type: "instrument",
@@ -184,6 +182,16 @@
         clips: [clip],
       });
     });
+    // createMidiClipFromUrl("/midi/silentium.mid", "Midi notes").then((clip) => {
+    //      addTrack({
+    //        id: crypto.randomUUID(),
+    //        type: "instrument",
+    //        name: "Midi notes",
+    //        isMuted: false,
+    //        isSolo: false,
+    //        clips: [clip],
+    //      });
+    //    });
 
     //   createMidiClipFromUrl("/midi/between-worlds.mid", "Between Worlds").then((clip) => {
     //     addTrack({
@@ -256,7 +264,7 @@
 
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
           <SegmentGroup>
-            <IconButton icon={Drum} onClick={createDummyDrumTracks} />
+            <IconButton icon={Drum} onClick={createDummyHardstyleTracks} />
             <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />
             <IconButton icon={Warehouse} onClick={createDummyHouseTracks} />
           </SegmentGroup>
