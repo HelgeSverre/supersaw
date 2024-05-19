@@ -47,7 +47,6 @@
   import TextDisplay from "./lib/ui/TextDisplay.svelte";
   import TextButton from "./lib/ui/TextButton.svelte";
   import { onMount } from "svelte";
-  import TopBar from "./lib/layout/TopBar.svelte";
   import MixerPanel from "./lib/daw/MixerPanel.svelte";
   import Browser from "./lib/daw/Browser.svelte";
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
@@ -226,8 +225,6 @@
 <svelte:window on:keydown={handleKeydown} on:mousemove={handleMouseMove} on:mouseup={handleMouseUp} />
 
 <main class="flex flex-1 flex-col">
-  <TopBar />
-
   <!-- Control Panel -->
   <section class="bg-dark-600">
     <div class="flex h-14 flex-row items-center">
