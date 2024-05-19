@@ -14,11 +14,37 @@
   } from "../../core/store.js";
   import { X } from "lucide-svelte";
   import MidiClip from "./MidiClip.svelte";
-  import { onMount } from "svelte";
+  import { createMidiClipFromFile } from "../../core/midi.js";
 
   export let track;
 
   function handleDrop(event) {
+    if (event.dataTransfer.items) {
+      for (let i = 0; i < event.dataTransfer.items.length; i++) {
+        // If the dropped item is a file and the file is a MIDI file
+        if (event.dataTransfer.items[i].kind === "file" && event.dataTransfer.items[i].type === "audio/midi") {
+          const file = event.dataTransfer.items[i].getAsFile();
+
+          // If the current track type is "instrument"
+          if (track.type !== "instrument") {
+            alert("You can only drop MIDI files on instrument tracks.");
+            return;
+          }
+
+          // Create a new clip from the MIDI file and add it to the track
+          const timelineElement = event.currentTarget;
+          const timelineRect = timelineElement.getBoundingClientRect();
+          const relativeX = event.clientX - timelineRect.left;
+          const newStartTime = $pixelsToTime(relativeX);
+          createMidiClipFromFile(file).then((clip) => {
+            addClip(track.id, { ...clip, startTime: newStartTime });
+          });
+        }
+      }
+
+      return;
+    }
+
     const data = JSON.parse(event.dataTransfer.getData("text/plain"));
 
     if (data.action === "clip:move") {

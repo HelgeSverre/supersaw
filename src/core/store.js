@@ -20,7 +20,7 @@ export const playbackState = writable({ playing: false, currentTime: 0 });
 export const selectedClip = writable(null);
 export const selectedTrack = writable(0);
 
-export const currentView = writable("midi");
+export const currentView = writable("timeline");
 // toggle between timeline and midi view
 export const toggleView = () => {
   currentView.update((view) => (view === "timeline" ? "midi" : "timeline"));
@@ -325,6 +325,10 @@ export const removeClip = (trackId, clipId) => {
     ),
   );
 };
+
+export const getSelectedClip = derived([selectedClip, tracks], ([$selectedClip, $tracks]) => {
+  return $selectedClip ? $tracks.flatMap((track) => track.clips).find((clip) => clip.id === $selectedClip) : null;
+});
 
 export const moveClip = (trackId, clipId, newTrackId) => {
   tracks.update((allTracks) => {

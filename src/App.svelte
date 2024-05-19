@@ -57,6 +57,7 @@
   import Browser from "./lib/daw/Browser.svelte";
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
   import Synth from "./lib/daw/Synth.svelte";
+  import { createMidiClipFromUrl } from "./core/midi.js";
 
   let synth;
   let dialog;
@@ -174,21 +175,27 @@
   }
 
   function createMidiTrack() {
-    addTrack({
-      id: crypto.randomUUID(),
-      type: "instrument",
-      name: "Synth",
-      isMuted: false,
-      isSolo: false,
-      clips: [
-        {
-          id: crypto.randomUUID(),
-          type: "midi",
-          name: "Midi notes",
-          startTime: 0,
-          duration: 1,
-        },
-      ],
+    createMidiClipFromUrl("/midi/system-f-out-of-the-blue.mid", "Out of the blue").then((clip) => {
+      addTrack({
+        id: crypto.randomUUID(),
+        type: "instrument",
+        name: "Out of the blue",
+        isMuted: false,
+        isSolo: false,
+        clips: [clip],
+      });
+    });
+
+
+    createMidiClipFromUrl("/midi/till-the-sky-falls.mid", "Till the sky falls").then((clip) => {
+      addTrack({
+        id: crypto.randomUUID(),
+        type: "instrument",
+        name: "Till the sky falls",
+        isMuted: false,
+        isSolo: false,
+        clips: [clip],
+      });
     });
   }
 

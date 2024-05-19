@@ -1,10 +1,9 @@
 <script>
-  import { onMount } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
   import TextButton from "../ui/TextButton.svelte";
-  import * as midiManager from "midi-file";
-  import { bpm, changeBpm, timeToPixels } from "../../core/store.js";
-  import { createEventDispatcher } from "svelte";
+  import { bpm, changeBpm, getSelectedClip, timeToPixels } from "../../core/store.js";
+
   const dispatch = createEventDispatcher();
 
   let noteHeight = 20;
@@ -15,8 +14,27 @@
   let startTime;
   let currentPlayTime = 0;
 
+  let midis = [
+    { label: "Ayla - Ayla (Veracocha Remix)", file: "/midi/ayla.mid" },
+    { label: "A-Lusion meets Scope DJ - Between Worlds", file: "/midi/between-worlds.mid" },
+    { label: "Cosmic Gate - Come With Me", file: "/midi/come-with-me.mid" },
+    { label: "Witness Of Wonder - Emotion In Motion (Thrillseekers Remix)", file: "/midi/emotions.mid" },
+    { label: "Flutlicht - Icarus", file: "/midi/icarus.mid" },
+    { label: "Abject - In Our Memories ", file: "/midi/in-our-memories.mid" },
+    { label: "Dash Berlin - Man On The Run (intro)", file: "/midi/man-on-the-run.mid" },
+    { label: "Dash Berlin - Man On The Run (full) ", file: "/midi/man-on-the-run-long.mid" },
+    { label: "Nu NRG - Moon Loves The Sun", file: "/midi/moon-loves-the-sun.mid" },
+    { label: "Nu NRG - Moon Loves The Sun (full)", file: "/midi/moon-loves-the-sun-full.mid" },
+    { label: "System F - Out Of The Blue", file: "/midi/system-f-out-of-e-blue.midi" },
+    { label: "William Orbit - Adagio For Strings", file: "/midi/orbit-adagio.mid" },
+    { label: "B-Front & DV8 - We Will Never Break", file: "/midi/we-will-never-break-wish-outdoor.mid" },
+  ];
+
   onMount(() => {
     audioManager.audioContext.resume();
+
+    parseMidi($getSelectedClip.midiData);
+
     // setupAudioContext();
     // loadMidiFile("/midi/ayla.mid");
     // loadMidiFile("/midi/between-worlds.mid");
@@ -26,7 +44,8 @@
     // loadMidiFile("/midi/in-our-memories.mid");
     // loadMidiFile("/midi/man-on-the-run.mid");
     // loadMidiFile("/midi/man-on-the-run-long.mid");
-    loadMidiFile("/midi/moon-loves-the-sun.mid");
+    // loadMidiFile("/midi/moon-loves-the-sun.mid");
+    // loadMidiFile("/midi/system-f-out-of-the-blue.mid");
     // loadMidiFile("/midi/moon-loves-the-sun-full.mid");
     // loadMidiFile("/midi/orbit-adagio.mid");
     animatePlayhead();
@@ -44,10 +63,7 @@
     return (ticks / ticksPerBeat) * (60000 / bpm);
   }
 
-  function parseMidi(arrayBuffer) {
-    const data = new Uint8Array(arrayBuffer);
-    const parsed = midiManager.parseMidi(data);
-
+  function parseMidi(parsed) {
     notesForDisplay = [];
 
     ticksPerBeat = parsed.header.ticksPerBeat;
@@ -220,6 +236,12 @@
       <div class="flex h-12 items-center gap-2 bg-dark-100 px-2">
         <TextButton text="Play" onClick={() => play()} />
         <TextButton text="Debug" onClick={() => (debug = !debug)} />
+
+        <select class="rounded bg-dark-400 px-1.5 py-2 text-white" on:change={(e) => loadMidiFile(event.target.value)}>
+          {#each midis as midi}
+            <option value={midi.file}>{midi.label}</option>
+          {/each}
+        </select>
       </div>
 
       <div class="relative flex-1">
