@@ -2,7 +2,8 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
   import TextButton from "../ui/TextButton.svelte";
-  import { bpm, changeBpm, getSelectedClip, timeToPixels } from "../../core/store.js";
+  import { bpm, changeBpm, getSelectedClip, timeToPixels, zoomByDelta } from "../../core/store.js";
+  import { noteLabel, ticksToMilliseconds } from "../../core/midi.js";
 
   const dispatch = createEventDispatcher();
 
@@ -29,38 +30,43 @@
     { label: "William Orbit - Adagio For Strings", file: "/midi/orbit-adagio.mid" },
     { label: "B-Front & DV8 - We Will Never Break", file: "/midi/we-will-never-break-wish-outdoor.mid" },
   ];
-
+  let pianoRoll;
+  let noteArea;
   onMount(() => {
     audioManager.audioContext.resume();
-
     parseMidi($getSelectedClip.midiData);
-
-    // setupAudioContext();
-    // loadMidiFile("/midi/ayla.mid");
-    // loadMidiFile("/midi/between-worlds.mid");
-    // loadMidiFile("/midi/come-with-me.mid");
-    // loadMidiFile("/midi/emotions.mid");
-    // loadMidiFile("/midi/icarus.mid");
-    // loadMidiFile("/midi/in-our-memories.mid");
-    // loadMidiFile("/midi/man-on-the-run.mid");
-    // loadMidiFile("/midi/man-on-the-run-long.mid");
-    // loadMidiFile("/midi/moon-loves-the-sun.mid");
-    // loadMidiFile("/midi/system-f-out-of-the-blue.mid");
-    // loadMidiFile("/midi/moon-loves-the-sun-full.mid");
-    // loadMidiFile("/midi/orbit-adagio.mid");
+    scrollToFirstNote();
     animatePlayhead();
   });
 
+  function handleZoom(event) {
+    if (event.shiftKey) {
+      event.preventDefault();
+      zoomByDelta(event.deltaY);
+    }
+  }
+
+  function syncVerticalScroll(e) {
+    if (e.target === pianoRoll) {
+      noteArea.scrollTop = e.target.scrollTop;
+    } else {
+      pianoRoll.scrollTop = e.target.scrollTop;
+    }
+  }
+
+  function scrollToFirstNote() {
+    if (notesForDisplay.length > 0) {
+      const firstNote = notesForDisplay[0];
+      const firstNoteTop = calculateNoteTopPosition(firstNote);
+      noteArea.scrollTop = Math.max(0, firstNoteTop - 100); // Scroll to first note with 100px padding
+    }
+  }
+
   async function loadMidiFile(url) {
-    // TODO: handle errors
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
 
     parseMidi(arrayBuffer);
-  }
-
-  function ticksToMilliseconds(ticks, ticksPerBeat, bpm) {
-    return (ticks / ticksPerBeat) * (60000 / bpm);
   }
 
   function parseMidi(parsed) {
@@ -88,7 +94,7 @@
           notesForDisplay.push({
             track: trackName,
             note: event.noteNumber,
-            label: getNoteLabel(event.noteNumber),
+            label: noteLabel(event.noteNumber),
             velocity: event.velocity,
             start: wallTimeInMilliseconds,
             tickOffset: wallTime,
@@ -196,12 +202,6 @@
     return [1, 3, 6, 8, 10].includes(key); // These represent the black keys on a piano (C#, D#, F#, G#, A#)
   }
 
-  function getNoteLabel(noteNumber) {
-    const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-    const octave = Math.floor(noteNumber / 12) - 1;
-    return `${noteNames[noteNumber % 12]}${octave}`;
-  }
-
   let highlightedNote = "";
 
   let debug = false;
@@ -218,15 +218,19 @@
       </div>
 
       <div class="relative flex-1">
-        <div class="piano-roll absolute inset-0 h-full min-h-0 min-w-0 flex-1 overflow-y-scroll bg-gray-700">
+        <div
+          on:scroll={syncVerticalScroll}
+          bind:this={pianoRoll}
+          class="piano-roll absolute inset-0 h-full min-h-0 min-w-0 flex-1 overflow-y-scroll bg-gray-700"
+        >
           {#each notesArray as noteNumber}
             <button
-              on:mouseenter={() => (highlightedNote = getNoteLabel(noteNumber))}
+              on:mouseenter={() => (highlightedNote = noteLabel(noteNumber))}
               on:mousedown={() => dispatch("note:start", { note: noteNumber })}
               on:mouseup={() => dispatch("note:end", { note: noteNumber })}
               class="piano-key hover:opacity-80 active:opacity-70 {isBlackKey(noteNumber) ? 'black-key' : 'white-key'}"
             >
-              <span class="inline-block pr-2 font-medium">{getNoteLabel(noteNumber)}</span>
+              <span class="inline-block pr-2 font-medium">{noteLabel(noteNumber)}</span>
             </button>
           {/each}
         </div>
@@ -245,13 +249,18 @@
       </div>
 
       <div class="relative flex-1">
-        <div class="note-area absolute inset-0 overflow-scroll bg-dark-700/50">
+        <div
+          on:scroll={syncVerticalScroll}
+          on:wheel={handleZoom}
+          bind:this={noteArea}
+          class="note-area absolute inset-0 overflow-scroll bg-dark-700/50"
+        >
           <div class="playhead" style="left: {$timeToPixels(currentPlayTime / 10)}px"></div>
           {#each notesForDisplay as note}
             <div
               aria-hidden="true"
               on:mouseenter={() => (highlightedNote = note.label)}
-              class="note flex cursor-pointer items-center justify-center hover:opacity-50"
+              class="note flex cursor-pointer select-none items-center justify-center hover:opacity-50"
               style="left: {$timeToPixels(note.start / 10000)}px; top: {calculateNoteTopPosition(
                 note,
               )}px; width: {$timeToPixels(note.duration / 10000)}px;"
