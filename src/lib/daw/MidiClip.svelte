@@ -1,12 +1,10 @@
 <script>
   import { bpm, selectClip, timeToPixels, toggleView } from "../../core/store";
   import { onMount } from "svelte";
-  import { get } from "svelte/store";
 
   export let clip;
 
   let notes = [];
-  let highestTime = 0;
   let loadingState = "loaded";
 
   onMount(() => {
@@ -58,10 +56,6 @@
           }
         }
       });
-
-      if (wallTimeInMilliseconds > highestTime) {
-        highestTime = wallTimeInMilliseconds;
-      }
     });
   }
 
@@ -112,11 +106,11 @@
     <div class="absolute right-1 top-1 inline-block rounded bg-white/10 p-0.5 text-right text-[10px] leading-none">
       {clip.duration.toFixed(2)}s
     </div>
-    <div class="relative h-full">
+    <div class="relative h-full w-full">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="h-full w-full"
-        viewBox={`0 0 ${$timeToPixels(highestTime / 1000)} 127`}
+        viewBox={`0 0 ${$timeToPixels(clip.duration)} 127`}
         preserveAspectRatio="none"
         fill="currentColor"
       >
