@@ -56,8 +56,7 @@
   import Browser from "./lib/daw/Browser.svelte";
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
   import Synth from "./lib/daw/Synth.svelte";
-  import { createMidiClipFromUrl } from "./core/midi.js";
-  import AudioVisualizer from "./lib/daw/AudioVisualizer.svelte";
+  import { createMidiClipFromUrl, midiNoteToFrequency } from "./core/midi.js";
 
   let synth;
   let dialog;
@@ -76,7 +75,7 @@
 
   function handleZoom(event) {
     if (event.shiftKey) {
-      event.preventDefault(); // Prevent the page from scrolling horizontally
+      event.preventDefault();
       zoomByDelta(event.deltaY);
     }
   }
@@ -175,11 +174,11 @@
   }
 
   function createMidiTrack() {
-    createMidiClipFromUrl("/midi/moon-loves-the-sun.mid", "Out of the blue").then((clip) => {
+    createMidiClipFromUrl("/midi/silentium.mid", "Midi notes").then((clip) => {
       addTrack({
         id: crypto.randomUUID(),
         type: "instrument",
-        name: "Out of the blue",
+        name: "Midi notes",
         isMuted: false,
         isSolo: false,
         clips: [clip],
@@ -285,10 +284,6 @@
         </div>
       </div>
     </div>
-  </section>
-
-  <section>
-    <AudioVisualizer />
   </section>
 
   <!-- Timeline -->
