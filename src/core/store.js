@@ -1,3 +1,36 @@
+/**
+ * @typedef {Object} Track
+ * @property {string} id - Unique identifier for the track.
+ * @property {string} name - Name of the track.
+ * @property {'audio'|'midi'} type - Type of the track (e.g., 'audio', 'midi').
+ * @property {boolean} isMuted - Whether the track is muted.
+ * @property {boolean} isSolo - Whether the track is soloed.
+ * @property {Clip[]} clips - Array of clips in the track.
+ */
+
+/**
+ * @typedef {Object} Clip
+ * @property {string} id - Unique identifier for the clip.
+ * @property {"sample"|"midi"} type - Type of the clip (e.g., 'sample', 'midi').
+ * @property {string} name - Name of the clip.
+ * @property {string} audioUrl - URL of the audio file (for sample clips).
+ * @property {number} startTime - Start time of the clip in seconds.
+ * @property {number} duration - Duration of the clip in seconds.
+ * @property {AudioBuffer} [audioBuffer] - Audio buffer for the clip (if preloaded).
+ * @property {MidiNote[]} [notes] - Array of midi notes (for midi clips).
+ * @property {MidiData} [midiData] - Parsed midi data
+ */
+
+/**
+ * @typedef {Object} MidiNote
+ * @property {string} track - Track name
+ * @property {string} label - Note label (e.g., 'C4', 'D#5').
+ * @property {number} note - The MIDI note number. (0 - 127)
+ * @property {number} velocity - The velocity of the note (0 - 127)
+ * @property {number} start - The start time of the event in milliseconds.
+ * @property {number} duration - The duration of the event in milliseconds.
+ */
+
 // noinspection JSUnusedGlobalSymbols
 
 import { derived, get, writable } from "svelte/store";
