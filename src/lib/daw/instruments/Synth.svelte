@@ -1,7 +1,7 @@
 <!-- SynthModal.svelte -->
 <script>
-  import Modal from "../ui/Modal.svelte";
-  import { audioManager } from "../../core/audio.js";
+  import Modal from "../../ui/Modal.svelte";
+  import { audioManager } from "../../../core/audio.js";
 
   export let modal;
 

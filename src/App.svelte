@@ -50,7 +50,7 @@
   import MixerPanel from "./lib/daw/MixerPanel.svelte";
   import Browser from "./lib/daw/Browser.svelte";
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
-  import Synth from "./lib/daw/Synth.svelte";
+  import Synth from "./lib/daw/instruments/Synth.svelte";
   import { createMidiClipFromUrl, midiNoteToFrequency } from "./core/midi.js";
   import AudioVisualizer from "./lib/daw/AudioVisualizer.svelte";
   import { Cube } from "phosphor-svelte";
