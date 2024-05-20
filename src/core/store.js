@@ -65,7 +65,11 @@ export const demoMidiFiles = writable([
 ]);
 
 export const loopRegion = writable({ start: 0, end: 0, active: false });
-export const playbackState = writable({ playing: false, currentTime: 0 });
+export const playbackState = writable({
+  playing: false,
+  currentTime: 0,
+  accumulatedTime: 0,
+});
 
 export const masterVolume = writable(loadFromLocalStorage("masterVolume", 1));
 export const masterPan = writable(loadFromLocalStorage("masterPan", 0));
@@ -95,11 +99,8 @@ tracks.subscribe((value) => {
 tracks.subscribe((value) => {
   if (get(playbackState).playing) {
     clearScheduledClips();
-    // TODO: bug here, clips are not scheduled correctly
-    scheduleAllClips(audioManager.audioContext.currentTime);
   }
 });
-
 masterVolume.subscribe((value) => saveToLocalStorage("masterVolume", value));
 masterPan.subscribe((value) => saveToLocalStorage("masterPan", value));
 bpm.subscribe((value) => saveToLocalStorage("bpm", value));
@@ -153,58 +154,53 @@ const instruments = new Map();
 
 let frame;
 
-const scheduleClipPlayback = (clip, startingFrom) => {
-  const currentAudioTime = audioManager.audioContext.currentTime;
-  let clipStartTime = currentAudioTime + clip.startTime;
-  let offset = 0;
-
-  if (startingFrom > clip.startTime && startingFrom < clip.startTime + clip.duration) {
-    clipStartTime = currentAudioTime + (startingFrom - clip.startTime);
-    offset = startingFrom - clip.startTime;
-  }
-
-  if (clip.type === "audio" && clip.audioBuffer) {
-    const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
-
-    source.start(clipStartTime, offset);
-    sources.set(clip.id, { source, gainNode });
-    return;
-  }
-
-  if (clip.type === "midi" && clip.midiData) {
-    const instrument = new Instrument(audioManager.audioContext, audioManager.mixer);
-
-    instrument.setVolume(0.1);
-    let notes = extractNoteEvents(clip.midiData);
-
-    notes.forEach((midiEvent) => {
-      let eventStart = clip.startTime + midiEvent.start / 1000;
-      if (eventStart >= startingFrom) {
-        let time = currentAudioTime + (eventStart - startingFrom);
-        instrument.playNote(midiEvent.note, time, midiEvent.duration / 1000);
-      }
-    });
-    instruments.set(clip.id, { instrument });
-  }
-};
-
 const clearScheduledClips = () => {
+  console.log("Clearing scheduled clips");
+
   sources.forEach(({ source }) => source.stop());
   sources.clear();
   instruments.forEach(({ instrument }) => instrument.stop());
   instruments.clear();
 };
 
-const scheduleAllClips = (startingFrom) => {
+const scheduleAllClips = (currentTime) => {
   const currentTracks = get(tracks);
 
   currentTracks.forEach((track) => {
     track.clips.forEach((clip) => {
-      const noOtherSolo = !currentTracks.some((t) => t.isSolo);
+      if (track.isMuted === false && (track.isSolo || !currentTracks.some((t) => t.isSolo))) {
+        let when =
+          clip.startTime > currentTime
+            ? audioManager.audioContext.currentTime + (clip.startTime - currentTime)
+            : audioManager.audioContext.currentTime;
+        let offset = clip.startTime < currentTime ? currentTime - clip.startTime : 0;
 
-      // TODO: Explain better what this does, basically, checks if track should be played
-      if (track.isMuted === false && (track.isSolo || noOtherSolo)) {
-        scheduleClipPlayback(clip, startingFrom);
+        console.log(clip);
+
+        if (clip.type === "audio" && clip.audioBuffer) {
+          console.log("Scheduling audio clip", clip.name, "at", when, "with offset", offset);
+          const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
+          // Start the audio clip at 'when', playing from 'offset' in the buffer
+          source.start(when, offset);
+          sources.set(clip.id, { source, gainNode });
+        }
+
+        // MIDI Clips: Schedule notes that are supposed to start after the current time
+        if (clip.type === "midi" && clip.midiData) {
+          const instrument = new Instrument(audioManager.audioContext, audioManager.mixer);
+          instrument.setVolume(0.1);
+          let notes = extractNoteEvents(clip.midiData);
+
+          notes.forEach((midiEvent) => {
+            const eventStart = clip.startTime + midiEvent.start / 1000;
+            if (eventStart >= currentTime) {
+              const eventTime = audioManager.audioContext.currentTime + (eventStart - currentTime);
+              instrument.playNote(midiEvent.note, eventTime, midiEvent.duration / 1000);
+            }
+          });
+
+          instruments.set(clip.id, { instrument });
+        }
       }
     });
   });
@@ -212,47 +208,55 @@ const scheduleAllClips = (startingFrom) => {
 
 export const startPlayback = async () => {
   await audioManager.audioContext.resume();
-
   await loadAudioBuffersForAllTracks();
 
-  const currentState = get(playbackState);
-  const startTime = audioManager.audioContext.currentTime - (currentState.pausedAt || 0);
-  playbackState.set({ playing: true, currentTime: startTime, pausedAt: null });
+  playbackState.update((state) => {
+    scheduleAllClips(state.accumulatedTime);
+    state.playing = true;
+    return state;
+  });
 
-  scheduleAllClips(currentState.pausedAt || startTime);
-
-  function tick() {
-    playbackState.update((state) => ({
-      ...state,
-      currentTime: audioManager.audioContext.currentTime - startTime,
-    }));
-
-    frame = requestAnimationFrame(tick);
-  }
-
-  tick();
-};
-
-export const stopPlayback = () => {
-  clearScheduledClips();
-  playbackState.update((state) => ({
-    ...state,
-    playing: false,
-    currentTime: 0,
-    pausedAt: null,
-  }));
-  cancelAnimationFrame(frame);
+  const startCurrentTime = audioManager.audioContext.currentTime;
+  frame = requestAnimationFrame(function updateCurrentTime() {
+    playbackState.update((state) => {
+      state.currentTime = audioManager.audioContext.currentTime - startCurrentTime + state.accumulatedTime;
+      return state;
+    });
+    frame = requestAnimationFrame(updateCurrentTime);
+  });
 };
 
 export const pausePlayback = () => {
   clearScheduledClips();
-  const currentTime = audioManager.audioContext.currentTime;
-  playbackState.update((state) => ({
-    ...state,
-    playing: false,
-    pausedAt: state.currentTime,
-  }));
   cancelAnimationFrame(frame);
+  playbackState.update((state) => {
+    state.accumulatedTime = state.currentTime;
+    state.playing = false;
+    return state;
+  });
+};
+
+export const stopPlayback = () => {
+  clearScheduledClips();
+  cancelAnimationFrame(frame);
+  playbackState.set({
+    playing: false,
+    currentTime: 0,
+    accumulatedTime: 0,
+  });
+};
+
+export const seekToTime = (time) => {
+  clearScheduledClips();
+  cancelAnimationFrame(frame);
+  playbackState.update((state) => {
+    state.currentTime = time;
+    state.accumulatedTime = time;
+    if (state.playing) {
+      startPlayback(time);
+    }
+    return state;
+  });
 };
 
 export const enableLooping = () => {
@@ -461,10 +465,6 @@ export const changeClipDuration = (trackId, clipId, newDuration) => {
         : track,
     ),
   );
-};
-
-export const seekToTime = (time) => {
-  playbackState.update((state) => ({ ...state, currentTime: time }));
 };
 
 // nudge to the left or right by a certain number ms

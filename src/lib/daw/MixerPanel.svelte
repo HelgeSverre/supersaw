@@ -7,11 +7,12 @@
   import { onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
   import ADSR from "../ui/ADSR.svelte";
+  import Kick from "./instruments/Kick.svelte";
 
   const openHeight = 350;
   const closedHeight = 30;
 
-  let isMixerOpen = true;
+  let isMixerOpen = false;
   const mixerHeight = tweened(isMixerOpen ? openHeight : closedHeight, {
     duration: 50,
     easing: cubicInOut,
@@ -144,6 +145,9 @@
 
     <div>
       <ADSR />
+    </div>
+    <div>
+      <Kick />
     </div>
   </div>
 </div>
