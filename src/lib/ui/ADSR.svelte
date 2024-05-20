@@ -147,9 +147,9 @@
     <!-- Envelope Curve -->
     <path
       d={`M 0 ${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${width} ${height} Z`}
-      fill="rgba(255, 255, 255, 0.5)"
-      stroke="white"
-      stroke-width="1"
+      fill="rgba(255, 255, 255, 0.25)"
+      stroke="silver"
+      stroke-width="2"
     />
 
     <!-- Attack Control Point -->
@@ -159,8 +159,8 @@
       cy="0"
       r="5"
       stroke-width="1"
-      stroke="white"
-      fill="silver"
+      stroke="silver"
+      fill="white"
       class="cursor-pointer"
       on:mousedown={() => startDrag("attack")}
     />
@@ -172,8 +172,8 @@
       cy={sustainY}
       r="5"
       stroke-width="1"
-      stroke="white"
-      fill="silver"
+      stroke="silver"
+      fill="white"
       class="cursor-pointer"
       on:mousedown={() => startDrag("decay")}
     />
@@ -185,8 +185,8 @@
       cy={sustainY}
       r="5"
       stroke-width="1"
-      stroke="white"
-      fill="silver"
+      stroke="silver"
+      fill="white"
       class="cursor-pointer"
       on:mousedown={() => startDrag("sustain")}
     />
@@ -198,8 +198,8 @@
       cy={height}
       r="5"
       stroke-width="1"
-      stroke="white"
-      fill="silver"
+      stroke="silver"
+      fill="white"
       class="cursor-pointer"
       on:mousedown={() => startDrag("release")}
     />
