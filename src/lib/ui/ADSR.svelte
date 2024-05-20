@@ -1,7 +1,6 @@
 <script>
   import { onMount } from "svelte";
 
-  export let amount = 0.8;
   export let attack = 0.1;
   export let decay = 0.1;
   export let sustain = 0.5;
@@ -58,46 +57,50 @@
 <div class="flex flex-col rounded border border-dark-100 bg-dark-700 p-2">
   <div class="mb-2 flex w-full flex-row gap-2">
     <div class="flex flex-col gap-1">
-      <label class="text-xs text-white/50">Attack</label>
+      <label for="attack" class="text-xs text-white/50">Attack</label>
       <input
-        class="w-full appearance-none border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
+        class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
         type="number"
         min="0.0"
         max="1"
         step="0.01"
+        name="attack"
         bind:value={attack}
       />
     </div>
     <div class="flex flex-col gap-1">
-      <label class="text-xs text-white/50">Decay</label>
+      <label for="decay" class="text-xs text-white/50">Decay</label>
       <input
-        class="w-full appearance-none border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
+        class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
         type="number"
         min="0.0"
         max="1"
         step="0.01"
+        name="decay"
         bind:value={decay}
       />
     </div>
     <div class="flex flex-col gap-1">
-      <label class="text-xs text-white/50">Sustain</label>
+      <label for="sustain" class="text-xs text-white/50">Sustain</label>
       <input
-        class="w-full appearance-none border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
+        class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
         type="number"
         min="0.0"
         max="1"
         step="0.01"
+        name="sustain"
         bind:value={sustain}
       />
     </div>
     <div class="flex flex-col gap-1">
-      <label class="text-xs text-white/50">Release</label>
+      <label for="release" class="text-xs text-white/50">Release</label>
       <input
-        class="w-full appearance-none border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
+        class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
         type="number"
         min="0.0"
         max="1"
         step="0.01"
+        name="release"
         bind:value={release}
       />
     </div>
@@ -202,3 +205,16 @@
     />
   </svg>
 </div>
+
+<style>
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"]:focus {
+    outline: none;
+    border-color: white;
+    transition: border-color 100ms ease-out;
+  }
+</style>
