@@ -1,8 +1,8 @@
 <script>
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
-  import { bpm, changeBpm, getSelectedClip, playbackState, timeToPixels, zoomByDelta } from "../../core/store.js";
-  import { extractNoteEvents, midiNoteToFrequency, noteLabel, ticksToMilliseconds } from "../../core/midi.js";
+  import { getSelectedClip, playbackState, timeToPixels, zoomByDelta } from "../../core/store.js";
+  import { extractNoteEvents, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
 
   const dispatch = createEventDispatcher();
 
@@ -21,7 +21,6 @@
     audioManager.audioContext.resume();
     notesForDisplay = extractNoteEvents($getSelectedClip.midiData);
     scrollToFirstNote();
-    animatePlayhead();
   });
 
   function handleZoom(event) {
@@ -45,54 +44,6 @@
       const firstNoteTop = calculateNoteTopPosition(firstNote);
       noteArea.scrollTop = Math.max(0, firstNoteTop - 100); // Scroll to first note with 100px padding
     }
-  }
-
-  function parseMidi(parsed) {
-    return;
-    ticksPerBeat = parsed.header.ticksPerBeat;
-
-    parsed.tracks.forEach((track) => {
-      let wallTime = 0;
-      let wallTimeInMilliseconds = 0;
-
-      let trackName = track.find((event) => event.type === "trackName")?.text || "Unnamed";
-
-      track.forEach((event) => {
-        // Timing
-        wallTime += event.deltaTime;
-        wallTimeInMilliseconds = ticksToMilliseconds(wallTime, ticksPerBeat, $bpm);
-
-        if (event.type === "setTempo") {
-          let newBpm = 60000000 / event.microsecondsPerBeat;
-          changeBpm(Math.floor(newBpm));
-        }
-
-        if (event.type === "noteOn") {
-          notesForDisplay.push({
-            track: trackName,
-            note: event.noteNumber,
-            label: noteLabel(event.noteNumber),
-            velocity: event.velocity,
-            start: wallTimeInMilliseconds,
-            tickOffset: wallTime,
-            duration: 0, // will be changed later
-          });
-        }
-
-        if (event.type === "noteOff") {
-          let note = notesForDisplay
-
-            .filter((note) => note.start < wallTimeInMilliseconds && note.duration === 0)
-            .find((note) => note.note === event.noteNumber);
-
-          note.duration = wallTimeInMilliseconds - note?.start;
-        }
-      });
-
-      if (wallTime > highestTime) {
-        highestTime = wallTime;
-      }
-    });
   }
 
   function startNote(note, time, duration) {
@@ -136,31 +87,6 @@
     });
 
     return oscillators;
-  }
-
-  function animatePlayhead(dt) {
-    currentPlayTime = audioManager.audioContext.currentTime - startTime;
-
-    requestAnimationFrame(animatePlayhead);
-  }
-
-  function play() {
-    startTime = audioManager.audioContext.currentTime;
-
-    notesForDisplay.forEach((note) => {
-      const startTimeInSeconds = audioManager.audioContext.currentTime + note.start / 1000;
-      const durationInSeconds = note.duration / 1000;
-
-      // setTimeout(() => {
-      //   dispatch("note:start", { note: note.note });
-      //
-      //   setTimeout(() => {
-      //     dispatch("note:end", { note: note.note });
-      //   }, durationInSeconds * 1000);
-      // }, startTimeInSeconds * 1000);
-
-      const noteInstance = startNote(note.note, startTimeInSeconds, durationInSeconds);
-    });
   }
 
   function calculateNoteTopPosition(note) {

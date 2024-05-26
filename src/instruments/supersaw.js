@@ -1,37 +1,41 @@
-export class Piano {
+export class Supersaw {
   constructor(audioContext, mixer) {
     this.audioContext = audioContext;
     this.mixer = mixer;
     this.output = this.audioContext.createGain();
     this.output.connect(this.mixer);
     this.notes = new Map();
+    this.adsr = { attack: 0.001, decay: 0.1, sustain: 0.3, release: 0.5 };
+    this.numOscillators = 4;
+    this.detuneAmount = 22;
   }
 
-  createOscillators(frequency, time) {
-    const frequencies = [frequency, frequency * 2, frequency * 3];
+  createSupersawOscillators(frequency, time) {
     const oscillators = [];
 
-    frequencies.forEach((freq) => {
+    for (let i = 0; i < this.numOscillators; i++) {
       const oscillator = this.audioContext.createOscillator();
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(freq, time);
+      oscillator.type = "sawtooth";
+      oscillator.frequency.setValueAtTime(frequency, time);
+      oscillator.detune.setValueAtTime((i - (this.numOscillators - 1) / 2) * this.detuneAmount, time);
+      oscillator.volume = 1 / this.numOscillators;
       oscillators.push(oscillator);
-    });
+    }
 
     return oscillators;
   }
 
-  applyEnvelope(envelope, attackTime, decayTime, sustainLevel, releaseTime, startTime) {
+  applyEnvelope(envelope, startTime) {
+    const { attack, decay, sustain, release } = this.adsr;
     envelope.gain.setValueAtTime(0, startTime);
-    envelope.gain.linearRampToValueAtTime(1, startTime + attackTime);
-    envelope.gain.linearRampToValueAtTime(sustainLevel, startTime + attackTime + decayTime);
-
-    return { attackTime, decayTime, sustainLevel, releaseTime };
+    envelope.gain.linearRampToValueAtTime(1, startTime + attack);
+    envelope.gain.linearRampToValueAtTime(sustain, startTime + attack + decay);
+    return { release };
   }
 
   startNote(frequency) {
     const startTime = this.audioContext.currentTime;
-    const oscillators = this.createOscillators(frequency, startTime);
+    const oscillators = this.createSupersawOscillators(frequency, startTime);
     const envelope = this.audioContext.createGain();
     envelope.connect(this.output);
 
@@ -40,57 +44,49 @@ export class Piano {
       oscillator.start(startTime);
     });
 
-    const { attackTime, decayTime, sustainLevel, releaseTime } = this.applyEnvelope(
-      envelope,
-      0.1,
-      0.3,
-      0.7,
-      0.5,
-      startTime,
-    );
+    const { release } = this.applyEnvelope(envelope, startTime);
 
-    this.notes.set(frequency, { oscillators, envelope, releaseTime });
+    this.notes.set(frequency, { oscillators, envelope, release });
   }
 
   stopNote(frequency) {
     if (this.notes.has(frequency)) {
-      const { oscillators, envelope, releaseTime } = this.notes.get(frequency);
+      const { oscillators, envelope, release } = this.notes.get(frequency);
       const now = this.audioContext.currentTime;
 
       envelope.gain.cancelScheduledValues(now);
       envelope.gain.setValueAtTime(envelope.gain.value, now);
-      envelope.gain.linearRampToValueAtTime(0, now + releaseTime);
+      envelope.gain.linearRampToValueAtTime(0, now + release);
 
-      oscillators.forEach((oscillator) => oscillator.stop(now + releaseTime));
+      oscillators.forEach((oscillator) => oscillator.stop(now + release));
 
       this.notes.delete(frequency);
     }
   }
 
   playNote(frequency, time, duration) {
-    const oscillators = this.createOscillators(frequency, time);
+    const oscillators = this.createSupersawOscillators(frequency, time);
     const envelope = this.audioContext.createGain();
     envelope.connect(this.output);
-    const key = `${frequency}:${time}:${duration}`;
 
     oscillators.forEach((oscillator) => {
       oscillator.connect(envelope);
       oscillator.start(time);
-      oscillator.stop(time + duration + 0.5);
-      oscillator.onended = () => this.notes.delete(key);
+      oscillator.stop(time + duration + 0.1);
     });
 
-    const attack = 0.01;
-    const decay = 0.05;
-    const sustain = 0.3;
-    const release = 0.5;
-
+    const { attack, decay, sustain, release } = this.adsr;
     envelope.gain.setValueAtTime(0.0001, time);
     envelope.gain.linearRampToValueAtTime(1, time + attack);
     envelope.gain.exponentialRampToValueAtTime(sustain, time + attack + decay);
     envelope.gain.linearRampToValueAtTime(0.0001, time + duration + release);
 
+    let key = `${frequency}:${time}:${duration}`;
     this.notes.set(key, { oscillators, envelope });
+
+    oscillators.forEach((oscillator) => {
+      oscillator.onended = () => this.notes.delete(key);
+    });
   }
 
   clearScheduledNotes() {
@@ -109,5 +105,9 @@ export class Piano {
 
   setVolume(volume) {
     this.output.gain.value = volume;
+  }
+
+  setADSR(attack, decay, sustain, release) {
+    this.adsr = { attack, decay, sustain, release };
   }
 }

@@ -5,7 +5,6 @@
     changeTrackName,
     createClipFromUrl,
     moveClipToTime,
-    openTrackInstrument,
     pixelsPerBeat,
     pixelsToTime,
     removeTrack,
@@ -16,6 +15,7 @@
   import { X } from "lucide-svelte";
   import MidiClip from "./MidiClip.svelte";
   import { createMidiClipFromFile } from "../../core/midi.js";
+  import { audioManager } from "../../core/audio.js";
 
   export let track;
 
@@ -108,7 +108,7 @@
   class="track flex flex-row gap-2 overflow-hidden rounded-sm border border-dark-100 bg-white/5 {track.isMuted
     ? 'opacity-50'
     : ''}"
-  style="height: 100px; position: relative;"
+  style="height: 150px; position: relative;"
 >
   <!-- Track header -->
   <div class="track-header flex w-60 shrink-0 flex-col border-r-2 border-r-dark-900 bg-dark-300">
@@ -122,9 +122,9 @@
         {track.name}
       </button>
 
-      <button on:click={() => openTrackInstrument(track.id)}>
+      <span>
         {track.type === "audio" ? "🔈" : "🎹"}
-      </button>
+      </span>
 
       <button class="p-2 hover:bg-dark-100" on:click={() => removeTrack(track.id)}>
         <X size="14" />
@@ -153,6 +153,16 @@
       >
         Solo
       </button>
+
+      <select
+        class="w-full rounded border border-dark-200 bg-dark-700 px-2 py-1"
+        bind:value={track.instrument}
+        on:change={(e) => (track.instrument = e.target.value)}
+      >
+        {#each audioManager.instruments.keys() as instrument}
+          <option value={instrument}>{instrument}</option>
+        {/each}
+      </select>
     </div>
   </div>
 

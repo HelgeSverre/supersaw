@@ -41,10 +41,9 @@ import {
   createTranceEDMPattern,
 } from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
-import { Synth } from "../instruments/synth.js";
 import { loadFromLocalStorage, saveToLocalStorage } from "./local.js";
-import { extractNoteEvents } from "./midi.js";
-import { Piano } from "../instruments/piano.js";
+import { extractNoteEvents, midiNoteToFrequency } from "./midi.js";
+import { Synth } from "../instruments/synth.js";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
@@ -185,15 +184,14 @@ const scheduleAllClips = (currentTime) => {
 
         // MIDI Clips: Schedule notes that are supposed to start after the current time
         if (clip.type === "midi" && clip.midiData) {
-          const instrument = new Synth(audioManager.audioContext, audioManager.mixer);
-          instrument.setVolume(0.1);
+          const instrument = audioManager.getInstrument(track.instrument);
           let notes = extractNoteEvents(clip.midiData);
 
           notes.forEach((midiEvent) => {
             const eventStart = clip.startTime + midiEvent.start / 1000;
             if (eventStart >= currentTime) {
               const eventTime = audioManager.audioContext.currentTime + (eventStart - currentTime);
-              instrument.playNote(midiEvent.note, eventTime, midiEvent.duration / 1000);
+              instrument.playNote(midiNoteToFrequency(midiEvent.note), eventTime, midiEvent.duration / 1000);
             }
           });
 
@@ -286,36 +284,12 @@ export const loadDefaultTracks = async () => {
   ]);
 };
 
-export const openTrackInstrument = async (trackId) => {
-  const track = get(tracks).find((track) => track.id === trackId);
-
-  if (!track) {
-    return;
-  }
-
-  if (track.type !== "instrument") {
-    return;
-  }
-
-  if (track.instrument === null) {
-    track.instrument = new Piano(audioManager.audioContext, audioManager.mixer);
-
-    tracks.update((allTracks) => {
-      return allTracks.map((t) => (t.id === trackId ? track : t));
-    });
-  }
-
-  selectedInstrument.set(track.instrument);
-
-  switchView("instrument");
-};
-
-export const createInstrumentTrack = async (instrument, trackName = "New instrument track") => {
+export const createInstrumentTrack = async (trackName = "New instrument track") => {
   addTrack({
     id: crypto.randomUUID(),
     name: trackName,
     type: "instrument",
-    instrument: instrument,
+    instrument: "synth",
     isMuted: false,
     isSolo: false,
     clips: [],

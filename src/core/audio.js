@@ -1,7 +1,13 @@
+import { Synth } from "../instruments/synth.js";
+import { Piano } from "../instruments/piano.js";
+import { Pad } from "../instruments/pad.js";
+import { Supersaw } from "../instruments/supersaw.js";
+
 class AudioManager {
   audioContext;
   mixer;
   sources = {};
+  instruments = {};
 
   cache = {};
 
@@ -14,7 +20,21 @@ class AudioManager {
 
     this.mixer.connect(this.panNode);
     this.panNode.connect(this.audioContext.destination);
+
+    this.setupInstruments();
   }
+
+  setupInstruments = () => {
+    this.instruments = new Map();
+    this.instruments.set("synth", new Synth(this.audioContext, this.mixer));
+    this.instruments.set("piano", new Piano(this.audioContext, this.mixer));
+    this.instruments.set("pad", new Pad(this.audioContext, this.mixer));
+    this.instruments.set("supersaw", new Supersaw(this.audioContext, this.mixer));
+  };
+
+  getInstrument = (name) => {
+    return this.instruments.get(name);
+  };
 
   loadAudioBuffer = async (url) => {
     if (this.cache[url]) {

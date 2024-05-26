@@ -52,25 +52,13 @@
   import Browser from "./lib/daw/Browser.svelte";
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
   import Synth from "./lib/daw/instruments/Synth.svelte";
-  import { createMidiClipFromUrl, midiNoteToFrequency } from "./core/midi.js";
+  import { createMidiClipFromUrl } from "./core/midi.js";
   import AudioVisualizer from "./lib/daw/AudioVisualizer.svelte";
   import { Cube } from "phosphor-svelte";
   import DesignSystem from "./lib/ui/DesignSystem.svelte";
+  import Instrument from "./lib/daw/instruments/Instrument.svelte";
 
-  let synth;
   let dialog;
-
-  onMount(async () => {
-    // dialog.showModal();
-  });
-
-  function handleNoteStart(event) {
-    synth.startNote(midiNoteToFrequency(event.detail.note), event.detail.note);
-  }
-
-  function handleNoteEnd(event) {
-    synth.stopNote(event.detail.note);
-  }
 
   function handleZoom(event) {
     if (event.shiftKey) {
@@ -270,11 +258,11 @@
             <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />
             <IconButton icon={Warehouse} onClick={createDummyHouseTracks} />
           </SegmentGroup>
+          <IconButton icon={KeyboardMusic} onClick={() => dialog.showModal()} />
 
           <SegmentGroup>
             <IconButton icon={Cube} onClick={() => switchView("playground")} />
             <IconButton icon={$currentView === "timeline" ? ListMusic : Music} onClick={() => toggleView()} />
-            <IconButton icon={KeyboardMusic} onClick={() => dialog.showModal()} />
             <IconButton icon={Plus} onClick={createMidiTrack} />
             <IconButton icon={Plus} onClick={createInstrumentTrack} />
             <IconButton icon={Trash} onClick={clearTracks} />
@@ -286,7 +274,7 @@
   </section>
 
   <!-- Timeline -->
-  {#if $currentView == "timeline" && $tracks.length}
+  {#if $currentView === "timeline" && $tracks.length}
     <section
       class="relative h-full overflow-hidden"
       class:select-none={dragging}
@@ -337,21 +325,23 @@
         </div>
       </div>
     </section>
-  {:else if $currentView == "midi"}
+  {:else if $currentView === "midi"}
     <section class="relative h-full overflow-hidden">
-      <MidiEditor on:note:start={handleNoteStart} on:note:end={handleNoteEnd} />
+      <MidiEditor />
     </section>
-  {:else if $currentView == "instrument"}
+  {:else if $currentView === "instrument"}
     <div class="m-8 flex flex-1 items-center justify-center">
       <Synth />
     </div>
-  {:else if $currentView == "playground"}
+  {:else if $currentView === "playground"}
     <DesignSystem />
   {:else}
     <div class="m-8 flex flex-1 items-center justify-center">
       <div class="text-center text-sm text-dark-100">No tracks</div>
     </div>
   {/if}
+
+  <Instrument bind:modal={dialog} />
 
   <MixerPanel />
 </main>
