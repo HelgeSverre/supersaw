@@ -57,6 +57,7 @@
   import { Cube } from "phosphor-svelte";
   import DesignSystem from "./lib/ui/DesignSystem.svelte";
   import Instrument from "./lib/daw/instruments/Instrument.svelte";
+  import Spectrogram from "./lib/daw/Spectrogram.svelte";
 
   let dialog;
 
@@ -96,6 +97,10 @@
       } else {
         startPlayback();
       }
+    }
+
+    if (key === "I" && event.shiftKey) {
+      dialog.showModal();
     }
 
     // Arrow keys - Move playhead left/right by 100 ms, if shift, move by 1 second
@@ -251,6 +256,7 @@
         {/if}
 
         <AudioVisualizer />
+        <Spectrogram />
 
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
           <SegmentGroup>

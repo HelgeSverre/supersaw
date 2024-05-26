@@ -9,7 +9,6 @@
   onMount(() => {
     analyser = audioManager.audioContext.createAnalyser();
     audioManager.mixer.connect(analyser);
-    canvas = document.querySelector("canvas");
     canvasCtx = canvas.getContext("2d");
 
     drawAnalyzer();
