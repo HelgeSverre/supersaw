@@ -289,7 +289,7 @@ export const createInstrumentTrack = async (trackName = "New instrument track") 
     id: crypto.randomUUID(),
     name: trackName,
     type: "instrument",
-    instrument: "synth",
+    instrument: "supersaw",
     isMuted: false,
     isSolo: false,
     clips: [],

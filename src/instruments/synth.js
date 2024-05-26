@@ -66,7 +66,7 @@ export class Synth {
     envelope.gain.linearRampToValueAtTime(0.0001, time + duration + 0.1);
 
     let key = `${frequency}:${time}:${duration}`;
-    this.notes.set(key, oscillator);
+    this.notes.set(key, { oscillator });
 
     oscillator.onended = () => this.notes.delete(key);
   }

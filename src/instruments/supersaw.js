@@ -5,24 +5,50 @@ export class Supersaw {
     this.output = this.audioContext.createGain();
     this.output.connect(this.mixer);
     this.notes = new Map();
-    this.adsr = { attack: 0.01, decay: 0.5, sustain: 0.2, release: 0.3 };
-    // this.adsr = { attack: 0.001, decay: 0.1, sustain: 0.05, release: 0.5 };
 
-    this.numOscillators = 4;
+    // this.adsr = { attack: 0.0, decay: 0.0, sustain: 1, release: 0.2 };
+    this.adsr = { attack: 0.01, decay: 0.1, sustain: 1, release: 0.5 };
+
+    this.numOscillators = 8;
     this.reverbAmount = 0.5;
-    this.detuneAmount = 12;
+    this.reverbTime = 2;
+    this.detuneAmount = 20;
 
     this.reverbGain = this.audioContext.createGain();
     this.reverbGain.connect(this.output);
     this.reverbGain.gain.value = this.reverbAmount;
     this.createReverbImpulse();
+    this.createDistortion();
+  }
+
+  oscGain(gain = 1) {
+    return gain / Math.sqrt(this.numOscillators);
+  }
+
+  createDistortion() {
+    this.distortion = this.audioContext.createWaveShaper();
+    this.distortion.curve = this.makeDistortionCurve(800);
+    this.distortion.oversample = "4x"; // "none", "2x", "4x
+    this.distortion.connect(this.reverbGain);
+  }
+
+  makeDistortionCurve(amount) {
+    const k = typeof amount === "number" ? amount : 50;
+    const n_samples = 44100;
+    const curve = new Float32Array(n_samples);
+    const deg = Math.PI / 180;
+    for (let i = 0; i < n_samples; ++i) {
+      const x = (i * 2) / n_samples - 1;
+      curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+    }
+    return curve;
   }
 
   createReverbImpulse() {
     // Reset reverb
     this.reverb = null;
 
-    const length = this.audioContext.sampleRate * 2; // 3 seconds reverb
+    const length = this.audioContext.sampleRate * this.reverbTime;
     const impulse = this.audioContext.createBuffer(2, length, this.audioContext.sampleRate);
     const impulseL = impulse.getChannelData(0);
     const impulseR = impulse.getChannelData(1);
@@ -39,14 +65,12 @@ export class Supersaw {
 
   createSupersawOscillators(frequency, time) {
     const oscillators = [];
-    const phaseOffset = 10; // 10ms phase offset between each oscillator
 
     for (let i = 0; i < this.numOscillators; i++) {
       const oscillator = this.audioContext.createOscillator();
       oscillator.type = "sawtooth";
       oscillator.frequency.setValueAtTime(frequency, time);
       oscillator.detune.setValueAtTime((i - (this.numOscillators - 1) / 2) * this.detuneAmount, time);
-      oscillator.volume = 1 / Math.sqrt(this.numOscillators);
       oscillators.push(oscillator);
     }
 
@@ -55,9 +79,9 @@ export class Supersaw {
 
   applyEnvelope(envelope, startTime) {
     const { attack, decay, sustain, release } = this.adsr;
-    envelope.gain.setValueAtTime(0, startTime);
-    envelope.gain.exponentialRampToValueAtTime(1, startTime + attack);
-    envelope.gain.exponentialRampToValueAtTime(sustain, startTime + attack + decay);
+    envelope.gain.setValueAtTime(0.00001, startTime);
+    envelope.gain.exponentialRampToValueAtTime(this.oscGain(1), startTime + attack);
+    envelope.gain.exponentialRampToValueAtTime(this.oscGain(sustain), startTime + attack + decay);
     return { release };
   }
 
@@ -71,9 +95,14 @@ export class Supersaw {
       envelope.connect(this.reverb);
     }
 
+    if (this.distortion) {
+      envelope.connect(this.distortion);
+    }
+
     oscillators.forEach((oscillator, index) => {
       oscillator.connect(envelope);
-      const phaseOffset = index / 100;
+
+      const phaseOffset = index / 1000 + Math.random() / 1000;
       oscillator.start(startTime + phaseOffset);
     });
 
@@ -106,16 +135,17 @@ export class Supersaw {
       envelope.connect(this.reverb);
     }
 
-    oscillators.forEach((oscillator) => {
+    oscillators.forEach((oscillator, index) => {
       oscillator.connect(envelope);
-      oscillator.start(time);
+      const phaseOffset = index / 1000 + Math.random() / 1000;
+      oscillator.start(time + phaseOffset);
       oscillator.stop(time + duration + 0.1);
     });
 
     const { attack, decay, sustain, release } = this.adsr;
-    envelope.gain.setValueAtTime(0.0001, time);
-    envelope.gain.exponentialRampToValueAtTime(1, time + attack);
-    envelope.gain.exponentialRampToValueAtTime(sustain, time + attack + decay);
+    envelope.gain.setValueAtTime(0.00001, time);
+    envelope.gain.exponentialRampToValueAtTime(this.oscGain(1), time + attack);
+    envelope.gain.exponentialRampToValueAtTime(this.oscGain(sustain), time + attack + decay);
     envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration + release);
 
     let key = `${frequency}:${time}:${duration}`;

@@ -264,7 +264,7 @@
             <IconButton icon={Cube} onClick={() => switchView("playground")} />
             <IconButton icon={$currentView === "timeline" ? ListMusic : Music} onClick={() => toggleView()} />
             <IconButton icon={Plus} onClick={createMidiTrack} />
-            <IconButton icon={Plus} onClick={createInstrumentTrack} />
+            <IconButton icon={Plus} onClick={() => createInstrumentTrack()} />
             <IconButton icon={Trash} onClick={clearTracks} />
             <IconButton icon={Lightbulb} onClick={toggleTheme} />
           </SegmentGroup>
