@@ -41,7 +41,7 @@
     tracks,
     zoomByDelta,
   } from "./core/store.js";
-  import { formatTime } from "./core/utils.js";
+  import { formatTime, formatTimeDuration } from "./core/utils.js";
   import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
   import IconButton from "./lib/ui/IconButton.svelte";
   import TextDisplay from "./lib/ui/TextDisplay.svelte";
@@ -161,7 +161,7 @@
       [startPixels, endPixels] = [endPixels, startPixels];
     }
 
-    // Prevent selection outside of the timeline
+    // Prevent selection outside the timeline
     if (startPixels < 0) {
       startPixels = 0;
     }
@@ -257,11 +257,14 @@
           />
         </SegmentGroup>
 
-        <TextDisplay text={formatTime($playbackState.currentTime)} additionalClasses="tabular-nums" />
-        <TextDisplay
-          text={`${formatTime($loopRegion.start)} - ${formatTime($loopRegion.end)}`}
-          additionalClasses="tabular-nums text-dark-soft"
-        />
+        <TextDisplay text={formatTimeDuration($playbackState.currentTime)} additionalClasses="tabular-nums" />
+
+        {#if $loopRegion.active}
+          <TextDisplay
+            text={`${formatTime($loopRegion.start)} - ${formatTime($loopRegion.end)}`}
+            additionalClasses="tabular-nums text-dark-soft"
+          />
+        {/if}
 
         <AudioVisualizer />
 

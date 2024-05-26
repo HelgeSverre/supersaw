@@ -96,7 +96,6 @@ tracks.subscribe((value) => {
   );
 });
 
-
 masterVolume.subscribe((value) => saveToLocalStorage("masterVolume", value));
 masterPan.subscribe((value) => saveToLocalStorage("masterPan", value));
 bpm.subscribe((value) => saveToLocalStorage("bpm", value));
