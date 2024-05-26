@@ -156,6 +156,7 @@
     const rect = selectionArea.getBoundingClientRect();
     endPixels = event.clientX - rect.left;
 
+    // Ensure startPixels is always the leftmost pixel
     if (startPixels > endPixels) {
       [startPixels, endPixels] = [endPixels, startPixels];
     }
