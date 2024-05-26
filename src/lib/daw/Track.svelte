@@ -5,6 +5,7 @@
     changeTrackName,
     createClipFromUrl,
     moveClipToTime,
+    openTrackInstrument,
     pixelsPerBeat,
     pixelsToTime,
     removeTrack,
@@ -41,8 +42,6 @@
           });
         }
       }
-
-      return;
     }
 
     const data = JSON.parse(event.dataTransfer.getData("text/plain"));
@@ -51,8 +50,12 @@
       const timelineElement = event.currentTarget;
       const timelineRect = timelineElement.getBoundingClientRect();
       const relativeX = event.clientX - timelineRect.left;
+      let newOffset = relativeX - data.dragStartX;
+      if (newOffset < 0) newOffset = 0;
 
-      const newStartTime = $pixelsToTime(relativeX);
+      const newStartTime = $pixelsToTime(newOffset);
+
+      console.log(newStartTime, relativeX, timelineRect.left, event.clientX);
 
       moveClipToTime(track.id, data.clipId, newStartTime);
     }
@@ -61,8 +64,10 @@
       const timelineElement = event.currentTarget;
       const timelineRect = timelineElement.getBoundingClientRect();
       const relativeX = event.clientX - timelineRect.left;
+      let newOffset = relativeX - data.dragStartX;
+      if (newOffset < 0) newOffset = 0;
 
-      const newStartTime = $pixelsToTime(relativeX);
+      const newStartTime = $pixelsToTime(newOffset);
 
       createClipFromUrl(data.path, data.name).then((clip) => {
         addClip(track.id, { ...clip, startTime: newStartTime });
@@ -117,7 +122,7 @@
         {track.name}
       </button>
 
-      <button on:click={() => dialog.showModal()}>
+      <button on:click={() => openTrackInstrument(track.id)}>
         {track.type === "audio" ? "🔈" : "🎹"}
       </button>
 

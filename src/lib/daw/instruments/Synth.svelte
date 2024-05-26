@@ -1,9 +1,5 @@
-<!-- SynthModal.svelte -->
 <script>
-  import Modal from "../../ui/Modal.svelte";
   import { audioManager } from "../../../core/audio.js";
-
-  export let modal;
 
   const frequencies = {
     "C2": 65.41,
@@ -131,10 +127,10 @@
   export { startNote, stopNote };
 </script>
 
-<Modal bind:dialog={modal}>
-  <h2 slot="header">DX77</h2>
+<div class="rounded-xl bg-dark-300 p-2">
+  <h2>DX77</h2>
 
-  <div class="rounded-lg border border-dark-900 bg-[#181C1D] p-6 pt-4 shadow-2xl shadow-accent-green">
+  <div class="rounded-lg border border-dark-900 bg-[#181C1D] p-6 pt-4 shadow-xl shadow-accent-green/20">
     <div class="mb-2 flex w-full flex-row items-center justify-between">
       <p
         class="mb-2 inline-block rounded-md border-2 border-accent-green/20 p-1 font-mono text-lg font-black leading-none tracking-tight text-white/70"
@@ -275,6 +271,7 @@
             <button
               class="note {note.includes('#') ? 'black-key' : 'white-key'}"
               on:mouseup={() => stopNote(note)}
+              on:mouseleave={() => stopNote(note)}
               on:mousedown={() => startNote(hz, note)}
             >
               <span class="note-name">{note}</span>
@@ -284,7 +281,7 @@
       </div>
     </div>
   </div>
-</Modal>
+</div>
 
 <style>
   .piano {

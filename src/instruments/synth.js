@@ -1,6 +1,6 @@
 import { midiNoteToFrequency } from "../core/midi.js";
 
-export class Instrument {
+export class Synth {
   constructor(audioContext, mixer) {
     this.audioContext = audioContext;
     this.mixer = mixer;

@@ -30,12 +30,16 @@
 
   function handleDragStart(clip) {
     return function (event) {
+      const clipRect = event.currentTarget.getBoundingClientRect();
+      const dragStartX = event.clientX - clipRect.left;
+
       event.dataTransfer.setData(
         "text/plain",
         JSON.stringify({
           action: "clip:move",
           clipId: clip.id,
           originalStartTime: clip.startTime,
+          dragStartX: dragStartX,
         }),
       );
     };

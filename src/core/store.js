@@ -41,9 +41,10 @@ import {
   createTranceEDMPattern,
 } from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
-import { Instrument } from "../instruments/instrument.js";
+import { Synth } from "../instruments/synth.js";
 import { loadFromLocalStorage, saveToLocalStorage } from "./local.js";
 import { extractNoteEvents } from "./midi.js";
+import { Piano } from "../instruments/piano.js";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
@@ -78,6 +79,7 @@ export const bpm = writable(loadFromLocalStorage("bpm", 140));
 export const zoomLevel = writable(loadFromLocalStorage("zoomLevel", 50));
 export const selectedClip = writable(loadFromLocalStorage("selectedClip", null));
 export const selectedTrack = writable(loadFromLocalStorage("selectedTrack", 0));
+export const selectedInstrument = writable(null);
 export const currentView = writable(loadFromLocalStorage("currentView", "timeline"));
 
 export const tracks = writable(loadFromLocalStorage("tracks", []));
@@ -143,7 +145,8 @@ export const pixelsToTime = derived([bpm, zoomLevel], ([$bpm, $zoomLevel]) => (p
 const sources = new Map();
 
 /**
- * @type {Map<string, {instrument: Instrument}>}
+ * todo: use typescript type / interface instead
+ * @type {Map<string, {instrument: Synth}>}
  */
 const instruments = new Map();
 
@@ -182,7 +185,7 @@ const scheduleAllClips = (currentTime) => {
 
         // MIDI Clips: Schedule notes that are supposed to start after the current time
         if (clip.type === "midi" && clip.midiData) {
-          const instrument = new Instrument(audioManager.audioContext, audioManager.mixer);
+          const instrument = new Synth(audioManager.audioContext, audioManager.mixer);
           instrument.setVolume(0.1);
           let notes = extractNoteEvents(clip.midiData);
 
@@ -281,6 +284,42 @@ export const loadDefaultTracks = async () => {
     createTrackFromUrl("SoundHelix-Song-2.mp3", "/SoundHelix-Song-2.mp3"),
     createTrackFromUrl("SoundHelix-Song-3.mp3", "/SoundHelix-Song-3.mp3"),
   ]);
+};
+
+export const openTrackInstrument = async (trackId) => {
+  const track = get(tracks).find((track) => track.id === trackId);
+
+  if (!track) {
+    return;
+  }
+
+  if (track.type !== "instrument") {
+    return;
+  }
+
+  if (track.instrument === null) {
+    track.instrument = new Piano(audioManager.audioContext, audioManager.mixer);
+
+    tracks.update((allTracks) => {
+      return allTracks.map((t) => (t.id === trackId ? track : t));
+    });
+  }
+
+  selectedInstrument.set(track.instrument);
+
+  switchView("instrument");
+};
+
+export const createInstrumentTrack = async (instrument, trackName = "New instrument track") => {
+  addTrack({
+    id: crypto.randomUUID(),
+    name: trackName,
+    type: "instrument",
+    instrument: instrument,
+    isMuted: false,
+    isSolo: false,
+    clips: [],
+  });
 };
 
 export const createTrackFromUrl = async (trackName, url) => {

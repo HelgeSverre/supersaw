@@ -24,6 +24,7 @@
     createDummyHardstyleTracks,
     createDummyHouseTracks,
     createDummyTranceTracks,
+    createInstrumentTrack,
     currentView,
     enableLooping,
     loopRegion,
@@ -280,6 +281,7 @@
             <IconButton icon={$currentView === "timeline" ? ListMusic : Music} onClick={() => toggleView()} />
             <IconButton icon={KeyboardMusic} onClick={() => dialog.showModal()} />
             <IconButton icon={Plus} onClick={createMidiTrack} />
+            <IconButton icon={Plus} onClick={createInstrumentTrack} />
             <IconButton icon={Trash} onClick={clearTracks} />
             <IconButton icon={Lightbulb} onClick={toggleTheme} />
           </SegmentGroup>
@@ -344,6 +346,10 @@
     <section class="relative h-full overflow-hidden">
       <MidiEditor on:note:start={handleNoteStart} on:note:end={handleNoteEnd} />
     </section>
+  {:else if $currentView == "instrument"}
+    <div class="m-8 flex flex-1 items-center justify-center">
+      <Synth />
+    </div>
   {:else if $currentView == "playground"}
     <DesignSystem />
   {:else}
@@ -351,8 +357,6 @@
       <div class="text-center text-sm text-dark-100">No tracks</div>
     </div>
   {/if}
-
-  <Synth bind:this={synth} bind:modal={dialog} />
 
   <MixerPanel />
 </main>
