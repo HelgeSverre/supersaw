@@ -12,11 +12,12 @@
   onMount(() => {
     audioManager.audioContext.resume();
 
-    changeInstrument("synth");
+    changeInstrument("supersaw");
   });
 
   function changeInstrument(instrument) {
     activeInstrument = audioManager.getInstrument(instrument);
+    selectedInstrument = instrument;
   }
 
   function startNote(hz, note) {
