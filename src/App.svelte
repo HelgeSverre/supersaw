@@ -103,11 +103,6 @@
     if (key === " ") {
       event.preventDefault();
 
-      // TODO: change this when midi editor state is global, for now, do nothing when space is pressed
-      if ($currentView === "midi") {
-        return;
-      }
-
       if ($playbackState.playing) {
         pausePlayback();
       } else {

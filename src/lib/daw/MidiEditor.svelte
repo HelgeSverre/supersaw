@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
-  import { bpm, changeBpm, getSelectedClip, timeToPixels, zoomByDelta } from "../../core/store.js";
+  import { bpm, changeBpm, getSelectedClip, playbackState, timeToPixels, zoomByDelta } from "../../core/store.js";
   import { extractNoteEvents, midiNoteToFrequency, noteLabel, ticksToMilliseconds } from "../../core/midi.js";
 
   const dispatch = createEventDispatcher();
@@ -178,10 +178,13 @@
   let highlightedNote = "";
 
   let debug = false;
+
+  $: beatWidth = $timeToPixels(480 / 1000).toFixed(3);
+  $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
 
 <div
-  style="--note-height: {noteHeight}px;--beat-width: {$timeToPixels(480 / 10000)}px"
+  style="--note-height: {noteHeight}px; --beat-width: {beatWidth}px"
   class="relative flex h-full min-h-0 flex-col p-2"
 >
   <div class="flex h-full min-h-0 flex-row gap-2 overflow-hidden">
@@ -219,15 +222,15 @@
           bind:this={noteArea}
           class="note-area absolute inset-0 overflow-scroll bg-dark-700/50"
         >
-          <div class="playhead" style="left: {$timeToPixels(currentPlayTime / 10)}px"></div>
+          <div class="playhead" style="left: {playHeadPosition}px;"></div>
           {#each notesForDisplay as note}
             <div
               aria-hidden="true"
               on:mouseenter={() => (highlightedNote = note.label)}
               class="note flex cursor-pointer select-none items-center justify-center hover:opacity-50"
-              style="left: {$timeToPixels(note.start / 10000)}px; top: {calculateNoteTopPosition(
+              style="left: {$timeToPixels(note.start / 1000)}px; top: {calculateNoteTopPosition(
                 note,
-              )}px; width: {$timeToPixels(note.duration / 10000)}px;"
+              )}px; width: {$timeToPixels(note.duration / 1000)}px;"
             >
               {note.label}
             </div>
@@ -319,9 +322,17 @@
         hsl(0, 0%, 100%, 10%),
         hsl(0, 0%, 100%, 10%) 1px,
         transparent 1px,
-        transparent calc(var(--beat-width) * 4) /* 1 beat */
+        transparent var(--beat-width) /* 1 beat */
+      ),
+      repeating-linear-gradient(
+        to right,
+        hsl(60, 100%, 50%, 15%),
+        hsl(60, 100%, 50%, 15%) 1px,
+        transparent 1px,
+        transparent calc(var(--beat-width) * 4) /* 1 bar */
       );
     background-attachment: local;
+    background-repeat: no-repeat;
   }
 
   .note {
@@ -343,7 +354,7 @@
   .playhead {
     position: absolute;
     top: 0;
-    width: 2px;
+    width: 1px;
     height: calc((var(--note-height) * 12 * 12));
     background: hsl(0, 90%, 55%);
   }
