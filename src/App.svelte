@@ -161,6 +161,11 @@
       [startPixels, endPixels] = [endPixels, startPixels];
     }
 
+    // Prevent selection outside of the timeline
+    if (startPixels < 0) {
+      startPixels = 0;
+    }
+
     const delta = endPixels - startPixels;
 
     if (Math.abs(delta) < 10) {
