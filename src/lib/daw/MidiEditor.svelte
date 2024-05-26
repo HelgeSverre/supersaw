@@ -2,7 +2,7 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
   import { bpm, changeBpm, getSelectedClip, timeToPixels, zoomByDelta } from "../../core/store.js";
-  import { extractNoteEvents, noteLabel, ticksToMilliseconds } from "../../core/midi.js";
+  import { extractNoteEvents, midiNoteToFrequency, noteLabel, ticksToMilliseconds } from "../../core/midi.js";
 
   const dispatch = createEventDispatcher();
 
@@ -136,10 +136,6 @@
     });
 
     return oscillators;
-  }
-
-  function midiNoteToFrequency(note) {
-    return 440 * Math.pow(2, (note - 69) / 12);
   }
 
   function animatePlayhead(dt) {
