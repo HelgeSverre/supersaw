@@ -23,6 +23,26 @@
   export let subFrequency = 50; // Sub-bass frequency in Hz
   export let distortionAmount = 0.2; // Distortion amount
 
+  let progress = 0;
+  let animationFrameId = null;
+  let startTime = null;
+  let totalDuration = ampAttack + ampDecay + ampRelease;
+
+  function updateProgress() {
+    const currentTime = audioManager.audioContext.currentTime;
+
+    progress = ((currentTime - startTime) / totalDuration) * 100;
+
+    // If progress is 100% or more, stop the animation frame loop
+    if (progress >= 100) {
+      progress = 100;
+      cancelAnimationFrame(animationFrameId);
+    } else {
+      // Otherwise, continue the loop
+      animationFrameId = requestAnimationFrame(updateProgress);
+    }
+  }
+
   let loopPreview = false;
 
   function createDistortionCurve(amount) {
@@ -94,12 +114,22 @@
     osc.stop(now + ampAttack + ampDecay + ampRelease);
     subOsc.stop(now + ampAttack + ampDecay + ampRelease);
 
+    startTime = audioManager.audioContext.currentTime;
+
+    totalDuration = ampAttack + ampDecay + ampRelease;
+    // Start the animation frame loop
+    animationFrameId = requestAnimationFrame(updateProgress);
+
     osc.onended = () => {
       osc.disconnect();
       gainNode.disconnect();
       subOsc.disconnect();
       subGainNode.disconnect();
       distortion.disconnect();
+
+      progress = 0;
+      cancelAnimationFrame(animationFrameId);
+
       if (loopPreview) setTimeout(play, 500);
     };
   }
@@ -109,11 +139,23 @@
   <div class="flex flex-row gap-2 rounded border border-dark-100 bg-dark-700 p-4">
     <div class="w-64">
       <span class="mb-2 block text-sm leading-none">AMP</span>
-      <ADSR bind:attack={ampAttack} bind:decay={ampDecay} bind:sustain={ampSustain} bind:release={ampRelease} />
+      <ADSR
+        bind:progress={progress}
+        bind:attack={ampAttack}
+        bind:decay={ampDecay}
+        bind:sustain={ampSustain}
+        bind:release={ampRelease}
+      />
     </div>
     <div class="w-64">
       <span class="mb-2 block text-sm leading-none">Pitch</span>
-      <ADSR bind:attack={pitchAttack} bind:decay={pitchDecay} bind:sustain={pitchSustain} bind:release={pitchRelease} />
+      <ADSR
+        bind:progress={progress}
+        bind:attack={pitchAttack}
+        bind:decay={pitchDecay}
+        bind:sustain={pitchSustain}
+        bind:release={pitchRelease}
+      />
     </div>
 
     <div class="flex flex-col gap-2">

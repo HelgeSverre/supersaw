@@ -10,6 +10,8 @@
   import TextDisplay from "./TextDisplay.svelte";
   import Select from "./Input/Select.svelte";
   import { demoMidiFiles } from "../../core/store.js";
+  import ADSR from "./ADSR.svelte";
+  import Kick from "../daw/instruments/Kick.svelte";
 
   let knobValue = 30;
 </script>
@@ -111,11 +113,15 @@
       </div>
 
       <div class="flex flex-col gap-4">
-        <div class="bg-dark-300 p-8">
+        <div class="bg-dark-300 p-2">
           <Knob size={48} bind:value={knobValue} />
         </div>
-        <div>
+        <div class="bg-dark-300 p-2">
           <Fader />
+        </div>
+
+        <div>
+          <ADSR attack={0.05} decay={0.1} sustain={0.7} release={0.3} />
         </div>
       </div>
     </div>

@@ -1,6 +1,8 @@
 <script>
   import { onMount } from "svelte";
 
+  export let progress = null;
+
   export let attack = 0.1;
   export let decay = 0.1;
   export let sustain = 0.5;
@@ -105,105 +107,111 @@
       />
     </div>
   </div>
-  <svg bind:this={svg} overflow="visible" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
-    <!-- Border -->
-    <path
-      d="M 0 {height} L 0 0 L {width} 0 L {width} {height} Z"
-      fill="rgba(0,0,0,0.5)"
-      stroke="rgba(255,255,255,0.25)"
-      stroke-width="1"
-    />
+  <div class="relative">
+    {#if progress !== null}
+      <div style="left: {progress}%;" class="absolute inset-y-0 z-50 w-[1px] bg-red-500"></div>
+    {/if}
 
-    <!-- Grid lines marking each stage -->
-    <line
-      x1={attackX}
-      y1="0"
-      x2={attackX}
-      y2={height}
-      stroke="rgba(255,255,255,0.2)"
-      stroke-width="2"
-      stroke-dasharray="4"
-    />
+    <svg bind:this={svg} overflow="visible" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Border -->
+      <path
+        d="M 0 {height} L 0 0 L {width} 0 L {width} {height} Z"
+        fill="rgba(0,0,0,0.5)"
+        stroke="rgba(255,255,255,0.25)"
+        stroke-width="1"
+      />
 
-    <line
-      x1={decayX}
-      y1="0"
-      x2={decayX}
-      y2={height}
-      stroke="rgba(255,255,255,0.2)"
-      stroke-width="2"
-      stroke-dasharray="4"
-    />
-    <line
-      x1={sustainX}
-      y1="0"
-      x2={sustainX}
-      y2={height}
-      stroke="rgba(255,255,255,0.2)"
-      stroke-width="2"
-      stroke-dasharray="4"
-    />
+      <!-- Grid lines marking each stage -->
+      <line
+        x1={attackX}
+        y1="0"
+        x2={attackX}
+        y2={height}
+        stroke="rgba(255,255,255,0.2)"
+        stroke-width="2"
+        stroke-dasharray="4"
+      />
 
-    <!-- Envelope Curve -->
-    <path
-      d={`M 0 ${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${width} ${height} Z`}
-      fill="rgba(255, 255, 255, 0.25)"
-      stroke="silver"
-      stroke-width="2"
-    />
+      <line
+        x1={decayX}
+        y1="0"
+        x2={decayX}
+        y2={height}
+        stroke="rgba(255,255,255,0.2)"
+        stroke-width="2"
+        stroke-dasharray="4"
+      />
+      <line
+        x1={sustainX}
+        y1="0"
+        x2={sustainX}
+        y2={height}
+        stroke="rgba(255,255,255,0.2)"
+        stroke-width="2"
+        stroke-dasharray="4"
+      />
 
-    <!-- Attack Control Point -->
-    <circle
-      aria-hidden="true"
-      cx={attackX}
-      cy="0"
-      r="5"
-      stroke-width="1"
-      stroke="silver"
-      fill="white"
-      class="cursor-pointer"
-      on:mousedown={() => startDrag("attack")}
-    />
+      <!-- Envelope Curve -->
+      <path
+        d={`M 0 ${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${width} ${height} Z`}
+        fill="rgba(255, 255, 255, 0.25)"
+        stroke="silver"
+        stroke-width="2"
+      />
 
-    <!-- Decay Control Point -->
-    <circle
-      aria-hidden="true"
-      cx={decayX}
-      cy={sustainY}
-      r="5"
-      stroke-width="1"
-      stroke="silver"
-      fill="white"
-      class="cursor-pointer"
-      on:mousedown={() => startDrag("decay")}
-    />
+      <!-- Attack Control Point -->
+      <circle
+        aria-hidden="true"
+        cx={attackX}
+        cy="0"
+        r="5"
+        stroke-width="1"
+        stroke="silver"
+        fill="white"
+        class="cursor-pointer"
+        on:mousedown={() => startDrag("attack")}
+      />
 
-    <!-- Sustain Control Point -->
-    <circle
-      aria-hidden="true"
-      cx={sustainX}
-      cy={sustainY}
-      r="5"
-      stroke-width="1"
-      stroke="silver"
-      fill="white"
-      class="cursor-pointer"
-      on:mousedown={() => startDrag("sustain")}
-    />
+      <!-- Decay Control Point -->
+      <circle
+        aria-hidden="true"
+        cx={decayX}
+        cy={sustainY}
+        r="5"
+        stroke-width="1"
+        stroke="silver"
+        fill="white"
+        class="cursor-pointer"
+        on:mousedown={() => startDrag("decay")}
+      />
 
-    <!-- Release Control Point -->
-    <circle
-      aria-hidden="true"
-      cx={width}
-      cy={height}
-      r="5"
-      stroke-width="1"
-      stroke="silver"
-      fill="white"
-      class="cursor-pointer"
-      on:mousedown={() => startDrag("release")}
-    />
-  </svg>
+      <!-- Sustain Control Point -->
+      <circle
+        aria-hidden="true"
+        cx={sustainX}
+        cy={sustainY}
+        r="5"
+        stroke-width="1"
+        stroke="silver"
+        fill="white"
+        class="cursor-pointer"
+        on:mousedown={() => startDrag("sustain")}
+      />
+
+      <!-- Release Control Point -->
+      <circle
+        aria-hidden="true"
+        cx={width}
+        cy={height}
+        r="5"
+        stroke-width="1"
+        stroke="silver"
+        fill="white"
+        class="cursor-pointer"
+        on:mousedown={() => startDrag("release")}
+      />
+    </svg>
+  </div>
 </div>
 
 <style>

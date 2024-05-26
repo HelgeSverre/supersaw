@@ -9,7 +9,7 @@
   }
 </script>
 
-<div class="relative flex items-center justify-center rounded-md bg-white/10 px-2 py-1">
+<div class="relative flex items-center justify-center rounded-md px-2 py-1">
   <input
     type="range"
     min={min}
