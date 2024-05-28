@@ -176,10 +176,10 @@
   >
     <div class="track-grid" style={gradientStyle}></div>
 
-    {#each track.clips.filter((c) => c.type === "audio") as clip}
+    {#each track.clips.filter((c) => c.type === "audio") as clip (clip.id)}
       <AudioClip clip={clip} />
     {/each}
-    {#each track.clips.filter((c) => c.type === "midi") as clip}
+    {#each track.clips.filter((c) => c.type === "midi") as clip (clip.id)}
       <MidiClip clip={clip} />
     {/each}
   </div>
