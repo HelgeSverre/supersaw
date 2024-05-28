@@ -15,7 +15,7 @@
   });
 
   function drawSpectrogram() {
-    analyser.fftSize = 1024 *16;
+    analyser.fftSize = 1024 * 16;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
