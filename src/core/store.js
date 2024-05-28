@@ -421,10 +421,12 @@ export const addClip = (trackId, clip) => {
   );
 };
 
-export const removeClip = (trackId, clipId) => {
+export const removeClip = (clipId) => {
   tracks.update((allTracks) =>
     allTracks.map((track) =>
-      track.id === trackId ? { ...track, clips: track.clips.filter((clip) => clip.id !== clipId) } : track,
+      track.clips.find((clip) => clip.id === clipId)
+        ? { ...track, clips: track.clips.filter((clip) => clip.id !== clipId) }
+        : track,
     ),
   );
 };
