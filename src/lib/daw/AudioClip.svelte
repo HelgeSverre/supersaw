@@ -1,7 +1,8 @@
 <script>
   import { onMount } from "svelte";
-  import { selectClip, timeToPixels } from "../../core/store";
+  import { removeClip, selectClip, selectedClip, timeToPixels } from "../../core/store";
   import { audioManager } from "../../core/audio.js";
+  import classNames from "classnames";
 
   export let clip;
 
@@ -23,10 +24,19 @@
     }
   });
 
-  const playClip = () => {
+  function onClip() {
     selectClip(clip.id);
+  }
+
+  function onClipDblClick() {
     audioManager.playPreview(clip.audioUrl);
-  };
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === "Backspace" || event.key === "Delete") {
+      removeClip(clip.id);
+    }
+  }
 
   function handleDragStart(clip) {
     return function (event) {
@@ -48,27 +58,26 @@
   $: leftPosition = $timeToPixels(clip.startTime);
   $: width = $timeToPixels(clip.duration);
 
-  function getClassByState(state) {
-    switch (state) {
-      case "loading":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-purple ring-inset bg-accent-purple/20";
-      case "error":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-red ring-inset bg-accent-red/20";
-      case "loaded":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-yellow ring-inset bg-accent-yellow/20";
-      default:
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-gray-200";
-    }
-  }
+  $: clipClasses = classNames("audio-clip absolute ring-inset inset-y-2 overflow-hidden rounded ring-1", {
+    "bg-accent-purple/20": "loading" === loadingState && clip.id === $selectedClip,
+    "ring-accent-purple bg-accent-purple/10": "loading" === loadingState,
 
-  $: classes = getClassByState(loadingState);
+    "bg-accent-red/20": "error" === loadingState && clip.id === $selectedClip,
+    "ring-accent-red bg-accent-red/10": "error" === loadingState,
+
+    "bg-accent-yellow/20": "loaded" === loadingState && clip.id === $selectedClip,
+    "ring-accent-yellow bg-accent-yellow/10": "loaded" === loadingState,
+    // "audio-clip absolute inset-y-2 overflow-hidden rounded border border-gray-200"
+  });
 </script>
 
 <button
-  class={classes}
+  class={clipClasses}
   draggable="true"
   on:dragstart|stopPropagation={handleDragStart(clip)}
-  on:click={playClip}
+  on:click|stopPropagation={onClip}
+  on:dblclick|stopPropagation={onClipDblClick}
+  on:keydown|preventDefault={handleKeyDown}
   style="left: {leftPosition}px; width: {width}px;"
   title={clip.name ?? "Unnamed"}
 >
