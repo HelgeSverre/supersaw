@@ -44,6 +44,7 @@
 
         if (event.type === "noteOn") {
           notes.push({
+            index: notes.length,
             note: event.noteNumber,
             velocity: event.velocity,
             start: wallTimeInMilliseconds,
@@ -120,7 +121,7 @@
         preserveAspectRatio="none"
         fill="currentColor"
       >
-        {#each notes as note}
+        {#each notes as note (note.index)}
           <rect
             class="note"
             x={$timeToPixels(note.start / 1000)}
