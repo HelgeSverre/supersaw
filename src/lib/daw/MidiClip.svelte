@@ -1,5 +1,5 @@
 <script>
-  import { bpm, selectClip, selectedClip, timeToPixels, toggleView } from "../../core/store";
+  import { bpm, removeClip, selectClip, selectedClip, timeToPixels, toggleView } from "../../core/store";
   import { onMount } from "svelte";
   import classNames from "classnames";
 
@@ -72,6 +72,12 @@
     toggleView("clip", clip.id);
   }
 
+  function handleKeyDown(event) {
+    if (event.key === "Backspace" || event.key === "Delete") {
+      removeClip(clip.id);
+    }
+  }
+
   $: leftPosition = $timeToPixels(clip.startTime);
   $: width = $timeToPixels(clip.duration);
 
@@ -85,8 +91,9 @@
   class={clipClasses}
   draggable="true"
   on:dragstart|stopPropagation={handleDragStart(clip)}
-  on:click={onClip}
-  on:dblclick={onClipDblClick}
+  on:click|stopPropagation={onClip}
+  on:dblclick|stopPropagation={onClipDblClick}
+  on:keydown|preventDefault={handleKeyDown}
   style="left: {leftPosition}px; width: {width}px;"
   title={clip.name ?? "Unnamed"}
 >
