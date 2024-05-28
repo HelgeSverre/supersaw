@@ -48,6 +48,33 @@ class AudioManager {
     return decodedAudio;
   };
 
+  generateWaveformFromBuffer = async (audioBuffer, numberOfSamples = 1000) => {
+    const isMono = audioBuffer.numberOfChannels === 1;
+
+    const leftChannelData = audioBuffer.getChannelData(0);
+    const rightChannelData = isMono ? leftChannelData : audioBuffer.getChannelData(1);
+
+    const samplingStep = Math.ceil(leftChannelData.length / numberOfSamples);
+    const verticalAmplitude = 50;
+    let svgPath = "M0 " + verticalAmplitude;
+
+    for (let sampleNum = 0; sampleNum < numberOfSamples; sampleNum++) {
+      let peakMin = 0;
+      let peakMax = 0;
+      for (let stepIndex = 0; stepIndex < samplingStep; stepIndex++) {
+        const currentSampleIndex = sampleNum * samplingStep + stepIndex;
+        if (currentSampleIndex < leftChannelData.length) {
+          const monoSampleValue = (leftChannelData[currentSampleIndex] + rightChannelData[currentSampleIndex]) / 2;
+          peakMin = Math.min(peakMin, monoSampleValue);
+          peakMax = Math.max(peakMax, monoSampleValue);
+        }
+      }
+      svgPath += ` L${sampleNum + 1} ${verticalAmplitude - peakMax * verticalAmplitude} L${sampleNum + 1} ${verticalAmplitude - peakMin * verticalAmplitude}`;
+    }
+
+    return svgPath;
+  };
+
   generateWaveform = async (audioUrl, numberOfSamples = 1000) => {
     const decodedAudio = await this.loadAudioBuffer(audioUrl);
     const isMono = decodedAudio.numberOfChannels === 1;
@@ -111,6 +138,21 @@ class AudioManager {
 
   cleanup = () => {
     Object.keys(this.sources).forEach((id) => this.stopClip(id));
+  };
+
+  playPreviewFromBuffer = async (audioBuffer) => {
+    const source = this.audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    const gainNode = this.audioContext.createGain();
+
+    source.connect(gainNode);
+    gainNode.connect(this.mixer);
+
+    source.start(0); // Start immediately
+    source.onended = () => {
+      source.disconnect();
+      gainNode.disconnect();
+    };
   };
 
   playPreview = async (url) => {

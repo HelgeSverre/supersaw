@@ -154,15 +154,36 @@
         Solo
       </button>
 
-      <select
-        class="w-full rounded border border-dark-200 bg-dark-700 px-2 py-1"
-        bind:value={track.instrument}
-        on:change={(e) => (track.instrument = e.target.value)}
-      >
-        {#each audioManager.instruments.keys() as instrument}
-          <option value={instrument}>{instrument}</option>
-        {/each}
-      </select>
+      {#if track.type === "audio"}
+        <button
+          class="inline-flex items-center justify-center rounded border border-dark-600 bg-dark-600 px-2 py-1 text-sm text-light hover:bg-dark-500"
+          on:click={() => {
+            const fileInput = document.createElement("input");
+            fileInput.type = "file";
+            fileInput.accept = "audio/*";
+            fileInput.onchange = (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              createClipFromUrl(URL.createObjectURL(file), file.name).then((clip) => {
+                addClip(track.id, clip);
+              });
+            };
+            fileInput.click();
+          }}
+        >
+          Add clip
+        </button>
+      {:else if track.type === "instrument"}
+        <select
+          class="w-full rounded border border-dark-200 bg-dark-700 px-2 py-1"
+          bind:value={track.instrument}
+          on:change={(e) => (track.instrument = e.target.value)}
+        >
+          {#each audioManager.instruments.keys() as instrument}
+            <option value={instrument}>{instrument}</option>
+          {/each}
+        </select>
+      {/if}
     </div>
   </div>
 

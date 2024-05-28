@@ -11,12 +11,17 @@
   let loadingState = "loading";
 
   onMount(async () => {
-    if (!clip.audioUrl) {
+    if (!clip.audioUrl && !clip.audioBuffer) {
       loadingState = "error";
       return;
     }
     try {
-      waveformPathData = await audioManager.generateWaveform(clip.audioUrl, 1000);
+      if (clip.audioBuffer) {
+        waveformPathData = await audioManager.generateWaveformFromBuffer(clip.audioBuffer, 1000);
+      } else {
+        waveformPathData = await audioManager.generateWaveform(clip.audioUrl, 1000);
+      }
+
       loadingState = "loaded";
     } catch (e) {
       loadingState = "error";
@@ -29,7 +34,11 @@
   }
 
   function onClipDblClick() {
-    audioManager.playPreview(clip.audioUrl);
+    if (clip.audioBuffer) {
+      audioManager.playPreviewFromBuffer(clip.audioBuffer);
+    } else {
+      audioManager.playPreview(clip.audioUrl);
+    }
   }
 
   function handleKeyDown(event) {

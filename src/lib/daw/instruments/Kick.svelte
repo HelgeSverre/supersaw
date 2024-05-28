@@ -6,44 +6,41 @@
   import IconButton from "../../ui/IconButton.svelte";
   import TextButton from "../../ui/TextButton.svelte";
   import Value from "../../ui/Input/Value.svelte";
+  import { addTrack } from "../../../core/store.js";
 
-  export let ampAttack = 0.01; // Attack time
-  export let ampDecay = 0.1; // Decay time
-  export let ampSustain = 0.1; // Sustain level (no sustain for a kick drum)
-  export let ampRelease = 0.3; // Release time
+  export let ampAttack = 0.001;
+  export let ampDecay = 0.25;
+  export let ampSustain = 0;
+  export let ampRelease = 0.15;
 
-  export let pitchAttack = 0.01; // Attack time
-  export let pitchDecay = 0.1; // Decay time
-  export let pitchSustain = 0.1; // Sustain level (no sustain for a kick drum)
-  export let pitchRelease = 0.3; // Release time
+  export let pitchAttack = 0.001;
+  export let pitchDecay = 0.2;
+  export let pitchSustain = 0;
+  export let pitchRelease = 0.1;
 
   export let peak = 1.0;
-  export let startFrequency = 4975; // Start frequency in Hz
-  export let endFrequency = 80; // End frequency in Hz
-  export let subFrequency = 50; // Sub-bass frequency in Hz
-  export let distortionAmount = 0.2; // Distortion amount
+  export let startFrequency = 200;
+  export let endFrequency = 50;
+  export let subFrequency = 40;
+  export let distortionAmount = 0.5;
 
   let progress = 0;
   let animationFrameId = null;
   let startTime = null;
   let totalDuration = ampAttack + ampDecay + ampRelease;
+  let loopPreview = false;
 
   function updateProgress() {
     const currentTime = audioManager.audioContext.currentTime;
-
     progress = ((currentTime - startTime) / totalDuration) * 100;
 
-    // If progress is 100% or more, stop the animation frame loop
     if (progress >= 100) {
       progress = 100;
       cancelAnimationFrame(animationFrameId);
     } else {
-      // Otherwise, continue the loop
       animationFrameId = requestAnimationFrame(updateProgress);
     }
   }
-
-  let loopPreview = false;
 
   function createDistortionCurve(amount) {
     const k = amount * 100;
@@ -57,81 +54,100 @@
   }
 
   function play() {
-    // Create main oscillator for kick drum
-    const osc = audioManager.audioContext.createOscillator();
-    osc.type = "sine"; // Can also try 'triangle'
+    generateKick(audioManager.audioContext);
+  }
 
-    // Create sub-bass oscillator
-    const subOsc = audioManager.audioContext.createOscillator();
+  function bounceToAudio() {
+    const sampleRate = audioManager.audioContext.sampleRate;
+    const offlineContext = new OfflineAudioContext(1, sampleRate * totalDuration, sampleRate);
+    generateKick(offlineContext, true).then((renderedBuffer) => {
+      addTrack({
+        id: crypto.randomUUID(),
+        type: "audio",
+        name: `Kick`,
+        isMuted: false,
+        isSolo: false,
+        clips: [
+          {
+            id: crypto.randomUUID(),
+            name: "Bounced audio clip",
+            type: "audio",
+            startTime: 0,
+            duration: renderedBuffer.duration,
+            audioBuffer: renderedBuffer,
+          },
+        ],
+      });
+    });
+  }
+
+  async function generateKick(context, renderOffline = false) {
+    const osc = context.createOscillator();
+    osc.type = "sine";
+
+    const subOsc = context.createOscillator();
     subOsc.type = "sine";
 
-    // Create gain nodes for amplitude envelopes
-    const gainNode = audioManager.audioContext.createGain();
-    const subGainNode = audioManager.audioContext.createGain();
+    const gainNode = context.createGain();
+    const subGainNode = context.createGain();
 
-    // Create distortion node
-    const distortion = audioManager.audioContext.createWaveShaper();
+    const distortion = context.createWaveShaper();
     distortion.curve = createDistortionCurve(distortionAmount);
-    distortion.oversample = "2x";
+    distortion.oversample = "4x";
 
-    // Connect main oscillator to gain node, then to distortion, then to audio context
     osc.connect(gainNode);
     gainNode.connect(distortion);
-    distortion.connect(audioManager.mixer);
+    distortion.connect(context.destination);
 
-    // Connect sub-bass oscillator to sub gain node, then to audio context
     subOsc.connect(subGainNode);
-    subGainNode.connect(audioManager.mixer);
+    subGainNode.connect(context.destination);
 
-    // Initial settings
-    const now = audioManager.audioContext.currentTime;
+    const now = context.currentTime;
 
-    // Set gain envelope for main oscillator
     gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(peak, now + ampAttack); // Attack phase
-    gainNode.gain.linearRampToValueAtTime(ampSustain, now + ampAttack + ampDecay); // Decay phase
-    gainNode.gain.linearRampToValueAtTime(0, now + ampAttack + ampDecay + ampRelease); // Release phase
+    gainNode.gain.linearRampToValueAtTime(peak, now + ampAttack);
+    gainNode.gain.linearRampToValueAtTime(ampSustain, now + ampAttack + ampDecay);
+    gainNode.gain.linearRampToValueAtTime(0, now + ampAttack + ampDecay + ampRelease);
 
-    // Set gain envelope for sub-bass oscillator
     subGainNode.gain.setValueAtTime(0, now);
-    subGainNode.gain.linearRampToValueAtTime(peak, now + ampAttack); // Attack phase
-    subGainNode.gain.linearRampToValueAtTime(ampSustain, now + ampAttack + ampDecay); // Decay phase
-    subGainNode.gain.linearRampToValueAtTime(0, now + ampAttack + ampDecay + ampRelease); // Release phase
+    subGainNode.gain.linearRampToValueAtTime(peak, now + ampAttack);
+    subGainNode.gain.linearRampToValueAtTime(ampSustain, now + ampAttack + ampDecay);
+    subGainNode.gain.linearRampToValueAtTime(0, now + ampAttack + ampDecay + ampRelease);
 
-    // Set pitch envelope for main oscillator
     osc.frequency.setValueAtTime(startFrequency, now);
-    osc.frequency.exponentialRampToValueAtTime(startFrequency, now + pitchAttack); // Pitch attack
-    osc.frequency.exponentialRampToValueAtTime(endFrequency, now + pitchAttack + pitchDecay); // Pitch decay
-    osc.frequency.setValueAtTime(endFrequency, now + pitchAttack + pitchDecay + pitchSustain); // Pitch sustain
-    osc.frequency.linearRampToValueAtTime(0, now + pitchAttack + pitchDecay + pitchRelease); // Pitch release
+    osc.frequency.exponentialRampToValueAtTime(endFrequency, now + pitchAttack);
+    osc.frequency.exponentialRampToValueAtTime(endFrequency, now + pitchAttack + pitchDecay);
 
-    // Set frequency for sub-bass oscillator
     subOsc.frequency.setValueAtTime(subFrequency, now);
 
-    // Start oscillators
     osc.start(now);
     subOsc.start(now);
-    osc.stop(now + ampAttack + ampDecay + ampRelease);
-    subOsc.stop(now + ampAttack + ampDecay + ampRelease);
+    osc.stop(now + totalDuration);
+    subOsc.stop(now + totalDuration);
 
-    startTime = audioManager.audioContext.currentTime;
+    if (renderOffline) {
+      return new Promise((resolve) => {
+        context.startRendering().then((renderedBuffer) => {
+          resolve(renderedBuffer);
+        });
+      });
+    } else {
+      startTime = context.currentTime;
+      animationFrameId = requestAnimationFrame(updateProgress);
 
-    totalDuration = ampAttack + ampDecay + ampRelease;
-    // Start the animation frame loop
-    animationFrameId = requestAnimationFrame(updateProgress);
+      osc.onended = () => {
+        osc.disconnect();
+        gainNode.disconnect();
+        subOsc.disconnect();
+        subGainNode.disconnect();
+        distortion.disconnect();
 
-    osc.onended = () => {
-      osc.disconnect();
-      gainNode.disconnect();
-      subOsc.disconnect();
-      subGainNode.disconnect();
-      distortion.disconnect();
+        progress = 0;
+        cancelAnimationFrame(animationFrameId);
 
-      progress = 0;
-      cancelAnimationFrame(animationFrameId);
-
-      if (loopPreview) setTimeout(play, 500);
-    };
+        if (loopPreview) setTimeout(play, 500);
+      };
+    }
   }
 </script>
 
@@ -170,6 +186,7 @@
       <SegmentGroup>
         <IconButton icon={Ear} onClick={play} />
         <TextButton onClick={() => (loopPreview = !loopPreview)} text={loopPreview ? "Stop" : "Loop"} />
+        <TextButton onClick={bounceToAudio} text="Bounce" />
       </SegmentGroup>
     </div>
   </div>
