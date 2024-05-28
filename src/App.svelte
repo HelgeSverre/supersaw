@@ -53,11 +53,12 @@
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
   import Synth from "./lib/daw/instruments/Synth.svelte";
   import { createMidiClipFromUrl } from "./core/midi.js";
-  import AudioVisualizer from "./lib/daw/AudioVisualizer.svelte";
+  import AudioVisualizer from "./lib/daw/analyzers/AudioVisualizer.svelte";
   import { Cube } from "phosphor-svelte";
   import DesignSystem from "./lib/ui/DesignSystem.svelte";
   import Instrument from "./lib/daw/instruments/Instrument.svelte";
-  import Spectrogram from "./lib/daw/Spectrogram.svelte";
+  import Spectrogram from "./lib/daw/analyzers/Spectrogram.svelte";
+  import VoxengoSpan from "./lib/daw/analyzers/VoxengoSpan.svelte";
 
   let dialog;
 
@@ -99,8 +100,17 @@
       }
     }
 
-    if (key === "I" && event.shiftKey) {
+    if (event.shiftKey && key === "I") {
       dialog.showModal();
+    }
+    // Shift + 1 - Switch to timeline view
+    if (event.shiftKey && keyCode === 49) {
+      switchView("timeline");
+    }
+
+    // Shift + 2 - Switch to midi view
+    if (event.shiftKey && keyCode === 50) {
+      switchView("midi");
     }
 
     // Arrow keys - Move playhead left/right by 100 ms, if shift, move by 1 second
@@ -257,6 +267,7 @@
 
         <AudioVisualizer />
         <Spectrogram />
+        <VoxengoSpan />
 
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
           <SegmentGroup>

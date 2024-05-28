@@ -7,12 +7,7 @@
   const dispatch = createEventDispatcher();
 
   let noteHeight = 20;
-  let ticksPerBeat = 480;
-
   let notesForDisplay = [];
-  let highestTime = 0;
-  let startTime;
-  let currentPlayTime = 0;
 
   let pianoRoll;
   let noteArea;
@@ -109,6 +104,8 @@
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
 
+<svelte:window on:keydown={(e) => e.key === "d" && (debug = !debug)} />
+
 <div
   style="--note-height: {noteHeight}px; --beat-width: {beatWidth}px"
   class="relative flex h-full min-h-0 flex-col p-2"
@@ -166,10 +163,9 @@
           <div class="absolute inset-y-0 left-0 w-[900px] overflow-y-scroll border-dark-800 bg-dark-600">
             <div class="flex-1">
               <div class="flex h-full flex-col overflow-y-scroll">
-                <table class="text-right">
+                <table class="text-left">
                   <thead>
                     <tr>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Tick</th>
                       <th class="whitespace-nowrap px-1 font-mono text-xs">Start</th>
                       <th class="whitespace-nowrap px-1 font-mono text-xs">Duration</th>
                       <th class="whitespace-nowrap px-1 font-mono text-xs">Velocity</th>
@@ -180,10 +176,12 @@
                   <tbody>
                     {#each notesForDisplay as event}
                       <tr>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.tickOffset}</td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{parseFloat(event.start).toFixed(3)}</td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{parseFloat(event.duration).toFixed(3)}</td
-                        >
+                        <td class="whitespace-nowrap px-1 font-mono text-xs">
+                          {parseFloat(event.start / 1000).toFixed(3)}s
+                        </td>
+                        <td class="whitespace-nowrap px-1 font-mono text-xs">
+                          {parseFloat(event.duration / 1000).toFixed(3)}s
+                        </td>
                         <td class="whitespace-nowrap px-1 font-mono text-xs">{event.velocity}</td>
                         <td class="whitespace-nowrap px-1 font-mono text-xs">{event.note}</td>
                         <td class="whitespace-nowrap px-1 font-mono text-xs">{event.label}</td>

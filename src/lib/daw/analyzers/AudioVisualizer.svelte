@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { audioManager } from "../../core/audio.js";
+  import { audioManager } from "../../../core/audio.js";
 
   let canvas = null;
   let canvasCtx = null;

@@ -1,6 +1,7 @@
 <script>
-  import { bpm, selectClip, timeToPixels, toggleView } from "../../core/store";
+  import { bpm, selectClip, selectedClip, timeToPixels, toggleView } from "../../core/store";
   import { onMount } from "svelte";
+  import classNames from "classnames";
 
   export let clip;
 
@@ -63,35 +64,29 @@
     });
   }
 
-  $: leftPosition = $timeToPixels(clip.startTime);
-  $: width = $timeToPixels(clip.duration);
-
-  function getClassByState(state) {
-    switch (state) {
-      case "loading":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-purple ring-inset bg-accent-purple/20";
-      case "error":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-red ring-inset bg-accent-red/20";
-      case "loaded":
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded ring-1 ring-accent-yellow ring-inset bg-accent-yellow/20";
-      default:
-        return "audio-clip absolute inset-y-2 overflow-hidden rounded border border-gray-200";
-    }
-  }
-
   function onClip() {
     selectClip(clip.id);
+  }
+
+  function onClipDblClick() {
     toggleView("clip", clip.id);
   }
 
-  $: classes = getClassByState(loadingState);
+  $: leftPosition = $timeToPixels(clip.startTime);
+  $: width = $timeToPixels(clip.duration);
+
+  $: clipClasses = classNames("audio-clip absolute inset-y-2 overflow-hidden rounded border ", {
+    "border-blue-300 bg-accent-blue/20": clip.id === $selectedClip,
+    "border-blue-400 bg-accent-blue/10": clip.id !== $selectedClip,
+  });
 </script>
 
 <button
-  class="audio-clip absolute inset-y-2 overflow-hidden rounded border border-blue-400 bg-accent-blue/20"
+  class={clipClasses}
   draggable="true"
   on:dragstart|stopPropagation={handleDragStart(clip)}
   on:click={onClip}
+  on:dblclick={onClipDblClick}
   style="left: {leftPosition}px; width: {width}px;"
   title={clip.name ?? "Unnamed"}
 >

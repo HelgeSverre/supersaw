@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { audioManager } from "../../core/audio.js";
+  import { audioManager } from "../../../core/audio.js";
 
   let canvas = null;
   let canvasCtx = null;
@@ -15,7 +15,7 @@
   });
 
   function drawSpectrogram() {
-    analyser.fftSize = 1024;
+    analyser.fftSize = 1024 *16;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 

@@ -26,14 +26,15 @@ export class Pad {
   }
 
   createOscillators(frequency, time) {
-    const frequencies = [frequency, frequency * 0.5, frequency * 0.25];
+    const detuneAmounts = [-12, -6, 0, 6, 12]; // Slight detuning for richness
     const oscillators = [];
 
-    frequencies.forEach((freq) => {
+    detuneAmounts.forEach((detune) => {
       const oscillator = this.audioContext.createOscillator();
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(freq, time);
-      oscillator.connect(this.reverb);
+      oscillator.type = "sawtooth"; // Sawtooth for a richer sound
+      oscillator.frequency.setValueAtTime(frequency, time);
+      oscillator.detune.setValueAtTime(detune, time);
+      oscillator.connect(this.reverb); // Connect to reverb directly
       oscillators.push(oscillator);
     });
 
@@ -42,9 +43,9 @@ export class Pad {
 
   applyEnvelope(envelope, attackTime, decayTime, sustainLevel, releaseTime, startTime) {
     envelope.gain.setValueAtTime(0.0001, startTime);
-    envelope.gain.linearRampToValueAtTime(1, startTime + attackTime);
-    envelope.gain.exponentialRampToValueAtTime(sustainLevel, startTime + attackTime + decayTime);
-    envelope.gain.linearRampToValueAtTime(0.0001, startTime + releaseTime);
+    envelope.gain.linearRampToValueAtTime(1 / Math.sqrt(5), startTime + attackTime);
+    envelope.gain.exponentialRampToValueAtTime(sustainLevel / Math.sqrt(5), startTime + attackTime + decayTime);
+    envelope.gain.linearRampToValueAtTime(0.0001, startTime + attackTime + decayTime + releaseTime);
 
     return { attackTime, decayTime, sustainLevel, releaseTime };
   }
@@ -74,41 +75,45 @@ export class Pad {
       envelope.gain.setValueAtTime(envelope.gain.value, now);
       envelope.gain.linearRampToValueAtTime(0, now + releaseTime);
 
-      oscillators.forEach((oscillator) => oscillator.stop(now + releaseTime));
-
-      this.notes.delete(frequency);
+      oscillators.forEach((oscillator) => {
+        oscillator.stop(now + releaseTime);
+        this.notes.delete(frequency);
+      });
     }
   }
 
   playNote(frequency, time, duration) {
     const oscillators = this.createOscillators(frequency, time);
+    const envelope = this.audioContext.createGain();
+    envelope.connect(this.output);
+
+    oscillators.forEach((oscillator) => {
+      oscillator.connect(envelope); // Connect oscillator to envelope
+      oscillator.start(time);
+      oscillator.stop(time + duration);
+      oscillator.onended = () => this.notes.delete(`${frequency}:${time}:${duration}`);
+    });
 
     const attack = 2.0;
     const decay = 1.0;
     const sustain = 0.8;
     const release = 2.0;
 
-    this.output.gain.setValueAtTime(0.0001, time);
-    this.output.gain.linearRampToValueAtTime(1, time + attack);
-    this.output.gain.exponentialRampToValueAtTime(sustain, time + attack + decay);
-    this.output.gain.linearRampToValueAtTime(0.0001, time + duration + release);
-
-    oscillators.forEach((oscillator) => {
-      oscillator.start(time);
-      oscillator.stop(time + duration + release);
-      oscillator.onended = () => this.notes.delete(`${frequency}:${time}:${duration}`);
-    });
+    envelope.gain.setValueAtTime(0.0001, time);
+    envelope.gain.linearRampToValueAtTime(1, time + attack);
+    envelope.gain.exponentialRampToValueAtTime(sustain, time + attack + decay);
+    envelope.gain.linearRampToValueAtTime(0.0001, time + duration + release);
 
     let key = `${frequency}:${time}:${duration}`;
-    this.notes.set(key, oscillators);
+    this.notes.set(key, { oscillators, envelope });
   }
 
   clearScheduledNotes() {
-    this.notes.forEach((oscillators) => oscillators.forEach((oscillator) => oscillator.cancelScheduledValues(0)));
+    this.notes.forEach(({ oscillators }) => oscillators.forEach((oscillator) => oscillator.cancelScheduledValues(0)));
   }
 
   stop() {
-    this.notes.forEach((oscillators) => {
+    this.notes.forEach(({ oscillators }) => {
       oscillators.forEach((oscillator) => {
         oscillator.disconnect();
         oscillator.stop();
