@@ -28,7 +28,6 @@
       requestAnimationFrame(draw);
 
       analyser.getByteFrequencyData(dataArray);
-
       tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
 
       for (let i = 0; i < bufferLength; i++) {
