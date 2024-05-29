@@ -70,6 +70,7 @@
   }
 
   onMount(() => {
+    // dialog.showModal();
     if ($tracks.length === 0) {
       // createDrumPattern({
       //   name: "Bass Drum",

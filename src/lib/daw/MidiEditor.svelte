@@ -2,7 +2,7 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
   import { getSelectedClip, playbackState, timeToPixels, zoomByDelta } from "../../core/store.js";
-  import { extractNoteEvents, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
+  import { extractNoteEvents, noteLabel } from "../../core/midi.js";
 
   const dispatch = createEventDispatcher();
 
@@ -41,49 +41,6 @@
     }
   }
 
-  function startNote(note, time, duration) {
-    audioManager.audioContext.resume();
-    const frequency = midiNoteToFrequency(note);
-
-    const totalOscillators = 4;
-
-    let gainNode = audioManager.audioContext.createGain();
-    let oscillators = Array.from({ length: totalOscillators }, (_, index) => {
-      let oscillator = audioManager.audioContext.createOscillator();
-      oscillator.type = "sawtooth";
-      oscillator.frequency.setValueAtTime(frequency, audioManager.audioContext.currentTime);
-      oscillator.detune.setValueAtTime((index - 1) * 13, audioManager.audioContext.currentTime);
-      oscillator.connect(gainNode);
-      return oscillator;
-    });
-
-    // ADSR Parameters
-    const attackTime = 0.01; // Attack time in seconds
-    const decayTime = 0.1; // Decay time in seconds
-    const sustainLevel = 0.9; // Sustain level (0.0 to 1.0)
-    const releaseTime = 0.3; // Release time in seconds
-
-    // Adjust noteEndTime to ensure it includes the release phase
-    const noteEndTime = time + duration;
-    const finalEndTime = noteEndTime + releaseTime; // Extend end time by the release duration
-
-    // Set up ADSR envelope
-    gainNode.gain.setValueAtTime(0.0001, time);
-    gainNode.gain.linearRampToValueAtTime(1 / totalOscillators, time + attackTime); // Attack
-    gainNode.gain.exponentialRampToValueAtTime(sustainLevel / totalOscillators, time + attackTime + decayTime); // Decay
-    gainNode.gain.setValueAtTime(sustainLevel / totalOscillators, noteEndTime); // Sustain until note end
-    gainNode.gain.linearRampToValueAtTime(0.0001, finalEndTime); // Release
-
-    // Connect, start, and schedule stopping of oscillators
-    gainNode.connect(audioManager.mixer);
-    oscillators.forEach((oscillator) => {
-      oscillator.start(time);
-      oscillator.stop(finalEndTime + 0.1);
-    });
-
-    return oscillators;
-  }
-
   function calculateNoteTopPosition(note) {
     return (127 - note.note) * noteHeight;
   }
@@ -104,7 +61,7 @@
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
 
-<svelte:window on:keydown={(e) => e.key === "d" && (debug = !debug)} />
+<!--<svelte:window on:keydown={(e) => e.key === "d" && (debug = !debug)} />-->
 
 <div
   style="--note-height: {noteHeight}px; --beat-width: {beatWidth}px"
@@ -177,10 +134,10 @@
                     {#each notesForDisplay as event}
                       <tr>
                         <td class="whitespace-nowrap px-1 font-mono text-xs">
-                          {parseFloat(event.start / 1000).toFixed(3)}s
+                          {(event.start / 1000).toFixed(3)}s
                         </td>
                         <td class="whitespace-nowrap px-1 font-mono text-xs">
-                          {parseFloat(event.duration / 1000).toFixed(3)}s
+                          {(event.duration / 1000).toFixed(3)}s
                         </td>
                         <td class="whitespace-nowrap px-1 font-mono text-xs">{event.velocity}</td>
                         <td class="whitespace-nowrap px-1 font-mono text-xs">{event.note}</td>

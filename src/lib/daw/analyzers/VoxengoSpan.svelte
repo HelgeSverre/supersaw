@@ -11,91 +11,18 @@
     audioManager.mixer.connect(analyser);
     canvasCtx = canvas.getContext("2d");
 
-    drawSpectrum2();
+    drawSpectrum();
   });
 
   function drawSpectrum() {
-    analyser.fftSize = 2048;
+    analyser.fftSize = 2048/4;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
     const draw = () => {
-      requestAnimationFrame(draw);
-
-      analyser.getByteFrequencyData(dataArray);
-
-      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const barWidth = canvas.width / bufferLength;
-      let barHeight;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        // Logarithmic frequency scaling
-        const logIndex = Math.log10(1 + (i / bufferLength) * 9);
-        const index = Math.floor(logIndex * bufferLength);
-        barHeight = dataArray[index];
-
-        // Rainbow colors
-        const hue = Math.round((index / bufferLength) * 360);
-        const color = `hsl(${hue}, 100%, 50%)`;
-
-        canvasCtx.fillStyle = color;
-        canvasCtx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
-
-        x += barWidth + 1;
+      if (!!!canvas) {
+        return;
       }
-    };
-
-    draw();
-  }
-
-  function drawSpectrum3() {
-    analyser.fftSize = 2048;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    const draw = () => {
-      requestAnimationFrame(draw);
-
-      analyser.getByteFrequencyData(dataArray);
-
-      canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const barWidth = canvas.width / bufferLength;
-      let barHeight;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        // Logarithmic frequency scaling
-        const logIndex = Math.log10(1 + (i / bufferLength) * 9);
-        const index = Math.floor(logIndex * bufferLength);
-        barHeight = dataArray[index];
-
-        // Logarithmic amplitude scaling
-        const percent = barHeight / 255;
-        const dB = -20 * Math.log10(percent);
-
-        // Rainbow colors
-        const hue = Math.round((index / bufferLength) * 360);
-        const color = `hsl(${hue}, 100%, 50%)`;
-
-        canvasCtx.fillStyle = color;
-        canvasCtx.fillRect(x, canvas.height - (dB + 100) * 2, barWidth, (dB + 100) * 2);
-
-        x += barWidth + 1;
-      }
-    };
-
-    draw();
-  }
-
-  function drawSpectrum2() {
-    analyser.fftSize = 2048;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    const draw = () => {
       requestAnimationFrame(draw);
 
       analyser.getByteFrequencyData(dataArray);

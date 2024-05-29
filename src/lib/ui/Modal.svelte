@@ -1,9 +1,14 @@
 <script>
   import { X } from "lucide-svelte";
+  import { onMount } from "svelte";
 
   export let dialog;
 
   export let dismissable = true;
+
+  onMount(() => {
+    dialog.showModal();
+  });
 
   function onClose() {
     dialog.close();
