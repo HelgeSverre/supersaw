@@ -168,7 +168,7 @@
         </div>
       </div>
 
-      <div class=" rounded-lg border border-black-300 bg-black-100 p-2">
+      <div class=" border-black-300 rounded-lg border bg-black p-2">
         <div class="piano select-none">
           {#each Object.entries(frequencies) as [note, hz]}
             <button

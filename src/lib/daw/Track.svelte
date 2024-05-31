@@ -138,7 +138,7 @@
         on:click={() => toggleMute(track.id)}
         class={`inline-flex items-center  justify-center rounded border border-dark-600 px-2 py-1 text-sm ${
           track.isMuted
-            ? "text-black-100 bg-accent-yellow hover:bg-accent-yellow/80"
+            ? "bg-accent-yellow text-black hover:bg-accent-yellow/80"
             : "bg-dark-600 text-light hover:bg-dark-500"
         }`}
       >
@@ -149,7 +149,7 @@
         on:click={() => toggleSolo(track.id)}
         class={`inline-flex items-center  justify-center rounded border border-dark-600 px-2 py-1 text-sm ${
           track.isSolo
-            ? "text-black-100 bg-accent-yellow hover:bg-accent-yellow/80"
+            ? "bg-accent-yellow text-black hover:bg-accent-yellow/80"
             : "bg-dark-600 text-light hover:bg-dark-500"
         }`}
       >
