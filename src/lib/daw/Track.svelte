@@ -16,6 +16,7 @@
   import MidiClip from "./MidiClip.svelte";
   import { createMidiClipFromFile } from "../../core/midi.js";
   import { audioManager } from "../../core/audio.js";
+  import classNames from "classnames";
 
   export let track;
 
@@ -138,7 +139,7 @@
         on:click={() => toggleMute(track.id)}
         class={`inline-flex items-center  justify-center rounded border border-dark-600 px-2 py-1 text-sm ${
           track.isMuted
-            ? "bg-accent-yellow text-black hover:bg-accent-yellow/80"
+            ? "text-black bg-accent-yellow hover:bg-accent-yellow/80"
             : "bg-dark-600 text-light hover:bg-dark-500"
         }`}
       >
@@ -147,11 +148,10 @@
 
       <button
         on:click={() => toggleSolo(track.id)}
-        class={`inline-flex items-center  justify-center rounded border border-dark-600 px-2 py-1 text-sm ${
-          track.isSolo
-            ? "bg-accent-yellow text-black hover:bg-accent-yellow/80"
-            : "bg-dark-600 text-light hover:bg-dark-500"
-        }`}
+        class={classNames("inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ", {
+          "text-black bg-accent-yellow hover:bg-accent-yellow/80": track.isSolo,
+          "bg-dark-600 text-light hover:bg-dark-500": !track.isSolo,
+        })}
       >
         Solo
       </button>
