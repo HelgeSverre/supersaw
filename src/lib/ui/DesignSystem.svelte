@@ -35,9 +35,9 @@
               <div class="rounded bg-dark-100 px-2 py-1">Dark 100</div>
             </div>
             <div class="flex flex-col gap-2">
-              <div class="text-black rounded bg-light px-2 py-1">light</div>
-              <div class="text-black rounded bg-light-secondary px-2 py-1">light-secondary</div>
-              <div class="text-black rounded bg-light-soft px-2 py-1">light-soft</div>
+              <div class="rounded bg-light px-2 py-1 text-black">light</div>
+              <div class="rounded bg-light-secondary px-2 py-1 text-black">light-secondary</div>
+              <div class="rounded bg-light-soft px-2 py-1 text-black">light-soft</div>
             </div>
 
             <div class="flex flex-col gap-2">
@@ -51,15 +51,15 @@
           </div>
           <div class="flex flex-1 flex-col gap-2">
             <div class="flex flex-col gap-2">
-              <div class="bg-black rounded px-2 py-1 text-dark-900">Dark 900</div>
-              <div class="bg-black rounded px-2 py-1 text-dark-800">Dark 800</div>
-              <div class="bg-black rounded px-2 py-1 text-dark-700">Dark 700</div>
-              <div class="bg-black rounded px-2 py-1 text-dark-600">Dark 600</div>
-              <div class="bg-black rounded px-2 py-1 text-dark-500">Dark 500</div>
-              <div class="bg-black rounded px-2 py-1 text-dark-400">Dark 400</div>
-              <div class="bg-black rounded px-2 py-1 text-dark-300">Dark 300</div>
-              <div class="bg-black rounded px-2 py-1 text-dark-200">Dark 200</div>
-              <div class="bg-black rounded px-2 py-1 text-dark-100">Dark 100</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-900">Dark 900</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-800">Dark 800</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-700">Dark 700</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-600">Dark 600</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-500">Dark 500</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-400">Dark 400</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-300">Dark 300</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-200">Dark 200</div>
+              <div class="rounded bg-black px-2 py-1 text-dark-100">Dark 100</div>
             </div>
             <div class="flex flex-col gap-2">
               <div class="rounded bg-dark-100 px-2 py-1 text-light">light</div>
