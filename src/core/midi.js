@@ -45,7 +45,7 @@ export function ticksToMilliseconds(ticks, ticksPerBeat, bpm) {
 
 function getDurationFromMidi(parsed) {
   let highestTime = 0;
-  let trackBpm = getBpmFromMidi(parsed);
+  let trackBpm = getBpmFromMidi(parsed) ?? 100;
 
   parsed.tracks.forEach((track) => {
     let wallTime = 0;
@@ -109,7 +109,9 @@ export function extractNoteEvents(midi) {
           .filter((note) => note.start < wallTimeInMilliseconds && note.duration === 0)
           .find((note) => note.note === event.noteNumber);
 
-        note.duration = wallTimeInMilliseconds - note?.start;
+        if (note) {
+          note.duration = wallTimeInMilliseconds - note?.start;
+        }
       }
     });
   });
