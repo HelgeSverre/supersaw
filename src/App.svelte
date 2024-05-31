@@ -245,7 +245,7 @@
 
       <div class="flex w-full flex-row items-center justify-start gap-x-2 py-2">
         <SegmentGroup>
-          <TextButton onClick={() => changeBpm(prompt("Enter new BPM", $bpm))} text="{$bpm} bpm" />
+          <TextButton onClick={() => changeBpm(prompt("Enter new BPM", $bpm) ?? $bpm)} text="{$bpm} bpm" />
         </SegmentGroup>
 
         <SegmentGroup>
