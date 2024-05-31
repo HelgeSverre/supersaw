@@ -74,8 +74,8 @@
     "bg-accent-red/20": "error" === loadingState && clip.id === $selectedClip,
     "ring-accent-red bg-accent-red/10": "error" === loadingState,
 
-    "bg-accent-yellow/20": "loaded" === loadingState && clip.id === $selectedClip,
-    "ring-accent-yellow bg-accent-yellow/10": "loaded" === loadingState,
+    "bg-accent-yellow/30": "loaded" === loadingState && clip.id === $selectedClip,
+    "ring-accent-yellow bg-accent-yellow/20": "loaded" === loadingState,
     // "audio-clip absolute inset-y-2 overflow-hidden rounded border border-gray-200"
   });
 </script>
@@ -106,8 +106,13 @@
       {clip.duration.toFixed(2)}s
     </div>
     <div class="h-full w-full overflow-hidden">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-full w-full" viewBox="0 0 1000 100" preserveAspectRatio="none">
-        <path d={waveformPathData} stroke="white" fill="none" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-full w-full text-accent-yellow"
+        viewBox="0 0 1000 100"
+        preserveAspectRatio="none"
+      >
+        <path d={waveformPathData} stroke="currentColor" fill="none" />
       </svg>
     </div>
   {/if}
