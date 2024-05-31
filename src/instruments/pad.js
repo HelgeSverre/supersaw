@@ -15,6 +15,13 @@ export class Pad {
     this.reverb.connect(this.compressor);
     this.createReverbImpulse();
 
+    this.adsr = {
+      attack: 0.8,
+      decay: 0.1,
+      sustain: 1,
+      release: 2.0,
+    };
+
     this.notes = new Map();
   }
 
@@ -60,15 +67,14 @@ export class Pad {
     return oscillators;
   }
 
-  applyEnvelope(envelope, attackTime, decayTime, sustainLevel, releaseTime, startTime) {
+  applyEnvelope(envelope, startTime, release) {
     envelope.gain.setValueAtTime(0.0001, startTime);
-    envelope.gain.linearRampToValueAtTime(1 / 5, startTime + attackTime);
-    envelope.gain.exponentialRampToValueAtTime(sustainLevel / 5, startTime + attackTime + decayTime);
-    if (releaseTime) {
-      envelope.gain.linearRampToValueAtTime(0, startTime + attackTime + decayTime + releaseTime);
-    }
+    envelope.gain.linearRampToValueAtTime(1 / Math.sqrt(5), startTime + this.adsr.attack);
+    envelope.gain.exponentialRampToValueAtTime(1 / Math.sqrt(5), startTime + this.adsr.attack + this.adsr.decay);
 
-    return { attackTime, decayTime, sustainLevel, releaseTime };
+    if (release) {
+      envelope.gain.linearRampToValueAtTime(0, startTime + this.adsr.attack + this.adsr.decay + this.adsr.release);
+    }
   }
 
   startNote(frequency) {
@@ -82,21 +88,22 @@ export class Pad {
       oscillator.start(startTime);
     });
 
-    this.applyEnvelope(envelope, 2.0, 0.2, 1, null, startTime);
+    this.applyEnvelope(envelope, startTime, false);
 
-    this.notes.set(frequency, { oscillators, envelope, releaseTime: 2.0 });
+    this.notes.set(frequency, { oscillators, envelope });
   }
 
   stopNote(frequency) {
     if (this.notes.has(frequency)) {
-      const { oscillators, envelope, releaseTime } = this.notes.get(frequency);
+      const { oscillators, envelope } = this.notes.get(frequency);
       const now = this.audioContext.currentTime;
 
       envelope.gain.cancelAndHoldAtTime(now);
-      envelope.gain.linearRampToValueAtTime(0, now + releaseTime);
+      envelope.gain.linearRampToValueAtTime(0, now + this.adsr.release);
 
       oscillators.forEach((oscillator) => {
-        oscillator.stop(now + releaseTime);
+        oscillator.stop(now + this.adsr.release);
+        console.log("stopped");
         this.notes.delete(frequency);
       });
     }
@@ -105,24 +112,14 @@ export class Pad {
   playNote(frequency, time, duration) {
     const oscillators = this.createOscillators(frequency, time);
     const envelope = this.audioContext.createGain();
-    envelope.connect(this.output);
+    envelope.connect(this.reverb);
 
     oscillators.forEach((oscillator) => {
-      oscillator.connect(envelope); // Connect oscillator to envelope
+      oscillator.connect(envelope);
       oscillator.start(time);
-      oscillator.stop(time + duration);
-      oscillator.onended = () => this.notes.delete(`${frequency}:${time}:${duration}`);
     });
 
-    const attack = 2.0;
-    const decay = 1.0;
-    const sustain = 0.8;
-    const release = 2.0;
-
-    envelope.gain.setValueAtTime(0.0001, time);
-    envelope.gain.linearRampToValueAtTime(1, time + attack);
-    envelope.gain.exponentialRampToValueAtTime(sustain, time + attack + decay);
-    envelope.gain.linearRampToValueAtTime(0.0001, time + duration + release);
+    this.applyEnvelope(envelope, time, true);
 
     let key = `${frequency}:${time}:${duration}`;
     this.notes.set(key, { oscillators, envelope });
@@ -137,6 +134,7 @@ export class Pad {
       oscillators.forEach((oscillator) => {
         oscillator.disconnect();
         oscillator.stop();
+        console.log("stopped");
       });
     });
     this.notes.clear();
