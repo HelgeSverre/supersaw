@@ -25,9 +25,11 @@
     tempCanvas.height = canvas.height;
 
     const draw = () => {
-      requestAnimationFrame(draw);
+      if (canvas === null) return;
+      if (tempCanvas === null) return;
 
       analyser.getByteFrequencyData(dataArray);
+
       tempCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
 
       for (let i = 0; i < bufferLength; i++) {
@@ -39,6 +41,8 @@
       canvasCtx.translate(-1, 0);
       canvasCtx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
       canvasCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+      requestAnimationFrame(draw);
     };
 
     draw();
