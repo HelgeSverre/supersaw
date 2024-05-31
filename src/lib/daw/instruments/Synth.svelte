@@ -147,10 +147,7 @@
           <div class="flex flex-row items-center justify-between text-xs">
             <span>Wave</span>
           </div>
-          <select
-            bind:value={selectedWaveform}
-            class="mt-1 w-full appearance-none rounded bg-black-100 p-1 px-2 text-xs"
-          >
+          <select bind:value={selectedWaveform} class="mt-1 w-full appearance-none rounded bg-black p-1 px-2 text-xs">
             {#each waveformTypes as type}
               <option value={type}>{type}</option>
             {/each}
@@ -167,7 +164,7 @@
             max="1"
             step="0.01"
             bind:value={volume}
-            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black text-sm accent-accent-green"
           />
         </div>
 
@@ -183,7 +180,7 @@
             step="1"
             bind:value={detune}
             title="Detune"
-            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black text-sm accent-accent-green"
           />
         </div>
       </div>
@@ -203,7 +200,7 @@
             step="0.01"
             bind:value={attack}
             title="Attack"
-            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black text-sm accent-accent-green"
           />
         </div>
         <div>
@@ -218,7 +215,7 @@
             step="0.01"
             bind:value={decay}
             title="Decay"
-            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black text-sm accent-accent-green"
           />
         </div>
         <div>
@@ -233,7 +230,7 @@
             step="0.01"
             bind:value={sustain}
             title="Sustain"
-            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black text-sm accent-accent-green"
           />
         </div>
         <div>
@@ -248,7 +245,7 @@
             step="0.01"
             bind:value={release}
             title="Release"
-            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black text-sm accent-accent-green"
           />
         </div>
         <div>
@@ -263,12 +260,12 @@
             step="1"
             bind:value={highPassFrequency}
             title="High Pass Filter Frequency"
-            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black text-sm accent-accent-green"
           />
         </div>
       </div>
 
-      <div class="col-span-full rounded-lg border border-black-100 bg-black-100 p-2">
+      <div class="border-black-100 col-span-full rounded-lg border bg-black p-2">
         <div class="piano">
           {#each Object.entries(frequencies) as [note, hz]}
             <button
