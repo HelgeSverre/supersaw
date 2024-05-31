@@ -8,7 +8,7 @@
 
 <div class="flex flex-col gap-1">
   {#if label}
-    <label for="sustain" class="text-xs text-white/50">{label}</label>
+    <span class="text-xs text-white/50">{label}</span>
   {/if}
   <input
     class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"

@@ -59,7 +59,7 @@
 <div class="flex flex-col rounded border border-dark-100 bg-dark-700 p-2">
   <div class="mb-2 flex w-full flex-row gap-2">
     <div class="flex flex-col gap-1">
-      <label for="attack" class="text-xs text-white/50">Attack</label>
+      <label class="text-xs text-white/50">Attack</label>
       <input
         class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
         type="number"
@@ -71,7 +71,7 @@
       />
     </div>
     <div class="flex flex-col gap-1">
-      <label for="decay" class="text-xs text-white/50">Decay</label>
+      <label class="text-xs text-white/50">Decay</label>
       <input
         class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
         type="number"
@@ -83,7 +83,7 @@
       />
     </div>
     <div class="flex flex-col gap-1">
-      <label for="sustain" class="text-xs text-white/50">Sustain</label>
+      <label class="text-xs text-white/50">Sustain</label>
       <input
         class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
         type="number"
@@ -95,7 +95,7 @@
       />
     </div>
     <div class="flex flex-col gap-1">
-      <label for="release" class="text-xs text-white/50">Release</label>
+      <label class="text-xs text-white/50">Release</label>
       <input
         class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
         type="number"
