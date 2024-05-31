@@ -7,7 +7,7 @@
   export let dismissable = true;
 
   onMount(() => {
-    dialog.showModal();
+    // dialog.showModal();
   });
 
   function onClose() {
