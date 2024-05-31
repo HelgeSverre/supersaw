@@ -102,7 +102,7 @@
   function stopNote(hz, note) {
     audioManager.audioContext.resume();
     activeInstrument.stopNote(hz);
-    activeNotes = activeNotes.filter((note) => note !== note);
+    activeNotes = activeNotes.filter((n) => n !== note);
   }
 
   function handleKeyboardDown(event) {
