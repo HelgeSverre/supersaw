@@ -1,18 +1,15 @@
 export class Pad {
   constructor(audioContext, mixer) {
-
     this.audioContext = audioContext;
     this.mixer = mixer;
     this.output = this.audioContext.createGain();
     this.output.connect(this.mixer);
-
 
     // Osc -> Reverb -> Compressor -> Output
     // Osc -> Output
 
     this.compressor = this.createCompressor();
     this.compressor.connect(this.output);
-
 
     this.reverb = this.audioContext.createConvolver();
     this.reverb.connect(this.compressor);
@@ -85,9 +82,9 @@ export class Pad {
       oscillator.start(startTime);
     });
 
-     this.applyEnvelope(envelope, 2.0, 0.2, 1, null, startTime);
+    this.applyEnvelope(envelope, 2.0, 0.2, 1, null, startTime);
 
-    this.notes.set(frequency, { oscillators, envelope, releaseTime: 2.0});
+    this.notes.set(frequency, { oscillators, envelope, releaseTime: 2.0 });
   }
 
   stopNote(frequency) {
