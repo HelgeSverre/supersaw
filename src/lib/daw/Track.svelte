@@ -110,7 +110,7 @@
   class="track flex flex-row gap-2 overflow-hidden rounded-sm border border-dark-100 bg-white/5 {track.isMuted
     ? 'opacity-50'
     : ''}"
-  style="height: 150px; position: relative;"
+  style="height: 120px; position: relative;"
 >
   <!-- Track header -->
   <div class="track-header flex w-60 shrink-0 flex-col border-r-2 border-r-dark-900 bg-dark-300">
@@ -138,7 +138,7 @@
         on:click={() => toggleMute(track.id)}
         class={`inline-flex items-center  justify-center rounded border border-dark-600 px-2 py-1 text-sm ${
           track.isMuted
-            ? "bg-accent-yellow text-black-100 hover:bg-accent-yellow/80"
+            ? "text-black-100 bg-accent-yellow hover:bg-accent-yellow/80"
             : "bg-dark-600 text-light hover:bg-dark-500"
         }`}
       >
@@ -149,7 +149,7 @@
         on:click={() => toggleSolo(track.id)}
         class={`inline-flex items-center  justify-center rounded border border-dark-600 px-2 py-1 text-sm ${
           track.isSolo
-            ? "bg-accent-yellow text-black-100 hover:bg-accent-yellow/80"
+            ? "text-black-100 bg-accent-yellow hover:bg-accent-yellow/80"
             : "bg-dark-600 text-light hover:bg-dark-500"
         }`}
       >
