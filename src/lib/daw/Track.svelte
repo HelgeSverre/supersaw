@@ -40,6 +40,8 @@
           createMidiClipFromFile(file).then((clip) => {
             addClip(track.id, { ...clip, startTime: newStartTime });
           });
+
+          return;
         }
       }
     }
