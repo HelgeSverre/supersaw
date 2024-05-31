@@ -83,7 +83,7 @@
   $: width = $timeToPixels(clip.duration);
 
   $: clipClasses = classNames("audio-clip absolute inset-y-2 overflow-hidden rounded border ", {
-    "border-blue-300 bg-accent-blue/20": clip.id === $selectedClip,
+    "border-blue-300 bg-accent-blue/30": clip.id === $selectedClip,
     "border-blue-400 bg-accent-blue/10": clip.id !== $selectedClip,
   });
 </script>
