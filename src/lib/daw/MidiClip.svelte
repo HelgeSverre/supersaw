@@ -111,7 +111,7 @@
       {clip.name ?? "Unnamed"}
     </div>
     <div class="absolute right-1 top-1 inline-block rounded bg-white/10 p-0.5 text-right text-[10px] leading-none">
-      {clip.duration.toFixed(2)}s
+      {clip.duration?.toFixed(2)}s
     </div>
     <div class="relative h-full w-full">
       <svg
