@@ -53,8 +53,6 @@
   };
 
   const getKeyboardKeyForNote = (note) => {
-
-
     return keyMapsForOctave[Object.keys(frequencies).indexOf(note)];
   };
 
@@ -140,8 +138,8 @@
   <h2 slot="header">Instrument</h2>
 
   <div class="instrument rounded-lg border border-dark-900 bg-dark-400 p-6 pt-4">
-    <div class="grid grid-cols-1 gap-3">
-      <div class="flex flex-row items-center justify-between gap-3">
+    <div class="flex flex-col gap-3">
+      <div class="flex h-6 flex-row items-center justify-between gap-3">
         <div class="mr-auto">
           <select
             bind:value={selectedInstrument}
@@ -153,6 +151,7 @@
             {/each}
           </select>
         </div>
+
         <div class="flex h-full w-full flex-row items-center gap-1 rounded-md bg-dark-200 p-1 px-1.5 font-mono text-xs">
           {#each activeNotes as note}
             <div class="inline-block rounded bg-white/80 px-1 py-0.5 text-center text-[10px] leading-none text-[black]">
@@ -169,7 +168,7 @@
         </div>
       </div>
 
-      <div class="col-span-full rounded-lg border border-black-200 bg-black-300 p-2">
+      <div class=" rounded-lg border border-black-300 bg-black-100 p-2">
         <div class="piano select-none">
           {#each Object.entries(frequencies) as [note, hz]}
             <button
@@ -200,15 +199,15 @@
 
 <style>
   /*
-    todo  fix this comment indenting weirdly when formatting.
+      todo  fix this comment indenting weirdly when formatting.
 
-          Z-INDEX ORDER:
+            Z-INDEX ORDER:
 
-          - 10 - White hovered/active keys (z-index: 10)
-          - 20 - White keys (z-index: 20)
-          - 30 - Black hovered/active keys (z-index: 30)
-          - 40 - Black keys (z-index: 40)
-        */
+            - 10 - White hovered/active keys (z-index: 10)
+            - 20 - White keys (z-index: 20)
+            - 30 - Black hovered/active keys (z-index: 30)
+            - 40 - Black keys (z-index: 40)
+          */
 
   .instrument {
     --white-note-width: 35px;

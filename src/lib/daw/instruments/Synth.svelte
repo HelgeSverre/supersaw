@@ -1,5 +1,8 @@
 <script>
   import { audioManager } from "../../../core/audio.js";
+  import Modal from "../../ui/Modal.svelte";
+
+  export let modal;
 
   const frequencies = {
     "C2": 65.41,
@@ -127,10 +130,10 @@
   export { startNote, stopNote };
 </script>
 
-<div class="rounded-xl bg-dark-300 p-2">
-  <h2>DX77</h2>
+<Modal bind:dialog={modal}>
+  <h2 slot="header">DX77</h2>
 
-  <div class="rounded-lg border border-dark-900 bg-[#181C1D] p-6 pt-4 shadow-xl shadow-accent-green/20">
+  <div class="rounded-lg bg-[#181C1D] p-6 pt-4 shadow-xl shadow-accent-green/20">
     <div class="mb-2 flex w-full flex-row items-center justify-between">
       <p
         class="mb-2 inline-block rounded-md border-2 border-accent-green/20 p-1 font-mono text-lg font-black leading-none tracking-tight text-white/70"
@@ -146,7 +149,7 @@
           </div>
           <select
             bind:value={selectedWaveform}
-            class="mt-1 w-full appearance-none rounded bg-black-200 p-1 px-2 text-xs"
+            class="mt-1 w-full appearance-none rounded bg-black-100 p-1 px-2 text-xs"
           >
             {#each waveformTypes as type}
               <option value={type}>{type}</option>
@@ -164,7 +167,7 @@
             max="1"
             step="0.01"
             bind:value={volume}
-            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
           />
         </div>
 
@@ -180,7 +183,7 @@
             step="1"
             bind:value={detune}
             title="Detune"
-            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
           />
         </div>
       </div>
@@ -200,7 +203,7 @@
             step="0.01"
             bind:value={attack}
             title="Attack"
-            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
           />
         </div>
         <div>
@@ -215,7 +218,7 @@
             step="0.01"
             bind:value={decay}
             title="Decay"
-            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
           />
         </div>
         <div>
@@ -230,7 +233,7 @@
             step="0.01"
             bind:value={sustain}
             title="Sustain"
-            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
           />
         </div>
         <div>
@@ -245,7 +248,7 @@
             step="0.01"
             bind:value={release}
             title="Release"
-            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
           />
         </div>
         <div>
@@ -260,12 +263,12 @@
             step="1"
             bind:value={highPassFrequency}
             title="High Pass Filter Frequency"
-            class="mt-1 w-full appearance-none rounded-full bg-black-200 text-sm accent-accent-green"
+            class="mt-1 w-full appearance-none rounded-full bg-black-100 text-sm accent-accent-green"
           />
         </div>
       </div>
 
-      <div class="col-span-full rounded-lg border border-black-200 bg-black-300 p-2">
+      <div class="col-span-full rounded-lg border border-black-100 bg-black-100 p-2">
         <div class="piano">
           {#each Object.entries(frequencies) as [note, hz]}
             <button
@@ -281,7 +284,7 @@
       </div>
     </div>
   </div>
-</div>
+</Modal>
 
 <style>
   .piano {
