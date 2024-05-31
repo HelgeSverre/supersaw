@@ -6,17 +6,25 @@ export class Supersaw {
     this.output.connect(this.mixer);
     this.notes = new Map();
 
-    // this.adsr = { attack: 0.0, decay: 0.0, sustain: 1, release: 0.2 };
-    this.adsr = { attack: 0.01, decay: 0.1, sustain: 1, release: 0.5 };
+    this.adsr = { attack: 0.001, decay: 0.05, sustain: 0.3, release: 1 };
+    // this.adsr = { attack: 0.01, decay: 0.1, sustain: 1, release: 0.5 };
+
+    // temporary
+    this.enableDistortion = false;
+    this.enableReverb = false;
+
+    this.detuneAmount = 20;
+    this.distortionAmount = 10;
 
     this.numOscillators = 8;
     this.reverbAmount = 0.5;
     this.reverbTime = 2;
-    this.detuneAmount = 20;
+    // this.limiter = this.createLimiter();
+    // this.limiter.connect(this.output);
 
     this.reverbGain = this.audioContext.createGain();
-    this.reverbGain.connect(this.output);
     this.reverbGain.gain.value = this.reverbAmount;
+    this.reverbGain.connect(this.output);
     this.createReverbImpulse();
     this.createDistortion();
   }
@@ -25,11 +33,52 @@ export class Supersaw {
     return gain / Math.sqrt(this.numOscillators);
   }
 
+  createCompressor() {
+    const compressor = this.audioContext.createDynamicsCompressor();
+    compressor.threshold.setValueAtTime(-6, this.audioContext.currentTime); // dB, adjust based on your needs
+    compressor.knee.setValueAtTime(30, this.audioContext.currentTime); // dB, provides a softer knee
+    compressor.ratio.setValueAtTime(4, this.audioContext.currentTime); // input/output ratio
+    compressor.attack.setValueAtTime(0.005, this.audioContext.currentTime); // seconds
+    compressor.release.setValueAtTime(0.05, this.audioContext.currentTime); // seconds
+    return compressor;
+  }
+
+  // createLimiter() {
+  //   const limiter = this.audioContext.createWaveShaper();
+  //   const n_samples = 44100;
+  //   const curve = new Float32Array(n_samples);
+  //   const threshold = 0.8; // Normalized threshold value
+  //
+  //   for (let i = 0; i < n_samples; i++) {
+  //     const x = (i * 2 / n_samples) - 1;
+  //     if (x < -threshold) {
+  //       curve[i] = -threshold + (x + threshold) / 2;
+  //     } else if (x > threshold) {
+  //       curve[i] = threshold + (x - threshold) / 2;
+  //     } else {
+  //       curve[i] = x;
+  //     }
+  //   }
+  //
+  //   limiter.curve = curve;
+  //   limiter.oversample = '4x';
+  //   return limiter;
+  // }
+  createLimiter() {
+    const limiter = this.audioContext.createWaveShaper();
+    const curve = new Float32Array(2);
+    curve[0] = 0.333; // values that achieve compression above -1/+1
+    curve[1] = 0.333;
+    limiter.curve = curve;
+    limiter.oversample = "4x";
+    return limiter;
+  }
+
   createDistortion() {
     this.distortion = this.audioContext.createWaveShaper();
-    this.distortion.curve = this.makeDistortionCurve(800);
+    this.distortion.curve = this.makeDistortionCurve(this.distortionAmount);
     this.distortion.oversample = "4x"; // "none", "2x", "4x
-    this.distortion.connect(this.reverbGain);
+    this.distortion.connect(this.output);
   }
 
   makeDistortionCurve(amount) {
@@ -131,22 +180,31 @@ export class Supersaw {
     const envelope = this.audioContext.createGain();
     envelope.connect(this.output);
 
-    if (this.reverb) {
+    if (this.enableReverb) {
       envelope.connect(this.reverb);
+    }
+
+    if (this.enableDistortion) {
+      envelope.connect(this.distortion);
     }
 
     oscillators.forEach((oscillator, index) => {
       oscillator.connect(envelope);
       const phaseOffset = index / 1000 + Math.random() / 1000;
       oscillator.start(time + phaseOffset);
-      oscillator.stop(time + duration + 0.1);
+      oscillator.stop(time + duration + this.adsr.attack + this.adsr.decay + this.adsr.release + 0.1);
     });
 
-    const { attack, decay, sustain, release } = this.adsr;
     envelope.gain.setValueAtTime(0.00001, time);
-    envelope.gain.exponentialRampToValueAtTime(this.oscGain(1), time + attack);
-    envelope.gain.exponentialRampToValueAtTime(this.oscGain(sustain), time + attack + decay);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration + release);
+    envelope.gain.exponentialRampToValueAtTime(this.oscGain(1), time + this.adsr.attack);
+    envelope.gain.exponentialRampToValueAtTime(
+      this.oscGain(this.adsr.sustain),
+      time + this.adsr.attack + this.adsr.decay,
+    );
+    envelope.gain.exponentialRampToValueAtTime(
+      0.0001,
+      time + duration + this.adsr.attack + this.adsr.decay + this.adsr.release,
+    );
 
     let key = `${frequency}:${time}:${duration}`;
     this.notes.set(key, { oscillators, envelope });
