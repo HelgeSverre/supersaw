@@ -60,7 +60,8 @@
   import Spectrogram from "./lib/daw/analyzers/Spectrogram.svelte";
   import VoxengoSpan from "./lib/daw/analyzers/VoxengoSpan.svelte";
 
-  let dialog;
+  let instrumentDialog;
+  let synthDialog;
 
   function handleZoom(event) {
     if (event.shiftKey) {
@@ -70,7 +71,7 @@
   }
 
   onMount(() => {
-    // dialog.showModal();
+    // instrumentDialog.showModal();
     if ($tracks.length === 0) {
       // createDrumPattern({
       //   name: "Bass Drum",
@@ -102,8 +103,12 @@
     }
 
     if (event.shiftKey && key === "I") {
-      dialog.showModal();
+      instrumentDialog.showModal();
     }
+    if (event.shiftKey && key === "O") {
+      synthDialog.showModal();
+    }
+
     // Shift + 1 - Switch to timeline view
     if (event.shiftKey && keyCode === 49) {
       switchView("timeline");
@@ -276,7 +281,8 @@
             <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />
             <IconButton icon={Warehouse} onClick={createDummyHouseTracks} />
           </SegmentGroup>
-          <IconButton icon={KeyboardMusic} onClick={() => dialog.showModal()} />
+          <IconButton icon={KeyboardMusic} onClick={() => instrumentDialog.showModal()} />
+          <IconButton icon={KeyboardMusic} onClick={() => synthDialog.showModal()} />
 
           <SegmentGroup>
             <IconButton icon={Cube} onClick={() => switchView("playground")} />
@@ -359,7 +365,8 @@
     </div>
   {/if}
 
-  <Instrument bind:modal={dialog} />
+  <Synth bind:modal={synthDialog} />
+  <Instrument bind:modal={instrumentDialog} />
 
   <MixerPanel />
 </main>
