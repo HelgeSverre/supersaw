@@ -8,6 +8,7 @@
 
   onMount(() => {
     analyser = audioManager.audioContext.createAnalyser();
+    analyser.fftSize = 2048;
     audioManager.mixer.connect(analyser);
     canvasCtx = canvas.getContext("2d");
 
@@ -15,7 +16,6 @@
   });
 
   function drawSpectrum() {
-    analyser.fftSize = 2048 / 4;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -29,7 +29,7 @@
 
       canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const barWidth = (canvas.width / bufferLength) * 2.5;
+      const barWidth = canvas.width / bufferLength;
       let barHeight;
       let x = 0;
 
