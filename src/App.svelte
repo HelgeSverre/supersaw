@@ -1,19 +1,5 @@
 <script>
-  import {
-    Drum,
-    KeyboardMusic,
-    Lightbulb,
-    ListMusic,
-    Music,
-    Pause,
-    Play,
-    Plus,
-    Repeat2,
-    Square,
-    SquareScissors,
-    Trash,
-    Warehouse,
-  } from "lucide-svelte";
+  import { Lightbulb, Pause, Play, Plus, Repeat2, Square, Trash } from "lucide-svelte";
   import Track from "./lib/daw/Track.svelte";
 
   import {
@@ -21,8 +7,6 @@
     bpm,
     changeBpm,
     clearTracks,
-    createDummyHardstyleTracks,
-    createDummyHouseTracks,
     createDummyTranceTracks,
     createInstrumentTrack,
     currentView,
@@ -38,7 +22,6 @@
     switchView,
     timeToPixels,
     toggleLooping,
-    toggleView,
     tracks,
     zoomByDelta,
   } from "./core/store.js";
@@ -49,15 +32,12 @@
   import TextButton from "./lib/ui/TextButton.svelte";
   import { onMount } from "svelte";
   import MixerPanel from "./lib/daw/MixerPanel.svelte";
-  import Browser from "./lib/daw/Browser.svelte";
   import MidiEditor from "./lib/daw/MidiEditor.svelte";
   import Synth from "./lib/daw/instruments/Synth.svelte";
   import { createMidiClipFromUrl } from "./core/midi.js";
   import AudioVisualizer from "./lib/daw/analyzers/AudioVisualizer.svelte";
-  import { Cube } from "phosphor-svelte";
   import DesignSystem from "./lib/ui/DesignSystem.svelte";
   import Instrument from "./lib/daw/instruments/Instrument.svelte";
-  import Spectrogram from "./lib/daw/analyzers/Spectrogram.svelte";
   import VoxengoSpan from "./lib/daw/analyzers/VoxengoSpan.svelte";
 
   let instrumentDialog;
@@ -117,6 +97,11 @@
     // Shift + 2 - Switch to midi view
     if (event.shiftKey && keyCode === 50) {
       switchView("midi");
+    }
+
+    // Shift + 2 - Switch to midi view
+    if (event.shiftKey && keyCode === 51) {
+      switchView("playground");
     }
 
     // Arrow keys - Move playhead left/right by 100 ms, if shift, move by 1 second
@@ -182,7 +167,7 @@
   }
 
   function createMidiTrack() {
-    createMidiClipFromUrl("/midi/emotions.mid", "Midi notes").then((clip) => {
+    createMidiClipFromUrl("/midi/sunblind-believe-nunrg.mid", "Midi notes").then((clip) => {
       addTrack({
         id: crypto.randomUUID(),
         type: "instrument",
@@ -192,27 +177,6 @@
         clips: [clip],
       });
     });
-    // createMidiClipFromUrl("/midi/silentium.mid", "Midi notes").then((clip) => {
-    //      addTrack({
-    //        id: crypto.randomUUID(),
-    //        type: "instrument",
-    //        name: "Midi notes",
-    //        isMuted: false,
-    //        isSolo: false,
-    //        clips: [clip],
-    //      });
-    //    });
-
-    //   createMidiClipFromUrl("/midi/between-worlds.mid", "Between Worlds").then((clip) => {
-    //     addTrack({
-    //       id: crypto.randomUUID(),
-    //       type: "instrument",
-    //       name: "Between Worlds",
-    //       isMuted: false,
-    //       isSolo: false,
-    //       clips: [clip],
-    //     });
-    //   });
   }
 
   function toggleTheme() {
@@ -239,9 +203,9 @@
   <!-- Control Panel -->
   <section class="bg-dark-600 px-2">
     <div class="flex h-14 flex-row items-center gap-2">
-      <div class="flex h-full w-[250px] shrink-0 items-center">
-        <Browser />
-      </div>
+      <!--      <div class="flex h-full w-[250px] shrink-0 items-center">-->
+      <!--        <Browser />-->
+      <!--      </div>-->
 
       <div class="flex w-full flex-row items-center justify-start gap-x-2 py-2">
         <SegmentGroup>
@@ -272,21 +236,20 @@
         {/if}
 
         <AudioVisualizer />
-        <Spectrogram />
+        <!--        <Spectrogram />-->
         <VoxengoSpan />
 
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
-          <SegmentGroup>
-            <IconButton icon={Drum} onClick={createDummyHardstyleTracks} />
-            <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />
-            <IconButton icon={Warehouse} onClick={createDummyHouseTracks} />
-          </SegmentGroup>
-          <IconButton icon={KeyboardMusic} onClick={() => instrumentDialog.showModal()} />
-          <IconButton icon={KeyboardMusic} onClick={() => synthDialog.showModal()} />
+          <!--          <SegmentGroup>-->
+          <!--            <IconButton icon={Drum} onClick={createDummyHardstyleTracks} />-->
+          <!--            <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />-->
+          <!--            <IconButton icon={Warehouse} onClick={createDummyHouseTracks} />-->
+          <!--          </SegmentGroup>-->
+          <!--          <IconButton icon={KeyboardMusic} onClick={() => instrumentDialog.showModal()} />-->
+          <!--          <IconButton icon={KeyboardMusic} onClick={() => synthDialog.showModal()} />-->
 
           <SegmentGroup>
-            <IconButton icon={Cube} onClick={() => switchView("playground")} />
-            <IconButton icon={$currentView === "timeline" ? ListMusic : Music} onClick={() => toggleView()} />
+            <TextDisplay text={$currentView} />
             <IconButton icon={Plus} onClick={createMidiTrack} />
             <IconButton icon={Plus} onClick={() => createInstrumentTrack()} />
             <IconButton icon={Trash} onClick={clearTracks} />
@@ -310,7 +273,7 @@
           bind:this={selectionArea}
           on:mousedown|self={handleMouseDown}
           aria-hidden="true"
-          class=" relative left-[250px] mt-2 h-6 bg-dark-600"
+          class="relative left-[250px] mt-2 h-6 bg-dark-600"
         >
           <!-- todo: allow moving the selection area  -->
           <!-- Loop selection indication on "minimap" -->
