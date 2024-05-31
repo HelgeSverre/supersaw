@@ -98,7 +98,7 @@ export const createTranceEDMPattern = async ({ bpm }) => {
     }),
     await createDrumPattern({
       name: "Clap",
-      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]),
+      steps: createStepSequencerPattern(16, 4, [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]),
       bpm: bpm,
       kit: "trance",
       variations: ["MaxV - Roland808 - 808Cp 05.wav"],
