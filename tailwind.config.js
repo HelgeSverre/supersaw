@@ -2,10 +2,7 @@ const defaultTheme = require("tailwindcss/defaultTheme");
 
 /** @type {import("tailwindcss").Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{html,js,svelte,ts}",
-  ],
+  content: ["./index.html", "./src/**/*.{html,js,svelte,ts}"],
   theme: {
     extend: {
       fontFamily: {
@@ -36,11 +33,6 @@ export default {
           pink: "rgb(var(--accent-pink) / <alpha-value>)",
           red: "rgb(var(--accent-red) / <alpha-value>)",
           yellow: "rgb(var(--accent-yellow) / <alpha-value>)",
-        },
-        black: {
-          100: "rgb(var(--black-100) / <alpha-value>)",
-          200: "rgb(var(--black-200) / <alpha-value>)",
-          300: "rgb(var(--black-300) / <alpha-value>)",
         },
         foreground: "rgb(var(--foreground) / <alpha-value>)",
         background: "rgb(var(--background) / <alpha-value>)",
