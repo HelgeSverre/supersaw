@@ -165,7 +165,7 @@
           class="flex select-none items-center justify-center gap-1 whitespace-nowrap text-sm font-medium uppercase leading-none tracking-widest text-white"
         >
           <Fan size="16" class="text-accent-yellow" />
-          <span>AirWAVE-01</span>
+          <span class="tabular-nums">AirWAVE-0{currentKeyboardOctave}</span>
         </div>
       </div>
 
