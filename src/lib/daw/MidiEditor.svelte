@@ -61,7 +61,7 @@
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
 
-<!--<svelte:window on:keydown={(e) => e.key === "d" && (debug = !debug)} />-->
+<svelte:window on:keydown={(e) => e.key === "d" && (debug = !debug)} />
 
 <div
   style="--note-height: {noteHeight}px; --beat-width: {beatWidth}px"
