@@ -9,7 +9,7 @@ export class Synth {
 
   createOscillator(frequency, time) {
     const oscillator = this.audioContext.createOscillator();
-    oscillator.type = "sawtooth";
+    oscillator.type = "square";
     oscillator.frequency.setValueAtTime(frequency, time);
     return oscillator;
   }
