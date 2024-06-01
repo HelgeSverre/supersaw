@@ -73,8 +73,6 @@
   };
 
   onMount(() => {
-    audioManager.audioContext.resume();
-
     changeInstrument("supersaw");
 
     modal.addEventListener("keydown", handleKeyboardDown);

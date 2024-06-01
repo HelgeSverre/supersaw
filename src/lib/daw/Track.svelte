@@ -187,7 +187,7 @@
         </button>
       {:else if track.type === "instrument"}
         <select
-          class="w-full rounded border border-dark-200 bg-dark-700 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-dark-100 appearance-none"
+          class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-dark-100"
           bind:value={track.instrument}
           on:change={(e) => (track.instrument = e.target.value)}
         >
