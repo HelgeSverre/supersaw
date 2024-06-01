@@ -1,7 +1,7 @@
 import { Synth } from "../instruments/synth.js";
 import { Piano } from "../instruments/piano.js";
 import { Pad } from "../instruments/pad.js";
-import { Supersaw } from "../instruments/supersaw.js";
+import { Supersaw } from "../instruments/supersaw.ts";
 
 class AudioManager {
   audioContext;

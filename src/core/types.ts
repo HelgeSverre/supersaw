@@ -2,7 +2,6 @@ export interface Instrument {
   startNote: (frequency: number) => void;
   stopNote: (frequency: number) => void;
   playNote: (frequency: number, time: number, duration: number) => void;
-  clearScheduledNotes: () => void;
   stop: () => void;
 }
 

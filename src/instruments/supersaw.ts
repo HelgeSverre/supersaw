@@ -1,5 +1,29 @@
-export class Supersaw {
-  constructor(audioContext, mixer) {
+import type { ADSR, Instrument } from "../core/types";
+
+interface Note {
+  oscillators: OscillatorNode[];
+  envelope: GainNode;
+}
+
+export class Supersaw implements Instrument {
+  private audioContext: AudioContext;
+  private mixer: AudioNode;
+  private notes: Map<string | number, Note>;
+  private adsr: ADSR;
+  private numOscillators: number;
+  private detuneAmount: number;
+  private reverbAmount: number;
+  private reverbTime: number;
+  private distortionAmount: number;
+  private output: GainNode;
+  private distortion: WaveShaperNode;
+  private reverb: ConvolverNode;
+  private compressor: DynamicsCompressorNode;
+  private reverbHPF: BiquadFilterNode;
+  private reverbLPF: BiquadFilterNode;
+  private reverbGain: GainNode;
+
+  constructor(audioContext: AudioContext, mixer: AudioNode) {
     this.audioContext = audioContext;
     this.mixer = mixer;
     this.notes = new Map();
@@ -10,7 +34,6 @@ export class Supersaw {
     this.reverbTime = 2;
     this.distortionAmount = 2;
 
-    // Create and connect nodes
     this.output = this.audioContext.createGain();
     this.distortion = this.createDistortion();
     this.reverb = this.createReverbImpulse();
@@ -18,12 +41,10 @@ export class Supersaw {
     this.reverbHPF = this.createHighPassFilter(600);
     this.reverbLPF = this.createLowPassFilter(6000);
 
-    // Chain the effects
     this.distortion.connect(this.compressor);
     this.compressor.connect(this.output);
     this.output.connect(this.mixer);
 
-    // Parallel chain for reverb
     this.reverbGain = this.audioContext.createGain();
     this.reverbGain.gain.value = this.reverbAmount;
     this.reverbHPF.connect(this.reverbLPF);
@@ -32,25 +53,25 @@ export class Supersaw {
     this.reverbGain.connect(this.output);
   }
 
-  oscGain(gain = 1) {
+  private oscGain(gain = 1): number {
     return gain / Math.sqrt(this.numOscillators);
   }
 
-  createHighPassFilter(frequency) {
+  private createHighPassFilter(frequency: number): BiquadFilterNode {
     const filter = this.audioContext.createBiquadFilter();
     filter.type = "highpass";
     filter.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
     return filter;
   }
 
-  createLowPassFilter(frequency) {
+  private createLowPassFilter(frequency: number): BiquadFilterNode {
     const filter = this.audioContext.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
     return filter;
   }
 
-  createCompressor() {
+  private createCompressor(): DynamicsCompressorNode {
     const compressor = this.audioContext.createDynamicsCompressor();
     compressor.threshold.setValueAtTime(-6, this.audioContext.currentTime);
     compressor.knee.setValueAtTime(30, this.audioContext.currentTime);
@@ -60,15 +81,15 @@ export class Supersaw {
     return compressor;
   }
 
-  createDistortion() {
+  private createDistortion(): WaveShaperNode {
     const distortion = this.audioContext.createWaveShaper();
     distortion.curve = this.makeDistortionCurve(this.distortionAmount);
     distortion.oversample = "4x";
     return distortion;
   }
 
-  makeDistortionCurve(amount) {
-    const k = typeof amount === "number" ? amount : 50;
+  private makeDistortionCurve(amount: number): Float32Array {
+    const k = amount;
     const n_samples = 44100;
     const curve = new Float32Array(n_samples);
     const deg = Math.PI / 180;
@@ -79,7 +100,7 @@ export class Supersaw {
     return curve;
   }
 
-  createReverbImpulse() {
+  private createReverbImpulse(): ConvolverNode {
     const reverb = this.audioContext.createConvolver();
     const length = this.audioContext.sampleRate * this.reverbTime;
     const impulse = this.audioContext.createBuffer(2, length, this.audioContext.sampleRate);
@@ -94,8 +115,8 @@ export class Supersaw {
     return reverb;
   }
 
-  createSupersawOscillators(frequency, time) {
-    const oscillators = [];
+  private createSupersawOscillators(frequency: number, time: number): OscillatorNode[] {
+    const oscillators: OscillatorNode[] = [];
 
     for (let i = 0; i < this.numOscillators; i++) {
       const oscillator = this.audioContext.createOscillator();
@@ -108,7 +129,7 @@ export class Supersaw {
     return oscillators;
   }
 
-  startNote(frequency) {
+  startNote(frequency: number): void {
     const now = this.audioContext.currentTime;
     const oscillators = this.createSupersawOscillators(frequency, now);
     const envelope = this.audioContext.createGain();
@@ -126,11 +147,11 @@ export class Supersaw {
     this.notes.set(frequency, { oscillators, envelope });
   }
 
-  stopNote(frequency) {
+  stopNote(frequency: number): void {
     if (!this.notes.has(frequency)) return;
 
     const { release } = this.adsr;
-    const { oscillators, envelope } = this.notes.get(frequency);
+    const { oscillators, envelope } = this.notes.get(frequency)!;
     const now = this.audioContext.currentTime;
 
     envelope.gain.cancelAndHoldAtTime(now);
@@ -144,7 +165,7 @@ export class Supersaw {
     this.notes.delete(frequency);
   }
 
-  playNote(frequency, time, duration) {
+  playNote(frequency: number, time: number, duration: number): void {
     const { attack, sustain, release, decay } = this.adsr;
     const oscillators = this.createSupersawOscillators(frequency, time);
     const envelope = this.audioContext.createGain();
@@ -161,14 +182,14 @@ export class Supersaw {
     this.applyEnvelope(envelope, time);
     envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration + attack + decay + release);
 
-    let key = `${frequency}:${time}:${duration}`;
+    const key = `${frequency}:${time}:${duration}`;
     this.notes.set(key, { oscillators, envelope });
     oscillators.forEach((oscillator) => {
       oscillator.onended = () => this.notes.delete(key);
     });
   }
 
-  applyEnvelope(envelope, time) {
+  private applyEnvelope(envelope: GainNode, time: number): { release: number } {
     const { attack, decay, sustain, release } = this.adsr;
     envelope.gain.setValueAtTime(0.00001, time);
     envelope.gain.exponentialRampToValueAtTime(this.oscGain(1), time + attack);
@@ -176,11 +197,7 @@ export class Supersaw {
     return { release };
   }
 
-  clearScheduledNotes() {
-    this.notes.forEach(({ oscillators }) => oscillators.forEach((oscillator) => oscillator.cancelScheduledValues(0)));
-  }
-
-  stop() {
+  stop(): void {
     this.notes.forEach(({ oscillators, envelope }) => {
       oscillators.forEach((oscillator) => {
         oscillator.stop(this.audioContext.currentTime);
