@@ -2,20 +2,29 @@
   import { createEventDispatcher } from "svelte";
 
   export let size = 64;
-  export let minValue = 0;
-  export let maxValue = 127;
   export let value;
+  export let min = 0;
+  export let max = 127;
+  export let step = 1;
 
   const dispatch = createEventDispatcher();
   let knob;
 
-  const startAngle = -135; // Start angle of the arc (in degrees)
-  const endAngle = 135; // End angle of the arc (in degrees)
-  let rotation = calculateRotation(value);
+  const startAngle = -135;
+  const endAngle = 135;
 
   function calculateRotation(value) {
-    const valueRatio = (value - minValue) / (maxValue - minValue);
-    return valueRatio * (endAngle - startAngle) + startAngle;
+    return ((value - min) / (max - min)) * (endAngle - startAngle) + startAngle;
+  }
+
+  function rotationToValue(rotation) {
+    return Math.max(min, Math.min(max, ((rotation - startAngle) / (endAngle - startAngle)) * (max - min) + min));
+  }
+
+  function getAngle(event, centerX, centerY) {
+    const dx = event.clientX - centerX;
+    const dy = event.clientY - centerY;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
   }
 
   function startDrag(event) {
@@ -24,14 +33,11 @@
     const rect = knob.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    let initialAngle = getAngle(event, centerX, centerY) - rotation;
+    const initialAngle = getAngle(event, centerX, centerY) - rotation;
 
     function onMouseMove(moveEvent) {
-      let angle = getAngle(moveEvent, centerX, centerY);
-      let newRotation = angle - initialAngle;
-
-      // Ensure newRotation stays within arc bounds
-      newRotation = Math.max(startAngle, Math.min(endAngle, newRotation));
+      const angle = getAngle(moveEvent, centerX, centerY);
+      const newRotation = Math.max(startAngle, Math.min(endAngle, angle - initialAngle));
       value = rotationToValue(newRotation);
       dispatch("input", { value });
     }
@@ -46,17 +52,6 @@
     window.addEventListener("mouseup", onMouseUp);
   }
 
-  function rotationToValue(rotation) {
-    let newValue = ((rotation - startAngle) / (endAngle - startAngle)) * (maxValue - minValue) + minValue;
-    return Math.max(minValue, Math.min(maxValue, newValue));
-  }
-
-  function getAngle(event, centerX, centerY) {
-    const dx = event.clientX - centerX;
-    const dy = event.clientY - centerY;
-    return Math.atan2(dy, dx) * (180 / Math.PI);
-  }
-
   $: rotation = calculateRotation(value);
 </script>
 
@@ -65,8 +60,8 @@
   style="--size: {size}px"
   on:mousedown={startDrag}
   bind:this={knob}
-  aria-valuemin={minValue}
-  aria-valuemax={maxValue}
+  aria-valuemin={min}
+  aria-valuemax={max}
   aria-valuenow={value}
 >
   <svg class="knob-svg" viewBox="0 0 100 100">
@@ -84,7 +79,10 @@
       transform="rotate({rotation} 50 50)"
     />
   </svg>
-  <div class="label">{value?.toFixed(0)}</div>
+  <div class="label">{min}</div>
+  <div class="label">{value}</div>
+  <div class="label">{max}</div>
+  <div class="label">{step}</div>
 </div>
 
 <style>
