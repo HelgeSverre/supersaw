@@ -153,9 +153,10 @@ let frame;
 
 const clearScheduledClips = () => {
   console.log("Clearing scheduled clips");
-
   sources.forEach(({ source }) => source.stop());
   sources.clear();
+
+  console.log("Clearing scheduled notes");
   instruments.forEach(({ instrument }) => instrument.stop());
   instruments.clear();
 };
