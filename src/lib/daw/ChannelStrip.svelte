@@ -16,35 +16,31 @@
 
   function setupPeakMeter() {
     analyser = audioManager.audioContext.createAnalyser();
+    analyser.fftSize = 2048; // Larger fftSize for more detailed analysis
+    analyser.smoothingTimeConstant = 0.3; // Smoothing can be adjusted as needed
     audioManager.mixer.connect(analyser);
 
     updateSoundLevel();
   }
 
   function updateSoundLevel() {
-    // Create an array to hold the time domain data
-    let data = new Uint8Array(analyser.fftSize);
+    const data = new Float32Array(analyser.frequencyBinCount);
+    analyser.getFloatFrequencyData(data);
 
-    analyser.getByteTimeDomainData(data);
-
-    // Calculate the RMS of the data
-    let sum = 0;
+    // Calculate the peak volume in dB
+    let maxDb = -Infinity;
     for (let i = 0; i < data.length; i++) {
-      const value = (data[i] - 128) / 128;
-      sum += value * value;
+      if (data[i] > maxDb) {
+        maxDb = data[i];
+      }
     }
-    const rms = Math.sqrt(sum / data.length);
 
-    // Convert the RMS to dB
-    let db = 20 * Math.log10(rms);
+    // Convert the max dB value to a scaled value between 0 and 100
+    const minDb = -100; // Minimum dB value for scaling, might need adjustment
+    const maxDbScale = 0; // Maximum dB value for scaling
+    let value = ((maxDb - minDb) / (maxDbScale - minDb)) * 100;
 
-    const minDb = -60;
-    const maxDb = 0;
-    peakMeter = (100 * (db - minDb)) / (maxDb - minDb);
-
-    if (peakMeter < 0) {
-      peakMeter = 0;
-    }
+    peakMeter = Math.max(0, Math.min(value, 100)); // Ensure it's between 0 and 100
 
     requestAnimationFrame(updateSoundLevel);
   }
@@ -68,9 +64,10 @@
         <div class="flex flex-col items-center justify-center py-1 text-center">
           <Fader bind:volume={$masterVolume} />
         </div>
+
         <div class="flex flex-row gap-1">
-          <LevelMeter level={peakMeter} />
-          <LevelMeter level={peakMeter} />
+          <LevelMeter bind:level={peakMeter} />
+          <LevelMeter bind:level={peakMeter} />
           <div>
             {#each new Array(10) as _, i}
               <span></span>
