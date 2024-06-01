@@ -108,18 +108,18 @@
 
 <!-- Track -->
 <div
-  class="track flex flex-row gap-2 overflow-hidden rounded-sm border border-dark-100 bg-white/5 {track.isMuted
-    ? 'opacity-50'
-    : ''}"
+  class={classNames("track flex flex-row gap-2 overflow-hidden rounded-sm border border-dark-100 bg-white/5", {
+    "opacity-50": track.isMuted,
+  })}
   style="height: 120px; position: relative;"
 >
   <!-- Track header -->
   <div class="track-header flex w-60 shrink-0 flex-col border-r-2 border-r-dark-900 bg-dark-300">
-    <div class="flex flex-row items-center justify-between gap-2 bg-dark-200">
+    <div class="flex flex-row items-center justify-between gap-2 bg-dark-200 p-0.5">
       <button
-        class="block w-full truncate p-1 text-left text-xs font-medium text-light"
+        class="block w-full truncate rounded p-1 text-left text-xs font-medium text-light focus:outline-none focus:ring-1 focus:ring-dark-100"
         on:click={() => {
-          changeTrackName(track.id, prompt("Enter new track name", track.name));
+          changeTrackName(track.id, prompt("Enter new track name", track.name) ?? track.name);
         }}
       >
         {track.name}
@@ -129,7 +129,10 @@
         {track.type === "audio" ? "🔈" : "🎹"}
       </span>
 
-      <button class="p-2 hover:bg-dark-100" on:click={() => removeTrack(track.id)}>
+      <button
+        class="rounded p-2 hover:bg-dark-100 focus:outline-none focus:ring-1 focus:ring-dark-100"
+        on:click={() => removeTrack(track.id)}
+      >
         <X size="14" />
       </button>
     </div>
@@ -137,21 +140,28 @@
     <div class="flex flex-row flex-wrap gap-1 p-2">
       <button
         on:click={() => toggleMute(track.id)}
-        class={`inline-flex items-center  justify-center rounded border border-dark-600 px-2 py-1 text-sm ${
-          track.isMuted
-            ? "text-black bg-accent-yellow hover:bg-accent-yellow/80"
-            : "bg-dark-600 text-light hover:bg-dark-500"
-        }`}
+        class={classNames(
+          "inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
+          "focus:outline-none focus:ring-1 focus:ring-dark-100",
+          {
+            "text-black bg-accent-yellow hover:bg-accent-yellow/80": track.isMuted,
+            "bg-dark-600 text-light hover:bg-dark-500": !track.isMuted,
+          },
+        )}
       >
         Mute
       </button>
 
       <button
         on:click={() => toggleSolo(track.id)}
-        class={classNames("inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ", {
-          "text-black bg-accent-yellow hover:bg-accent-yellow/80": track.isSolo,
-          "bg-dark-600 text-light hover:bg-dark-500": !track.isSolo,
-        })}
+        class={classNames(
+          "inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
+          "focus:outline-none focus:ring-1 focus:ring-dark-100",
+          {
+            "text-black bg-accent-yellow hover:bg-accent-yellow/80": track.isSolo,
+            "bg-dark-600 text-light hover:bg-dark-500": !track.isSolo,
+          },
+        )}
       >
         Solo
       </button>
@@ -177,7 +187,7 @@
         </button>
       {:else if track.type === "instrument"}
         <select
-          class="w-full rounded border border-dark-200 bg-dark-700 px-2 py-1"
+          class="w-full rounded border border-dark-200 bg-dark-700 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-dark-100"
           bind:value={track.instrument}
           on:change={(e) => (track.instrument = e.target.value)}
         >
