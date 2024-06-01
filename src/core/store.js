@@ -80,6 +80,7 @@ export const selectedClip = writable(loadFromLocalStorage("selectedClip", null))
 export const selectedTrack = writable(loadFromLocalStorage("selectedTrack", 0));
 export const selectedInstrument = writable(null);
 export const currentView = writable(loadFromLocalStorage("currentView", "timeline"));
+export const isMixerOpen = writable(loadFromLocalStorage("isMixerOpen", false));
 
 export const tracks = writable(loadFromLocalStorage("tracks", []));
 
@@ -104,6 +105,7 @@ zoomLevel.subscribe((value) => saveToLocalStorage("zoomLevel", value));
 selectedClip.subscribe((value) => saveToLocalStorage("selectedClip", value));
 selectedTrack.subscribe((value) => saveToLocalStorage("selectedTrack", value));
 currentView.subscribe((value) => saveToLocalStorage("currentView", value));
+isMixerOpen.subscribe((value) => saveToLocalStorage("isMixerOpen", value));
 
 export const toggleView = () => {
   currentView.update((view) => (view === "timeline" ? "midi" : "timeline"));

@@ -2,19 +2,19 @@
   import { tweened } from "svelte/motion";
   import { cubicInOut } from "svelte/easing";
   import ChannelStrip from "./ChannelStrip.svelte";
+  import { isMixerOpen } from "../../core/store.js";
 
   const openHeight = 350;
   const closedHeight = 0;
 
-  let isMixerOpen = false;
-  const mixerHeight = tweened(isMixerOpen ? openHeight : closedHeight, {
+  const mixerHeight = tweened($isMixerOpen ? openHeight : closedHeight, {
     duration: 50,
     easing: cubicInOut,
   });
 
   function toggleMixer() {
-    isMixerOpen = !isMixerOpen;
-    mixerHeight.set(isMixerOpen ? openHeight : closedHeight);
+    $isMixerOpen = !$isMixerOpen;
+    mixerHeight.set($isMixerOpen ? openHeight : closedHeight);
   }
 
   let startY;
