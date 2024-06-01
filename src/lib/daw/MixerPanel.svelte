@@ -1,6 +1,6 @@
 <script>
   import { tweened } from "svelte/motion";
-  import { backInOut, bounceInOut, cubicInOut, quartInOut, quintInOut } from "svelte/easing";
+  import { quartInOut } from "svelte/easing";
   import ChannelStrip from "./ChannelStrip.svelte";
   import { isMixerOpen } from "../../core/store.js";
 

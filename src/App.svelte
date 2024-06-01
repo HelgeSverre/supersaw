@@ -23,7 +23,7 @@
     timeToPixels,
     toggleLooping,
     tracks,
-    zoomByDelta
+    zoomByDelta,
   } from "./core/store.js";
   import { formatTime, formatTimeDuration } from "./core/utils.js";
   import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
@@ -54,34 +54,38 @@
 
   onMount(() => {
     if ($tracks.length === 0) {
-      clearTracks();
-      changeBpm(138);
-
-      createDrumPattern({
-        name: "Bass Drum",
-        steps: createStepSequencerPattern(16 * 2, 8, [1, 0, 0, 0]),
-        kit: "trance",
-        bpm: 138,
-        variations: ["TR-909Kick.wav"]
-      }).then((track) => {
-        track.isMuted = true;
-
-        addTrack(track);
-      });
-
-      createMidiClipFromUrl("/midi/moon-loves-the-sun.mid", "Nu-NRG - Moon Loves The Sun").then((clip) => {
-        addTrack({
-          id: crypto.randomUUID(),
-          type: "instrument",
-          instrument: "supersaw",
-          name: "Melody",
-          isMuted: false,
-          isSolo: false,
-          clips: [clip]
-        });
-      });
+      createTranceDemo();
     }
   });
+
+  function createTranceDemo() {
+    clearTracks();
+    changeBpm(138);
+
+    createDrumPattern({
+      name: "Bass Drum",
+      steps: createStepSequencerPattern(16 * 2, 8, [1, 0, 0, 0]),
+      kit: "trance",
+      bpm: 138,
+      variations: ["TR-909Kick.wav"],
+    }).then((track) => {
+      track.isMuted = true;
+
+      addTrack(track);
+    });
+
+    createMidiClipFromUrl("/midi/moon-loves-the-sun.mid", "Nu-NRG - Moon Loves The Sun").then((clip) => {
+      addTrack({
+        id: crypto.randomUUID(),
+        type: "instrument",
+        instrument: "supersaw",
+        name: "Melody",
+        isMuted: false,
+        isSolo: false,
+        clips: [clip],
+      });
+    });
+  }
 
   function handleKeydown(event) {
     const { key, keyCode } = event;
@@ -195,7 +199,7 @@
   $: looper = {
     active: $loopRegion.active,
     left: $timeToPixels($loopRegion.start),
-    right: $timeToPixels($loopRegion.end - $loopRegion.start)
+    right: $timeToPixels($loopRegion.end - $loopRegion.start),
   };
 </script>
 
@@ -243,6 +247,7 @@
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
           <SegmentGroup>
             <TextDisplay text={$currentView} />
+            <TextButton text="Trance" onClick={() => createTranceDemo()} />
             <IconButton icon={Plus} onClick={() => createInstrumentTrack()} />
             <IconButton icon={Waveform} onClick={() => createAudioTrack()} />
             <IconButton icon={Trash} onClick={clearTracks} />
