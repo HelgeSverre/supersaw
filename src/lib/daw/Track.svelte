@@ -27,15 +27,13 @@
         if (event.dataTransfer.items[i].kind === "file" && event.dataTransfer.items[i].type === "audio/midi") {
           const file = event.dataTransfer.items[i].getAsFile();
 
-          // If the current track type is "instrument"
           if (track.type !== "instrument") {
             alert("You can only drop MIDI files on instrument tracks.");
             return;
           }
 
           // Create a new clip from the MIDI file and add it to the track
-          const timelineElement = event.currentTarget;
-          const timelineRect = timelineElement.getBoundingClientRect();
+          const timelineRect = event.currentTarget.getBoundingClientRect();
           const relativeX = event.clientX - timelineRect.left;
           const newStartTime = $pixelsToTime(relativeX);
           createMidiClipFromFile(file).then((clip) => {
@@ -44,10 +42,34 @@
 
           return;
         }
+
+        if (event.dataTransfer.items[i].kind === "file") {
+          const file = event.dataTransfer.items[i].getAsFile();
+
+          if (track.type !== "audio") {
+            alert("You can only drop audio files on audio tracks.");
+            return;
+          }
+
+          // Create a new clip from the MIDI file and add it to the track
+          const timelineRect = event.currentTarget.getBoundingClientRect();
+          const relativeX = event.clientX - timelineRect.left;
+          const newStartTime = $pixelsToTime(relativeX);
+          createClipFromUrl(URL.createObjectURL(file), file.name).then((clip) => {
+            addClip(track.id, { ...clip, startTime: newStartTime });
+          });
+
+          return;
+        }
       }
     }
 
-    const data = JSON.parse(event.dataTransfer.getData("text/plain"));
+    const dataTransfer = event.dataTransfer.getData("text/plain");
+    if (dataTransfer === "") {
+      return;
+    }
+
+    const data = JSON.parse(dataTransfer);
 
     if (data.action === "clip:move") {
       const timelineElement = event.currentTarget;
@@ -144,7 +166,7 @@
           "inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
           "focus:outline-none focus:ring-1 focus:ring-dark-100",
           {
-            "bg-accent-yellow text-black hover:bg-accent-yellow/80": track.isMuted,
+            "text-black bg-accent-yellow hover:bg-accent-yellow/80": track.isMuted,
             "bg-dark-600 text-light hover:bg-dark-500": !track.isMuted,
           },
         )}
@@ -158,7 +180,7 @@
           "inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
           "focus:outline-none focus:ring-1 focus:ring-dark-100",
           {
-            "bg-accent-yellow text-black hover:bg-accent-yellow/80": track.isSolo,
+            "text-black bg-accent-yellow hover:bg-accent-yellow/80": track.isSolo,
             "bg-dark-600 text-light hover:bg-dark-500": !track.isSolo,
           },
         )}
@@ -168,7 +190,10 @@
 
       {#if track.type === "audio"}
         <button
-          class="inline-flex items-center justify-center rounded border border-dark-600 bg-dark-600 px-2 py-1 text-sm text-light hover:bg-dark-500"
+          class={classNames(
+            "inline-flex items-center justify-center rounded border border-dark-600 bg-dark-600 px-2 py-1 text-sm text-light hover:bg-dark-500 ",
+            "focus:outline-none focus:ring-1 focus:ring-dark-100",
+          )}
           on:click={() => {
             const fileInput = document.createElement("input");
             fileInput.type = "file";

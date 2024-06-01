@@ -7,6 +7,7 @@
     bpm,
     changeBpm,
     clearTracks,
+    createAudioTrack,
     createInstrumentTrack,
     currentView,
     enableLooping,
@@ -22,7 +23,7 @@
     timeToPixels,
     toggleLooping,
     tracks,
-    zoomByDelta,
+    zoomByDelta
   } from "./core/store.js";
   import { formatTime, formatTimeDuration } from "./core/utils.js";
   import SegmentGroup from "./lib/ui/SegmentGroup.svelte";
@@ -39,6 +40,7 @@
   import Instrument from "./lib/daw/instruments/Instrument.svelte";
   import { createDrumPattern, createStepSequencerPattern } from "./utils/drumpattern.js";
   import Spectrogram from "./lib/daw/analyzers/Spectrogram.svelte";
+  import { Waveform } from "phosphor-svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -60,7 +62,7 @@
         steps: createStepSequencerPattern(16 * 2, 8, [1, 0, 0, 0]),
         kit: "trance",
         bpm: 138,
-        variations: ["TR-909Kick.wav"],
+        variations: ["TR-909Kick.wav"]
       }).then((track) => {
         track.isMuted = true;
 
@@ -75,7 +77,7 @@
           name: "Melody",
           isMuted: false,
           isSolo: false,
-          clips: [clip],
+          clips: [clip]
         });
       });
     }
@@ -193,7 +195,7 @@
   $: looper = {
     active: $loopRegion.active,
     left: $timeToPixels($loopRegion.start),
-    right: $timeToPixels($loopRegion.end - $loopRegion.start),
+    right: $timeToPixels($loopRegion.end - $loopRegion.start)
   };
 </script>
 
@@ -242,6 +244,7 @@
           <SegmentGroup>
             <TextDisplay text={$currentView} />
             <IconButton icon={Plus} onClick={() => createInstrumentTrack()} />
+            <IconButton icon={Waveform} onClick={() => createAudioTrack()} />
             <IconButton icon={Trash} onClick={clearTracks} />
             <IconButton icon={Lightbulb} onClick={toggleTheme} />
           </SegmentGroup>

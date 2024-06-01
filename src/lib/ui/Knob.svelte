@@ -1,5 +1,7 @@
 <script>
   import { createEventDispatcher } from "svelte";
+  import { tweened } from "svelte/motion";
+  import { quartInOut } from "svelte/easing";
 
   export let size = 64;
   export let value;
@@ -21,6 +23,10 @@
   let startValue;
 
   let fineTune = false;
+  let strokeWidth = tweened(8, {
+    duration: 100,
+    easing: quartInOut,
+  });
 
   function calculateFactor(baseDistance) {
     return (max - min) / baseDistance;
@@ -42,6 +48,7 @@
     lastY = startY;
     startValue = value;
     fineTune = event.shiftKey;
+    strokeWidth.set(fineTune ? 4 : 8);
 
     function onMouseMove(moveEvent) {
       lastY = moveEvent.clientY;
@@ -60,6 +67,7 @@
         startY = lastY;
         startValue = value;
         fineTune = true;
+        strokeWidth.set(4);
       }
     }
 
@@ -68,10 +76,12 @@
         startY = lastY;
         startValue = value;
         fineTune = false;
+        strokeWidth.set(8);
       }
     }
 
     function onMouseUp() {
+      fineTune = false;
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("keydown", onKeyDown);
@@ -90,7 +100,7 @@
 </script>
 
 <div
-  class="knob-container"
+  class="knob"
   style="--size: {size}px"
   on:mousedown={startDrag}
   bind:this={knob}
@@ -98,18 +108,26 @@
   aria-valuemax={max}
   aria-valuenow={value}
 >
-  <svg class="knob-svg" viewBox="0 0 100 100">
+  <svg viewBox="0 0 100 100">
     <!-- Background arc -->
-    <path d="M 30 70 A 30 30 0 1 1 70 70" stroke="#5A5F63" stroke-linecap="round" stroke-width="8" fill="none" />
+    <path
+      class="gauge"
+      d="M 30 70 A 30 30 0 1 1 70 70"
+      stroke="#707271"
+      stroke-linecap="round"
+      stroke-width="8"
+      fill="none"
+    />
 
     <!-- Needle -->
     <line
+      class="needle"
       x1="50"
       y1="50"
       x2="50"
       y2="20"
-      stroke="#ffffff"
-      stroke-width={fineTune ? 4 : 8}
+      stroke="#EBEBEB"
+      stroke-width={$strokeWidth}
       stroke-linecap="round"
       transform="rotate({rotation} 50 50)"
     />
@@ -117,7 +135,7 @@
 </div>
 
 <style>
-  .knob-container {
+  .knob {
     position: relative;
     display: inline-flex;
     flex-direction: column;
@@ -126,16 +144,8 @@
     user-select: none;
   }
 
-  .knob-svg {
+  svg {
     width: var(--size);
     height: var(--size);
-  }
-
-  .label {
-    display: inline-block;
-    line-height: 1em;
-    text-align: center;
-    font-size: 14px;
-    color: white;
   }
 </style>

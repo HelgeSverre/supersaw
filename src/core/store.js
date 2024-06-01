@@ -322,6 +322,17 @@ export const loadDefaultTracks = async () => {
   ]);
 };
 
+export const createAudioTrack = async (trackName = "New audio track") => {
+  addTrack({
+    id: crypto.randomUUID(),
+    name: trackName,
+    type: "audio",
+    isMuted: false,
+    isSolo: false,
+    clips: [],
+  });
+};
+
 export const createInstrumentTrack = async (trackName = "New instrument track") => {
   addTrack({
     id: crypto.randomUUID(),
@@ -413,7 +424,10 @@ export const clearTracks = () => {
 };
 
 export const removeTrack = (trackId) => {
-  tracks.update((allTracks) => allTracks.filter((track) => track.id !== trackId));
+  tracks.update((allTracks) => {
+    clearScheduledClipsOnTrack(trackId);
+    return allTracks.filter((track) => track.id !== trackId);
+  });
 };
 
 /**
@@ -476,11 +490,28 @@ export const addClip = (trackId, clip) => {
 
 export const removeClip = (clipId) => {
   tracks.update((allTracks) =>
-    allTracks.map((track) =>
-      track.clips.find((clip) => clip.id === clipId)
-        ? { ...track, clips: track.clips.filter((clip) => clip.id !== clipId) }
-        : track,
-    ),
+    allTracks.map((track) => {
+      let found = track.clips.find((clip) => clip.id === clipId);
+
+      if (found) {
+        if (sources.has(clipId)) {
+          sources.get(clipId).source.stop();
+          sources.delete(clipId);
+        }
+
+        if (instruments.has(clipId)) {
+          instruments.get(clipId).instrument.stop();
+          instruments.delete(clipId);
+        }
+      }
+
+      return found
+        ? {
+            ...track,
+            clips: track.clips.filter((clip) => clip.id !== clipId),
+          }
+        : track;
+    }),
   );
 };
 

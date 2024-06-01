@@ -1,8 +1,8 @@
 <script>
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
-  import { getSelectedClip, playbackState, timeToPixels, zoomByDelta } from "../../core/store.js";
-  import { extractNoteEvents, noteLabel } from "../../core/midi.js";
+  import { getSelectedClip, playbackState, selectedTrack, timeToPixels, zoomByDelta } from "../../core/store.js";
+  import { extractNoteEvents, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
 
   const dispatch = createEventDispatcher();
 
@@ -60,6 +60,18 @@
 
   let debug = false;
 
+  let activeNotes = [];
+
+  function startNote(hz, note) {
+    audioManager.audioContext.resume();
+    audioManager.getInstrument("pad").startNote(hz);
+  }
+
+  function stopNote(hz, note) {
+    audioManager.audioContext.resume();
+    audioManager.getInstrument("pad").stopNote(hz);
+  }
+
   $: beatWidth = $timeToPixels(480 / 1000).toFixed(3);
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
@@ -85,8 +97,9 @@
           {#each notesArray as noteNumber}
             <button
               on:mouseenter={() => (highlightedNote = noteLabel(noteNumber))}
-              on:mousedown={() => dispatch("note:start", { note: noteNumber })}
-              on:mouseup={() => dispatch("note:end", { note: noteNumber })}
+              on:mouseup={() => stopNote(midiNoteToFrequency(noteNumber))}
+              on:mouseleave={() => stopNote(midiNoteToFrequency(noteNumber))}
+              on:mousedown={() => startNote(midiNoteToFrequency((noteNumber)))}
               class="piano-key hover:opacity-80 active:opacity-70 {isBlackKey(noteNumber) ? 'black-key' : 'white-key'}"
             >
               <span class="inline-block pr-2 font-medium">{noteLabel(noteNumber)}</span>
@@ -125,28 +138,28 @@
               <div class="flex h-full flex-col overflow-y-scroll">
                 <table class="text-left">
                   <thead>
-                    <tr>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Start</th>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Duration</th>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Velocity</th>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Note Num</th>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Label</th>
-                    </tr>
+                  <tr>
+                    <th class="whitespace-nowrap px-1 font-mono text-xs">Start</th>
+                    <th class="whitespace-nowrap px-1 font-mono text-xs">Duration</th>
+                    <th class="whitespace-nowrap px-1 font-mono text-xs">Velocity</th>
+                    <th class="whitespace-nowrap px-1 font-mono text-xs">Note Num</th>
+                    <th class="whitespace-nowrap px-1 font-mono text-xs">Label</th>
+                  </tr>
                   </thead>
                   <tbody>
-                    {#each notesForDisplay as event}
-                      <tr>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">
-                          {(event.start / 1000).toFixed(3)}s
-                        </td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">
-                          {(event.duration / 1000).toFixed(3)}s
-                        </td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.velocity}</td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.note}</td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.label}</td>
-                      </tr>
-                    {/each}
+                  {#each notesForDisplay as event}
+                    <tr>
+                      <td class="whitespace-nowrap px-1 font-mono text-xs">
+                        {(event.start / 1000).toFixed(3)}s
+                      </td>
+                      <td class="whitespace-nowrap px-1 font-mono text-xs">
+                        {(event.duration / 1000).toFixed(3)}s
+                      </td>
+                      <td class="whitespace-nowrap px-1 font-mono text-xs">{event.velocity}</td>
+                      <td class="whitespace-nowrap px-1 font-mono text-xs">{event.note}</td>
+                      <td class="whitespace-nowrap px-1 font-mono text-xs">{event.label}</td>
+                    </tr>
+                  {/each}
                   </tbody>
                 </table>
               </div>
@@ -159,87 +172,87 @@
 </div>
 
 <style>
-  .piano-roll {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
-  }
+    .piano-roll {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow-y: auto;
+    }
 
-  .piano-key {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    color: black;
-    font-size: 10px;
-    min-height: var(--note-height);
-    max-height: var(--note-height);
-  }
+    .piano-key {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        color: black;
+        font-size: 10px;
+        min-height: var(--note-height);
+        max-height: var(--note-height);
+    }
 
-  .black-key {
-    background-color: black;
-    color: white;
-  }
+    .black-key {
+        background-color: black;
+        color: white;
+    }
 
-  .white-key {
-    background-color: white;
-  }
+    .white-key {
+        background-color: white;
+    }
 
-  /*noinspection ALL*/
-  .note-area {
-    background: repeating-linear-gradient(
-        to bottom,
-        hsl(0, 0%, 100%, 10%),
-        hsl(0, 0%, 100%, 10%) 1px,
-        transparent 1px,
-        transparent var(--note-height)
-      ),
-      repeating-linear-gradient(
-        to bottom,
-        hsl(60, 100%, 50%, 30%),
-        hsl(60, 100%, 50%, 30%) 1px,
-        transparent 1px,
-        transparent calc(var(--note-height) * 12) /* 1 octave */
-      ),
-      repeating-linear-gradient(
-        to right,
-        hsl(0, 0%, 100%, 10%),
-        hsl(0, 0%, 100%, 10%) 1px,
-        transparent 1px,
-        transparent var(--beat-width) /* 1 beat */
-      ),
-      repeating-linear-gradient(
-        to right,
-        hsl(60, 100%, 50%, 15%),
-        hsl(60, 100%, 50%, 15%) 1px,
-        transparent 1px,
-        transparent calc(var(--beat-width) * 4) /* 1 bar */
-      );
-    background-attachment: local;
-    background-repeat: no-repeat;
-  }
+    /*noinspection ALL*/
+    .note-area {
+        background: repeating-linear-gradient(
+                to bottom,
+                hsl(0, 0%, 100%, 10%),
+                hsl(0, 0%, 100%, 10%) 1px,
+                transparent 1px,
+                transparent var(--note-height)
+        ),
+        repeating-linear-gradient(
+                to bottom,
+                hsl(60, 100%, 50%, 30%),
+                hsl(60, 100%, 50%, 30%) 1px,
+                transparent 1px,
+                transparent calc(var(--note-height) * 12) /* 1 octave */
+        ),
+        repeating-linear-gradient(
+                to right,
+                hsl(0, 0%, 100%, 10%),
+                hsl(0, 0%, 100%, 10%) 1px,
+                transparent 1px,
+                transparent var(--beat-width) /* 1 beat */
+        ),
+        repeating-linear-gradient(
+                to right,
+                hsl(60, 100%, 50%, 15%),
+                hsl(60, 100%, 50%, 15%) 1px,
+                transparent 1px,
+                transparent calc(var(--beat-width) * 4) /* 1 bar */
+        );
+        background-attachment: local;
+        background-repeat: no-repeat;
+    }
 
-  .note {
-    position: absolute;
-    background: hsl(60, 100%, 80%);
-    color: hsl(0, 0%, 0%, 80%);
-    font-size: 8px;
-    height: var(--note-height);
-  }
+    .note {
+        position: absolute;
+        background: hsl(60, 100%, 80%);
+        color: hsl(0, 0%, 0%, 80%);
+        font-size: 8px;
+        height: var(--note-height);
+    }
 
-  .note.active {
-    background: rgb(182, 255, 153);
-  }
+    .note.active {
+        background: rgb(182, 255, 153);
+    }
 
-  .note.inactive {
-    background: hsl(0, 0%, 90%);
-  }
+    .note.inactive {
+        background: hsl(0, 0%, 90%);
+    }
 
-  .playhead {
-    position: absolute;
-    top: 0;
-    width: 1px;
-    height: calc((var(--note-height) * 12 * 12));
-    background: hsl(0, 90%, 55%);
-  }
+    .playhead {
+        position: absolute;
+        top: 0;
+        width: 1px;
+        height: calc((var(--note-height) * 12 * 12));
+        background: hsl(0, 90%, 55%);
+    }
 </style>
