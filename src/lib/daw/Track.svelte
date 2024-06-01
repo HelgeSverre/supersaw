@@ -144,7 +144,7 @@
           "inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
           "focus:outline-none focus:ring-1 focus:ring-dark-100",
           {
-            "text-black bg-accent-yellow hover:bg-accent-yellow/80": track.isMuted,
+            "bg-accent-yellow text-black hover:bg-accent-yellow/80": track.isMuted,
             "bg-dark-600 text-light hover:bg-dark-500": !track.isMuted,
           },
         )}
@@ -158,7 +158,7 @@
           "inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
           "focus:outline-none focus:ring-1 focus:ring-dark-100",
           {
-            "text-black bg-accent-yellow hover:bg-accent-yellow/80": track.isSolo,
+            "bg-accent-yellow text-black hover:bg-accent-yellow/80": track.isSolo,
             "bg-dark-600 text-light hover:bg-dark-500": !track.isSolo,
           },
         )}
