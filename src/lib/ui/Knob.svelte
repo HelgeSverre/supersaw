@@ -1,10 +1,10 @@
 <script>
   import { createEventDispatcher } from "svelte";
 
-  export let size = 100;
+  export let size = 64;
   export let minValue = 0;
   export let maxValue = 127;
-  export let value = 20;
+  export let value;
 
   const dispatch = createEventDispatcher();
   let knob;
@@ -84,7 +84,7 @@
       transform="rotate({rotation} 50 50)"
     />
   </svg>
-  <div class="label">{value.toFixed(0)}</div>
+  <div class="label">{value?.toFixed(0)}</div>
 </div>
 
 <style>
