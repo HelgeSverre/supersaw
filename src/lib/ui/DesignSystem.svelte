@@ -9,8 +9,8 @@
   import Fader from "./Fader.svelte";
   import TextDisplay from "./TextDisplay.svelte";
   import Select from "./Input/Select.svelte";
-  import { demoMidiFiles } from "../../core/store.js";
   import ADSR from "./ADSR.svelte";
+  import { demoMidiFiles } from "../../core/midiDemos.ts";
 
   let knobValue = 30;
   let knobValue2 = 0;
