@@ -13,6 +13,7 @@
   import ADSR from "./ADSR.svelte";
 
   let knobValue = 30;
+  let knobValue2 = 0;
 </script>
 
 <div class="m-2 flex flex-1 rounded border border-dark-200 bg-dark-900 p-4">
@@ -119,7 +120,8 @@
         </div>
 
         <div class="bg-dark-300 p-2">
-          <Knob size={48} bind:value={knobValue} />
+          <Knob size={48} bind:value={knobValue} min={0} max={100} step={1} />
+          <Knob size={48} bind:value={knobValue2} min={-1} max={1} step={0.1} />
         </div>
         <div class="bg-dark-300 p-2">
           <Fader />

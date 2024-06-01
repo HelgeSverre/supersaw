@@ -18,7 +18,11 @@
   }
 
   function rotationToValue(rotation) {
-    return Math.max(min, Math.min(max, ((rotation - startAngle) / (endAngle - startAngle)) * (max - min) + min));
+    const rawValue = ((rotation - startAngle) / (endAngle - startAngle)) * (max - min) + min;
+    if (step !== null) {
+      return Math.round(rawValue / step) * step;
+    }
+    return rawValue;
   }
 
   function getAngle(event, centerX, centerY) {
@@ -37,6 +41,7 @@
 
     function onMouseMove(moveEvent) {
       const angle = getAngle(moveEvent, centerX, centerY);
+      console.log(angle);
       const newRotation = Math.max(startAngle, Math.min(endAngle, angle - initialAngle));
       value = rotationToValue(newRotation);
       dispatch("input", { value });
@@ -80,7 +85,7 @@
     />
   </svg>
   <div class="label">{min}</div>
-  <div class="label">{value}</div>
+  <div class="label">{value.toFixed(2)}</div>
   <div class="label">{max}</div>
   <div class="label">{step}</div>
 </div>
