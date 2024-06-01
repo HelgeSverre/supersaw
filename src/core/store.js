@@ -224,13 +224,12 @@ export const startPlayback = async () => {
       const loop = get(loopRegion);
 
       if (loop.active && currentTime >= loop.end) {
-        // Calculate the time over the loop end, add this to loop start to maintain continuity
-        let excessTime = currentTime - loop.end;
+        const excessTime = currentTime - loop.end;
         loopOffsetTime -= currentTime - loop.start - excessTime;
         currentTime = loop.start + excessTime;
+
         // Clear and reschedule clips starting from the loop start
-        clearScheduledClips();
-        scheduleAllClips(currentTime);
+        rescheduleClips(currentTime);
       }
 
       state.currentTime = currentTime;
@@ -239,6 +238,11 @@ export const startPlayback = async () => {
 
     frame = requestAnimationFrame(updateCurrentTime);
   });
+};
+
+export const rescheduleClips = (time) => {
+  clearScheduledClips();
+  scheduleAllClips(time);
 };
 
 export const pausePlayback = () => {
@@ -498,6 +502,9 @@ export const changeClipDuration = (trackId, clipId, newDuration) => {
 
 // nudge to the left or right by a certain number ms
 export const nudge = (nudgeAmountInMs) => {
+  clearScheduledClips();
+  cancelAnimationFrame(frame);
+
   playbackState.update((state) => {
     let newTime = state.currentTime + nudgeAmountInMs / 1000;
 
@@ -505,7 +512,15 @@ export const nudge = (nudgeAmountInMs) => {
       newTime = 0;
     }
 
-    return { ...state, currentTime: newTime };
+    if (state.playing) {
+      startPlayback();
+    }
+
+    return {
+      ...state,
+      currentTime: newTime,
+      totalElapsedTime: newTime,
+    };
   });
 };
 
