@@ -7,15 +7,22 @@
   export let max = 127;
   export let step = 1;
 
+  // Amount of PX the mouse has to move to change the value from min to max
+  export let sensitivity = 100;
+
+  // Amount of PX the mouse has to move to change the value from min to max when shift is pressed (fine-tune)
+  export let fineTuneSensitivity = 500;
+
   const dispatch = createEventDispatcher();
+
   let knob;
   let startY;
+  let lastY;
   let startValue;
 
-  // Define the base distance that represents the full range of the knob's values
-  const baseDistance = 100; // Adjust this value to control the drag sensitivity
+  let fineTune = false;
 
-  function calculateFactor() {
+  function calculateFactor(baseDistance) {
     return (max - min) / baseDistance;
   }
 
@@ -23,8 +30,8 @@
     return ((value - min) / (max - min)) * 270 - 135;
   }
 
-  function rotationToValue(distance) {
-    const factor = calculateFactor();
+  function rotationToValue(distance, baseDistance) {
+    const factor = calculateFactor(baseDistance);
     const rawValue = startValue - distance * factor;
     return Math.max(min, Math.min(max, rawValue));
   }
@@ -32,11 +39,15 @@
   function startDrag(event) {
     event.preventDefault();
     startY = event.clientY;
+    lastY = startY;
     startValue = value;
+    fineTune = event.shiftKey;
 
     function onMouseMove(moveEvent) {
-      const distance = moveEvent.clientY - startY;
-      let newValue = rotationToValue(distance);
+      lastY = moveEvent.clientY;
+
+      const distance = lastY - startY;
+      let newValue = rotationToValue(distance, fineTune ? fineTuneSensitivity : sensitivity);
       if (step !== null) {
         newValue = Math.round(newValue / step) * step;
       }
@@ -47,9 +58,24 @@
     function onMouseUp() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+
       dispatch("change", { value });
     }
 
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Shift") {
+        startY = lastY;
+        startValue = value;
+        fineTune = true;
+      }
+    });
+    window.addEventListener("keyup", (event) => {
+      if (event.key === "Shift") {
+        startY = lastY;
+        startValue = value;
+        fineTune = false;
+      }
+    });
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
   }
@@ -69,6 +95,7 @@
   <svg class="knob-svg" viewBox="0 0 100 100">
     <!-- Background arc -->
     <path d="M 30 70 A 30 30 0 1 1 70 70" stroke="#5A5F63" stroke-linecap="round" stroke-width="8" fill="none" />
+
     <!-- Needle -->
     <line
       x1="50"
@@ -84,6 +111,10 @@
   <div class="label">{min.toFixed(2)}</div>
   <div class="label">{value.toFixed(2)}</div>
   <div class="label">{max.toFixed(2)}</div>
+  <div class="label">Step: {step}</div>
+  <div class="label">C-Y: {startY}</div>
+  <div class="label">L-Y: {lastY}</div>
+  <div class="label">Sensitivity: {fineTune ? "Fine-tune" : "Normal"}</div>
 </div>
 
 <style>
