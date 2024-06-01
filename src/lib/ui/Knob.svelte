@@ -9,41 +9,38 @@
 
   const dispatch = createEventDispatcher();
   let knob;
+  let startY;
+  let startValue;
 
-  const startAngle = -135;
-  const endAngle = 135;
+  // Define the base distance that represents the full range of the knob's values
+  const baseDistance = 100; // Adjust this value to control the drag sensitivity
+
+  function calculateFactor() {
+    return (max - min) / baseDistance;
+  }
 
   function calculateRotation(value) {
-    return ((value - min) / (max - min)) * (endAngle - startAngle) + startAngle;
+    return ((value - min) / (max - min)) * 270 - 135;
   }
 
-  function rotationToValue(rotation) {
-    const rawValue = ((rotation - startAngle) / (endAngle - startAngle)) * (max - min) + min;
-    if (step !== null) {
-      return Math.round(rawValue / step) * step;
-    }
-    return rawValue;
-  }
-
-  function getAngle(event, centerX, centerY) {
-    const dx = event.clientX - centerX;
-    const dy = event.clientY - centerY;
-    return Math.atan2(dy, dx) * (180 / Math.PI);
+  function rotationToValue(distance) {
+    const factor = calculateFactor();
+    const rawValue = startValue - distance * factor;
+    return Math.max(min, Math.min(max, rawValue));
   }
 
   function startDrag(event) {
     event.preventDefault();
-
-    const rect = knob.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const initialAngle = getAngle(event, centerX, centerY) - rotation;
+    startY = event.clientY;
+    startValue = value;
 
     function onMouseMove(moveEvent) {
-      const angle = getAngle(moveEvent, centerX, centerY);
-      console.log(angle);
-      const newRotation = Math.max(startAngle, Math.min(endAngle, angle - initialAngle));
-      value = rotationToValue(newRotation);
+      const distance = moveEvent.clientY - startY;
+      let newValue = rotationToValue(distance);
+      if (step !== null) {
+        newValue = Math.round(newValue / step) * step;
+      }
+      value = newValue;
       dispatch("input", { value });
     }
 
@@ -84,10 +81,9 @@
       transform="rotate({rotation} 50 50)"
     />
   </svg>
-  <div class="label">{min}</div>
+  <div class="label">{min.toFixed(2)}</div>
   <div class="label">{value.toFixed(2)}</div>
-  <div class="label">{max}</div>
-  <div class="label">{step}</div>
+  <div class="label">{max.toFixed(2)}</div>
 </div>
 
 <style>

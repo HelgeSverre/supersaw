@@ -56,7 +56,7 @@
     <div class="flex flex-col gap-2">
       <!-- PAN -->
       <div class="flex flex-col items-center justify-center px-1 py-2 text-center">
-        <Knob bind:value={$masterPan} min={-1} max={1} size="42" />
+        <Knob bind:value={$masterPan} min={-1} max={1} size="42" step={0.1} />
       </div>
 
       <div class="flex flex-row gap-px p-2">
