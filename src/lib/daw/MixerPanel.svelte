@@ -2,12 +2,11 @@
   import { tweened } from "svelte/motion";
   import { cubicInOut } from "svelte/easing";
   import ChannelStrip from "./ChannelStrip.svelte";
-  import Compressor from "./analyzers/Compressor.svelte";
 
   const openHeight = 350;
-  const closedHeight = 30;
+  const closedHeight = 0;
 
-  let isMixerOpen = true;
+  let isMixerOpen = false;
   const mixerHeight = tweened(isMixerOpen ? openHeight : closedHeight, {
     duration: 50,
     easing: cubicInOut,
@@ -56,7 +55,7 @@
   </div>
   <div aria-hidden="true" class="h-1 w-full cursor-row-resize bg-[#2D2D30]" on:mousedown={startResizing}></div>
   <div class="flex h-full flex-row bg-[#2D2D30] p-1">
-    <div class="flex flex-row gap-px bg-black p-px">
+    <div class="bg-black flex flex-row gap-px p-px">
       <ChannelStrip channel="master" />
       <ChannelStrip channel="1" />
       <ChannelStrip channel="2" />

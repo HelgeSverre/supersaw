@@ -152,11 +152,9 @@ const instruments = new Map();
 let frame;
 
 const clearScheduledClips = () => {
-  console.log("Clearing scheduled clips");
   sources.forEach(({ source }) => source.stop());
   sources.clear();
 
-  console.log("Clearing scheduled notes");
   instruments.forEach(({ instrument }) => instrument.stop());
   instruments.clear();
 };
@@ -173,10 +171,7 @@ const scheduleAllClips = (currentTime) => {
             : audioManager.audioContext.currentTime;
         let offset = clip.startTime < currentTime ? currentTime - clip.startTime : 0;
 
-        console.log(clip);
-
         if (clip.type === "audio" && clip.audioBuffer) {
-          console.log("Scheduling audio clip", clip.name, "at", when, "with offset", offset);
           const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
           // Start the audio clip at 'when', playing from 'offset' in the buffer
           source.start(when, offset);

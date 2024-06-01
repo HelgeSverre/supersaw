@@ -38,6 +38,7 @@
   import DesignSystem from "./lib/ui/DesignSystem.svelte";
   import Instrument from "./lib/daw/instruments/Instrument.svelte";
   import { createDrumPattern, createStepSequencerPattern } from "./utils/drumpattern.js";
+  import Spectrogram from "./lib/daw/analyzers/Spectrogram.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -235,6 +236,7 @@
         {/if}
 
         <AudioVisualizer />
+        <Spectrogram />
 
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
           <SegmentGroup>

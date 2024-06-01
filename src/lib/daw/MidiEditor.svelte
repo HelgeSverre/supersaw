@@ -14,8 +14,11 @@
 
   onMount(() => {
     audioManager.audioContext.resume();
-    notesForDisplay = extractNoteEvents($getSelectedClip.midiData);
-    scrollToFirstNote();
+
+    if ($getSelectedClip.midiData) {
+      notesForDisplay = extractNoteEvents($getSelectedClip.midiData);
+      scrollToFirstNote();
+    }
   });
 
   function handleZoom(event) {
