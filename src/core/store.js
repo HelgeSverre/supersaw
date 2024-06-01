@@ -153,6 +153,22 @@ const instruments = new Map();
 
 let frame;
 
+const clearScheduledClipsOnTrack = (trackId) => {
+  sources.forEach((item, id) => {
+    if (item.trackId === trackId) {
+      item.source.stop();
+      sources.delete(id);
+    }
+  });
+
+  instruments.forEach((item, id) => {
+    if (item.trackId === trackId) {
+      item.instrument.stop();
+      instruments.delete(id);
+    }
+  });
+};
+
 const clearScheduledClips = () => {
   sources.forEach(({ source }) => source.stop());
   sources.clear();
@@ -161,43 +177,45 @@ const clearScheduledClips = () => {
   instruments.clear();
 };
 
-const scheduleAllClips = (currentTime) => {
+const scheduleAllClips = (currentTime, filterByTrackId = null) => {
   const currentTracks = get(tracks);
 
-  currentTracks.forEach((track) => {
-    track.clips.forEach((clip) => {
-      if (track.isMuted === false && (track.isSolo || !currentTracks.some((t) => t.isSolo))) {
-        let when =
-          clip.startTime > currentTime
-            ? audioManager.audioContext.currentTime + (clip.startTime - currentTime)
-            : audioManager.audioContext.currentTime;
-        let offset = clip.startTime < currentTime ? currentTime - clip.startTime : 0;
+  currentTracks
+    .filter((track) => (filterByTrackId ? track.id === filterByTrackId : true))
+    .forEach((track) => {
+      track.clips.forEach((clip) => {
+        if (track.isMuted === false && (track.isSolo || !currentTracks.some((t) => t.isSolo))) {
+          let when =
+            clip.startTime > currentTime
+              ? audioManager.audioContext.currentTime + (clip.startTime - currentTime)
+              : audioManager.audioContext.currentTime;
+          let offset = clip.startTime < currentTime ? currentTime - clip.startTime : 0;
 
-        if (clip.type === "audio" && clip.audioBuffer) {
-          const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
-          // Start the audio clip at 'when', playing from 'offset' in the buffer
-          source.start(when, offset);
-          sources.set(clip.id, { source, gainNode });
+          if (clip.type === "audio" && clip.audioBuffer) {
+            const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
+            // Start the audio clip at 'when', playing from 'offset' in the buffer
+            source.start(when, offset);
+            sources.set(clip.id, { trackId: track.id, source, gainNode });
+          }
+
+          // MIDI Clips: Schedule notes that are supposed to start after the current time
+          if (clip.type === "midi" && clip.midiData) {
+            const instrument = audioManager.getInstrument(track.instrument);
+            let notes = extractNoteEvents(clip.midiData);
+
+            notes.forEach((midiEvent) => {
+              const eventStart = clip.startTime + midiEvent.start / 1000;
+              if (eventStart >= currentTime) {
+                const eventTime = audioManager.audioContext.currentTime + (eventStart - currentTime);
+                instrument.playNote(midiNoteToFrequency(midiEvent.note), eventTime, midiEvent.duration / 1000);
+              }
+            });
+
+            instruments.set(clip.id, { trackId: track.id, instrument });
+          }
         }
-
-        // MIDI Clips: Schedule notes that are supposed to start after the current time
-        if (clip.type === "midi" && clip.midiData) {
-          const instrument = audioManager.getInstrument(track.instrument);
-          let notes = extractNoteEvents(clip.midiData);
-
-          notes.forEach((midiEvent) => {
-            const eventStart = clip.startTime + midiEvent.start / 1000;
-            if (eventStart >= currentTime) {
-              const eventTime = audioManager.audioContext.currentTime + (eventStart - currentTime);
-              instrument.playNote(midiNoteToFrequency(midiEvent.note), eventTime, midiEvent.duration / 1000);
-            }
-          });
-
-          instruments.set(clip.id, { instrument });
-        }
-      }
+      });
     });
-  });
 };
 
 export const startPlayback = async () => {
@@ -354,11 +372,26 @@ export const createClipFromUrl = async (url, name = null) => {
 
 // Functions for toggling track mute and solo states
 export const toggleMute = (trackId) => {
+  let tracksToReschedule = [];
+
   tracks.update((allTracks) =>
     allTracks.map((track) => {
-      return track.id === trackId ? { ...track, isMuted: !track.isMuted } : track;
+      if (track.id !== trackId) return track;
+
+      const isMutedNow = !track.isMuted;
+      if (isMutedNow) {
+        clearScheduledClipsOnTrack(track.id);
+      } else {
+        tracksToReschedule.push(track.id);
+      }
+
+      return { ...track, isMuted: isMutedNow };
     }),
   );
+
+  if (get(playbackState).playing) {
+    tracksToReschedule.forEach((trackId) => scheduleAllClips(get(playbackState).currentTime, trackId));
+  }
 };
 
 export const toggleSolo = (trackId) => {
