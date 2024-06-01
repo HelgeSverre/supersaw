@@ -68,7 +68,7 @@ export const loopRegion = writable({ start: 0, end: 0, active: false });
 export const playbackState = writable({
   playing: false,
   currentTime: 0,
-  accumulatedTime: 0,
+  totalElapsedTime: 0,
 });
 
 export const masterVolume = writable(loadFromLocalStorage("masterVolume", 1));
@@ -208,17 +208,35 @@ export const startPlayback = async () => {
   await loadAudioBuffersForAllTracks();
 
   playbackState.update((state) => {
-    scheduleAllClips(state.accumulatedTime);
+    scheduleAllClips(state.totalElapsedTime);
     state.playing = true;
     return state;
   });
 
-  const startCurrentTime = audioManager.audioContext.currentTime;
+  let playbackStartTime = audioManager.audioContext.currentTime;
+  let loopOffsetTime = 0; // To adjust playback timing when looping
+
   frame = requestAnimationFrame(function updateCurrentTime() {
     playbackState.update((state) => {
-      state.currentTime = audioManager.audioContext.currentTime - startCurrentTime + state.accumulatedTime;
+      let currentTime =
+        audioManager.audioContext.currentTime - playbackStartTime + state.totalElapsedTime + loopOffsetTime;
+
+      const loop = get(loopRegion);
+
+      if (loop.active && currentTime >= loop.end) {
+        // Calculate the time over the loop end, add this to loop start to maintain continuity
+        let excessTime = currentTime - loop.end;
+        loopOffsetTime -= currentTime - loop.start - excessTime;
+        currentTime = loop.start + excessTime;
+        // Clear and reschedule clips starting from the loop start
+        clearScheduledClips();
+        scheduleAllClips(currentTime);
+      }
+
+      state.currentTime = currentTime;
       return state;
     });
+
     frame = requestAnimationFrame(updateCurrentTime);
   });
 };
@@ -227,7 +245,7 @@ export const pausePlayback = () => {
   clearScheduledClips();
   cancelAnimationFrame(frame);
   playbackState.update((state) => {
-    state.accumulatedTime = state.currentTime;
+    state.totalElapsedTime = state.currentTime;
     state.playing = false;
     return state;
   });
@@ -239,7 +257,7 @@ export const stopPlayback = () => {
   playbackState.set({
     playing: false,
     currentTime: 0,
-    accumulatedTime: 0,
+    totalElapsedTime: 0,
   });
 };
 
@@ -248,9 +266,9 @@ export const seekToTime = (time) => {
   cancelAnimationFrame(frame);
   playbackState.update((state) => {
     state.currentTime = time;
-    state.accumulatedTime = time;
+    state.totalElapsedTime = time;
     if (state.playing) {
-      startPlayback(time);
+      startPlayback();
     }
     return state;
   });
