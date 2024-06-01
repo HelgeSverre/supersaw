@@ -15,7 +15,7 @@
   onMount(() => {
     audioManager.audioContext.resume();
 
-    if ($getSelectedClip.midiData) {
+    if ($getSelectedClip?.midiData) {
       notesForDisplay = extractNoteEvents($getSelectedClip.midiData);
       scrollToFirstNote();
     }
