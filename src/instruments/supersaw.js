@@ -6,29 +6,48 @@ export class Supersaw {
     this.adsr = { attack: 0.001, decay: 0.05, sustain: 0.3, release: 1 };
     this.numOscillators = 8;
     this.detuneAmount = 20;
-    this.reverbAmount = 0.25;
+    this.reverbAmount = 0.4;
     this.reverbTime = 2;
-    this.distortionAmount = 10;
+    this.distortionAmount = 2;
 
     // Create and connect nodes
     this.output = this.audioContext.createGain();
     this.distortion = this.createDistortion();
     this.reverb = this.createReverbImpulse();
     this.compressor = this.createCompressor();
+    this.reverbHPF = this.createHighPassFilter(600);
+    this.reverbLPF = this.createLowPassFilter(6000);
 
     // Chain the effects
     this.distortion.connect(this.compressor);
-    this.compressor.connect(this.mixer);
+    this.compressor.connect(this.output);
     this.output.connect(this.mixer);
 
+    // Parallel chain for reverb
     this.reverbGain = this.audioContext.createGain();
     this.reverbGain.gain.value = this.reverbAmount;
-    this.reverbGain.connect(this.output);
+    this.reverbHPF.connect(this.reverbLPF);
+    this.reverbLPF.connect(this.reverb);
     this.reverb.connect(this.reverbGain);
+    this.reverbGain.connect(this.output);
   }
 
   oscGain(gain = 1) {
     return gain / Math.sqrt(this.numOscillators);
+  }
+
+  createHighPassFilter(frequency) {
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = "highpass";
+    filter.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+    return filter;
+  }
+
+  createLowPassFilter(frequency) {
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+    return filter;
   }
 
   createCompressor() {
@@ -90,40 +109,39 @@ export class Supersaw {
   }
 
   startNote(frequency) {
-    const startTime = this.audioContext.currentTime;
-    const oscillators = this.createSupersawOscillators(frequency, startTime);
+    const now = this.audioContext.currentTime;
+    const oscillators = this.createSupersawOscillators(frequency, now);
     const envelope = this.audioContext.createGain();
 
     envelope.connect(this.distortion); // Connect to the first effect in the chain
-    envelope.connect(this.reverb);
+    envelope.connect(this.reverbHPF);
 
     oscillators.forEach((oscillator, index) => {
       const phaseOffset = index / 1000 + Math.random() / 1000;
       oscillator.connect(envelope);
-      oscillator.start(startTime + phaseOffset);
+      oscillator.start(now + phaseOffset);
     });
 
-    this.applyEnvelope(envelope, startTime);
+    this.applyEnvelope(envelope, now);
     this.notes.set(frequency, { oscillators, envelope });
   }
 
   stopNote(frequency) {
-    if (this.notes.has(frequency)) {
-      const { release } = this.adsr;
-      const { oscillators, envelope } = this.notes.get(frequency);
-      const now = this.audioContext.currentTime;
+    if (!this.notes.has(frequency)) return;
 
-      envelope.gain.cancelAndHoldAtTime(now);
-      // envelope.gain.linearRampToValueAtTime(0, now + release);
-      envelope.gain.exponentialRampToValueAtTime(0.0001, now + release);
+    const { release } = this.adsr;
+    const { oscillators, envelope } = this.notes.get(frequency);
+    const now = this.audioContext.currentTime;
 
-      oscillators.forEach((oscillator) => {
-        oscillator.stop(now + release + 0.001);
-        oscillator.onended = () => oscillator.disconnect();
-      });
+    envelope.gain.cancelAndHoldAtTime(now);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, now + release);
 
-      this.notes.delete(frequency);
-    }
+    oscillators.forEach((oscillator) => {
+      oscillator.stop(now + release + 0.001);
+      oscillator.onended = () => oscillator.disconnect();
+    });
+
+    this.notes.delete(frequency);
   }
 
   playNote(frequency, time, duration) {
@@ -132,7 +150,7 @@ export class Supersaw {
     const envelope = this.audioContext.createGain();
 
     envelope.connect(this.distortion);
-    envelope.connect(this.reverb);
+    envelope.connect(this.reverbHPF);
 
     oscillators.forEach((oscillator, index) => {
       const phaseOffset = index / 1000 + Math.random() / 1000;
@@ -150,11 +168,11 @@ export class Supersaw {
     });
   }
 
-  applyEnvelope(envelope, startTime) {
+  applyEnvelope(envelope, time) {
     const { attack, decay, sustain, release } = this.adsr;
-    envelope.gain.setValueAtTime(0.00001, startTime);
-    envelope.gain.exponentialRampToValueAtTime(this.oscGain(1), startTime + attack);
-    envelope.gain.exponentialRampToValueAtTime(this.oscGain(sustain), startTime + attack + decay);
+    envelope.gain.setValueAtTime(0.00001, time);
+    envelope.gain.exponentialRampToValueAtTime(this.oscGain(1), time + attack);
+    envelope.gain.exponentialRampToValueAtTime(this.oscGain(sustain), time + attack + decay);
     return { release };
   }
 
