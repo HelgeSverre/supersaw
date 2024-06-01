@@ -60,7 +60,11 @@
         kit: "trance",
         bpm: 138,
         variations: ["TR-909Kick.wav"],
-      }).then((track) => addTrack(track));
+      }).then((track) => {
+        track.isMuted = true;
+
+        addTrack(track);
+      });
 
       createMidiClipFromUrl("/midi/moon-loves-the-sun.mid", "Nu-NRG - Moon Loves The Sun").then((clip) => {
         addTrack({

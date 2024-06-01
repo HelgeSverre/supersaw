@@ -3,12 +3,12 @@ export class Supersaw {
     this.audioContext = audioContext;
     this.mixer = mixer;
     this.notes = new Map();
-    this.adsr = { attack: 0.001, decay: 0.05, sustain: 0.3, release: 1 };
+    this.adsr = { attack: 0.001, decay: 0.05, sustain: 1, release: 1 };
     this.numOscillators = 8;
     this.detuneAmount = 20;
-    this.reverbAmount = 0.4;
+    this.reverbAmount = 0.25;
     this.reverbTime = 2;
-    this.distortionAmount = 2;
+    this.distortionAmount = 0;
 
     // Create and connect nodes
     this.output = this.audioContext.createGain();
