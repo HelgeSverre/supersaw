@@ -75,7 +75,7 @@
   onMount(() => {
     audioManager.audioContext.resume();
 
-    changeInstrument("pad");
+    changeInstrument("supersaw");
 
     modal.addEventListener("keydown", handleKeyboardDown);
     modal.addEventListener("keyup", handleKeyboardUp);
@@ -144,7 +144,7 @@
           <select
             bind:value={selectedInstrument}
             on:change={(e) => changeInstrument(e.target.value)}
-            class="w-16 appearance-none rounded bg-dark-600 p-1 px-2 text-xs"
+            class="w-20 appearance-none rounded bg-dark-600 p-1 px-2 font-mono text-xs text-white"
           >
             {#each audioManager.instruments.keys() as instrument}
               <option value={instrument}>{instrument}</option>
@@ -168,7 +168,7 @@
         </div>
       </div>
 
-      <div class=" border-black-300 rounded-lg border bg-black p-2">
+      <div class=" bg-black rounded-lg border border-accent-yellow p-2">
         <div class="piano select-none">
           {#each Object.entries(frequencies) as [note, hz]}
             <button
@@ -199,15 +199,15 @@
 
 <style>
   /*
-      todo  fix this comment indenting weirdly when formatting.
+          todo  fix this comment indenting weirdly when formatting.
 
-            Z-INDEX ORDER:
+                Z-INDEX ORDER:
 
-            - 10 - White hovered/active keys (z-index: 10)
-            - 20 - White keys (z-index: 20)
-            - 30 - Black hovered/active keys (z-index: 30)
-            - 40 - Black keys (z-index: 40)
-          */
+                - 10 - White hovered/active keys (z-index: 10)
+                - 20 - White keys (z-index: 20)
+                - 30 - Black hovered/active keys (z-index: 30)
+                - 40 - Black keys (z-index: 40)
+              */
 
   .instrument {
     --white-note-width: 35px;
