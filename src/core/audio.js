@@ -12,7 +12,10 @@ class AudioManager {
   cache = {};
 
   constructor() {
-    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    this.audioContext = new window.AudioContext({
+      latencyHint: "interactive",
+      sampleRate: 44100,
+    });
 
     // Mixer -> Pan -> Destination (Speakers)
     this.mixer = this.audioContext.createGain();
