@@ -48,7 +48,7 @@
 
 <svelte:window on:keyup={handleKeyup} />
 
-<div class="relative mixer-panel" style:height="{$mixerHeight}px">
+<div class="mixer-panel relative" style:height="{$mixerHeight}px">
   <div class="absolute -top-8">
     <button class="block h-8 w-auto rounded-tr bg-[#2D2D30] px-4 text-sm text-white" on:click={toggleMixer}>
       Mixer
@@ -56,11 +56,10 @@
   </div>
   <div aria-hidden="true" class="h-1 w-full cursor-row-resize bg-[#2D2D30]" on:mousedown={startResizing}></div>
   <div class="flex h-full flex-row bg-[#2D2D30] p-1">
-    <div class="bg-black flex flex-row gap-px p-px">
+    <div class="flex flex-row gap-px bg-black p-px">
       <ChannelStrip channel="master" />
       <ChannelStrip channel="1" />
       <ChannelStrip channel="2" />
-
     </div>
   </div>
 </div>
