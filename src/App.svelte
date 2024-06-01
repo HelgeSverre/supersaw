@@ -236,8 +236,6 @@
         {/if}
 
         <AudioVisualizer />
-        <!--        <Spectrogram />-->
-        <VoxengoSpan />
 
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
           <!--          <SegmentGroup>-->
