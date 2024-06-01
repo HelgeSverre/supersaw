@@ -1,8 +1,8 @@
-export function saveToLocalStorage(key, value) {
+export function saveToLocalStorage(key: string, value: any) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-export function loadFromLocalStorage(key, defaultValue) {
+export function loadFromLocalStorage(key: string, defaultValue: any) {
   const storedValue = localStorage.getItem(key);
   if (storedValue) {
     try {
@@ -11,5 +11,6 @@ export function loadFromLocalStorage(key, defaultValue) {
       console.error("Error parsing localStorage item", key, e);
     }
   }
+
   return defaultValue;
 }
