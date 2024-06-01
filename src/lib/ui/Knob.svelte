@@ -55,27 +55,33 @@
       dispatch("input", { value });
     }
 
-    function onMouseUp() {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-
-      dispatch("change", { value });
-    }
-
-    window.addEventListener("keydown", (event) => {
+    function onKeyDown(event) {
       if (event.key === "Shift") {
         startY = lastY;
         startValue = value;
         fineTune = true;
       }
-    });
-    window.addEventListener("keyup", (event) => {
+    }
+
+    function onKeyUp(event) {
       if (event.key === "Shift") {
         startY = lastY;
         startValue = value;
         fineTune = false;
       }
-    });
+    }
+
+    function onMouseUp() {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+
+      dispatch("change", { value });
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
   }
@@ -103,18 +109,11 @@
       x2="50"
       y2="20"
       stroke="#ffffff"
-      stroke-width="8"
+      stroke-width={fineTune ? 4 : 8}
       stroke-linecap="round"
       transform="rotate({rotation} 50 50)"
     />
   </svg>
-  <div class="label">{min.toFixed(2)}</div>
-  <div class="label">{value.toFixed(2)}</div>
-  <div class="label">{max.toFixed(2)}</div>
-  <div class="label">Step: {step}</div>
-  <div class="label">C-Y: {startY}</div>
-  <div class="label">L-Y: {lastY}</div>
-  <div class="label">Sensitivity: {fineTune ? "Fine-tune" : "Normal"}</div>
 </div>
 
 <style>
