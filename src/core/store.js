@@ -578,30 +578,6 @@ export const createDummyHardstyleTracks = async () => {
   addTrack(closed);
 };
 
-export const createDummyDrumTracks = async () => {
-  clearTracks();
-  changeBpm(100);
-
-  const track = await createDrumPattern({
-    name: "Bass Drum",
-    steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]),
-    bpm: 100,
-    variations: ["BD/BD0000.WAV"],
-  });
-
-  addTrack(track);
-
-  const track2 = await createDrumPattern({
-    name: "Bass Drum",
-    steps: createStepSequencerPattern(16, 4, [1, 0, 0, 0]),
-    bpm: 100,
-    kit: "roland-tr-909",
-    variations: ["BT0A0A7.WAV"],
-  });
-
-  addTrack(track2);
-};
-
 export const createDummyTranceTracks = async () => {
   clearTracks();
   changeBpm(120);

@@ -7,7 +7,6 @@
     bpm,
     changeBpm,
     clearTracks,
-    createDummyTranceTracks,
     createInstrumentTrack,
     currentView,
     enableLooping,
@@ -38,7 +37,7 @@
   import AudioVisualizer from "./lib/daw/analyzers/AudioVisualizer.svelte";
   import DesignSystem from "./lib/ui/DesignSystem.svelte";
   import Instrument from "./lib/daw/instruments/Instrument.svelte";
-  import VoxengoSpan from "./lib/daw/analyzers/VoxengoSpan.svelte";
+  import { createDrumPattern, createStepSequencerPattern } from "./utils/drumpattern.js";
 
   let instrumentDialog;
   let synthDialog;
@@ -51,19 +50,28 @@
   }
 
   onMount(() => {
-    // instrumentDialog.showModal();
     if ($tracks.length === 0) {
-      // createDrumPattern({
-      //   name: "Bass Drum",
-      //   folder: "BD",
-      //   pattern: [1, 1, 1, 1], // Basic 4/4 beat
-      //   bpm: $bpm,
-      //   baseVolume: 1, // Full volume
-      //   variations: ["0000"],
-      // }).then((track) => addTrack(track));
+      clearTracks();
+      changeBpm(138);
 
-      createDummyTranceTracks().then(() => {
-        createMidiTrack();
+      createDrumPattern({
+        name: "Bass Drum",
+        steps: createStepSequencerPattern(16 * 2, 8, [1, 0, 0, 0]),
+        kit: "trance",
+        bpm: 138,
+        variations: ["TR-909Kick.wav"],
+      }).then((track) => addTrack(track));
+
+      createMidiClipFromUrl("/midi/moon-loves-the-sun.mid", "Nu-NRG - Moon Loves The Sun").then((clip) => {
+        addTrack({
+          id: crypto.randomUUID(),
+          type: "instrument",
+          instrument: "supersaw",
+          name: "Melody",
+          isMuted: false,
+          isSolo: false,
+          clips: [clip],
+        });
       });
     }
   });
@@ -166,19 +174,6 @@
     enableLooping();
   }
 
-  function createMidiTrack() {
-    createMidiClipFromUrl("/midi/sunblind-believe-nunrg.mid", "Midi notes").then((clip) => {
-      addTrack({
-        id: crypto.randomUUID(),
-        type: "instrument",
-        name: "Midi notes",
-        isMuted: false,
-        isSolo: false,
-        clips: [clip],
-      });
-    });
-  }
-
   function toggleTheme() {
     if (document.documentElement.classList.contains("theme-dark")) {
       document.documentElement.classList.remove("theme-dark");
@@ -238,17 +233,8 @@
         <AudioVisualizer />
 
         <div class="ml-auto flex flex-row items-center justify-end gap-8">
-          <!--          <SegmentGroup>-->
-          <!--            <IconButton icon={Drum} onClick={createDummyHardstyleTracks} />-->
-          <!--            <IconButton icon={SquareScissors} onClick={createDummyTranceTracks} />-->
-          <!--            <IconButton icon={Warehouse} onClick={createDummyHouseTracks} />-->
-          <!--          </SegmentGroup>-->
-          <!--          <IconButton icon={KeyboardMusic} onClick={() => instrumentDialog.showModal()} />-->
-          <!--          <IconButton icon={KeyboardMusic} onClick={() => synthDialog.showModal()} />-->
-
           <SegmentGroup>
             <TextDisplay text={$currentView} />
-            <IconButton icon={Plus} onClick={createMidiTrack} />
             <IconButton icon={Plus} onClick={() => createInstrumentTrack()} />
             <IconButton icon={Trash} onClick={clearTracks} />
             <IconButton icon={Lightbulb} onClick={toggleTheme} />
