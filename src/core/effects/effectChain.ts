@@ -12,11 +12,13 @@ export class EffectChain {
   private outputNode: AudioNode;
   private effects: Effect[];
 
-  constructor(audioContext: AudioContext) {
+  constructor(audioContext: AudioContext, effects: Effect[] = []) {
     this.audioContext = audioContext;
     this.inputNode = this.audioContext.createGain();
     this.outputNode = this.inputNode; // Initially, output is the same as input
     this.effects = [];
+
+    effects.forEach((effect) => this.addEffect(effect));
   }
 
   addEffects(effects: Effect[]): void {

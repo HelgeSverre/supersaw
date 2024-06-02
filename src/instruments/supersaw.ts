@@ -1,4 +1,10 @@
 import type { ADSR, Instrument } from "../core/types";
+import { Reverb } from "../core/effects/reverb";
+import { Filter } from "../core/effects/filter";
+import { Distortion } from "../core/effects/distortion";
+import { Compressor } from "../core/effects/compressor";
+import { ParallelChain } from "../core/effects/parallelChain";
+import { EffectChain } from "../core/effects/effectChain";
 
 interface Note {
   oscillators: OscillatorNode[];
@@ -15,13 +21,10 @@ export class Supersaw implements Instrument {
   private reverbAmount: number;
   private reverbTime: number;
   private distortionAmount: number;
+
   private output: GainNode;
-  private distortion: WaveShaperNode;
-  private reverb: ConvolverNode;
-  private compressor: DynamicsCompressorNode;
-  private reverbHPF: BiquadFilterNode;
-  private reverbLPF: BiquadFilterNode;
-  private reverbGain: GainNode;
+
+  private effectChain: ParallelChain;
 
   constructor(audioContext: AudioContext, mixer: AudioNode) {
     this.audioContext = audioContext;
@@ -32,25 +35,23 @@ export class Supersaw implements Instrument {
     this.detuneAmount = 20;
     this.reverbAmount = 0.25;
     this.reverbTime = 2;
-    this.distortionAmount = 2;
+    this.distortionAmount = 4;
+
+    this.effectChain = new ParallelChain(audioContext, [
+      new EffectChain(this.audioContext, [
+        new Compressor(this.audioContext),
+        new Distortion(this.audioContext, this.distortionAmount),
+      ]),
+      new EffectChain(this.audioContext, [
+        new Reverb(this.audioContext, this.reverbTime),
+        new Filter(this.audioContext, "highpass", 500),
+        new Filter(this.audioContext, "lowpass", 6000),
+      ]),
+    ]);
 
     this.output = this.audioContext.createGain();
-    this.distortion = this.createDistortion();
-    this.reverb = this.createReverbImpulse();
-    this.compressor = this.createCompressor();
-    this.reverbHPF = this.createHighPassFilter(600);
-    this.reverbLPF = this.createLowPassFilter(6000);
-
-    this.distortion.connect(this.compressor);
-    this.compressor.connect(this.output);
+    this.effectChain.connect(this.output);
     this.output.connect(this.mixer);
-
-    this.reverbGain = this.audioContext.createGain();
-    this.reverbGain.gain.value = this.reverbAmount;
-    this.reverbHPF.connect(this.reverbLPF);
-    this.reverbLPF.connect(this.reverb);
-    this.reverb.connect(this.reverbGain);
-    this.reverbGain.connect(this.output);
   }
 
   private oscGain(gain = 1): number {
@@ -134,8 +135,7 @@ export class Supersaw implements Instrument {
     const oscillators = this.createSupersawOscillators(frequency, now);
     const envelope = this.audioContext.createGain();
 
-    envelope.connect(this.distortion); // Connect to the first effect in the chain
-    envelope.connect(this.reverbHPF);
+    envelope.connect(this.effectChain.getInputNode());
 
     oscillators.forEach((oscillator, index) => {
       const phaseOffset = index / 1000 + Math.random() / 1000;
@@ -170,8 +170,7 @@ export class Supersaw implements Instrument {
     const oscillators = this.createSupersawOscillators(frequency, time);
     const envelope = this.audioContext.createGain();
 
-    envelope.connect(this.distortion);
-    envelope.connect(this.reverbHPF);
+    envelope.connect(this.effectChain.getInputNode());
 
     oscillators.forEach((oscillator, index) => {
       const phaseOffset = index / 1000 + Math.random() / 1000;

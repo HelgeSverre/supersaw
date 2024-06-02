@@ -33,6 +33,7 @@ class AudioManager {
     this.instruments.set("piano", new Piano(this.audioContext, this.mixer));
     this.instruments.set("pad", new Pad(this.audioContext, this.mixer));
     this.instruments.set("supersaw", new Supersaw(this.audioContext, this.mixer));
+    this.instruments.set("midi_out", null);
   };
 
   getInstrument = (name) => {

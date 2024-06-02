@@ -1,5 +1,6 @@
-// src/effects/Filter.ts
-export class Filter {
+import type { Effect } from "./chain";
+
+export class Filter implements Effect {
   private audioContext: AudioContext;
   private filter: BiquadFilterNode;
 

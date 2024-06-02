@@ -1,5 +1,6 @@
-// src/effects/Distortion.ts
-export class Distortion {
+import type { Effect } from "./chain";
+
+export class Distortion implements Effect {
   private audioContext: AudioContext;
   private distortion: WaveShaperNode;
 

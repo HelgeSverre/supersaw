@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import AudioClip from "./AudioClip.svelte";
   import {
     addClip,
@@ -9,6 +9,8 @@
     pixelsToTime,
     removeTrack,
     seekToTime,
+    setInstrumentForTrack,
+    setMidiOutputForTrack,
     toggleMute,
     toggleSolo,
   } from "../../core/store.js";
@@ -17,10 +19,12 @@
   import { createMidiClipFromFile } from "../../core/midi.js";
   import { audioManager } from "../../core/audio.js";
   import classNames from "classnames";
+  import { onMount } from "svelte";
+  import type { Track } from "../../core/types";
 
-  export let track;
+  export let track: Track;
 
-  function handleDrop(event) {
+  function handleDrop(event: DragEvent) {
     if (event.dataTransfer.items) {
       for (let i = 0; i < event.dataTransfer.items.length; i++) {
         // If the dropped item is a file and the file is a MIDI file
@@ -110,6 +114,22 @@
     seekToTime(newStartTime);
   }
 
+  let midiOutputs: MIDIOutput[] = [];
+
+  onMount(() => {
+    // TODO: Move into a provider component (context api)
+    navigator.requestMIDIAccess().then((access) => {
+      midiOutputs = Array.from(access.outputs.values());
+
+      access.onstatechange = (event) => {
+        console.log("MIDI state change", event);
+        midiOutputs = Array.from(access.outputs.values());
+      };
+    });
+  });
+
+  $: midiOutputFound = midiOutputs.find((output) => output.name === track.midiOutput) !== null;
+
   $: gradientStyle = `
   background:
      repeating-linear-gradient(
@@ -133,7 +153,7 @@
   class={classNames("track flex flex-row gap-2 overflow-hidden rounded-sm border border-dark-100 bg-white/5", {
     "opacity-50": track.isMuted,
   })}
-  style="height: 120px; position: relative;"
+  style="height: 200px; position: relative;"
 >
   <!-- Track header -->
   <div class="track-header flex w-60 shrink-0 flex-col border-r-2 border-r-dark-900 bg-dark-300">
@@ -212,14 +232,33 @@
         </button>
       {:else if track.type === "instrument"}
         <select
-          class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-dark-100"
+          class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-dark-100"
           bind:value={track.instrument}
-          on:change={(e) => (track.instrument = e.target.value)}
+          on:change={(e) => setInstrumentForTrack(track.id, e.target.value)}
         >
           {#each audioManager.instruments.keys() as instrument}
             <option value={instrument}>{instrument}</option>
           {/each}
         </select>
+
+        {#if midiOutputs.length}
+          <select
+            bind:value={track.midiOutput}
+            on:change={(e) => setMidiOutputForTrack(track.id, e.target.value)}
+            class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-dark-100"
+          >
+            <option>Select MIDI output</option>
+            {#each midiOutputs as output}
+              <option value={output.name}> {output.manufacturer} - {output.name}</option>
+            {/each}
+          </select>
+        {:else}
+          <div
+            class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 font-mono text-xs text-light-soft focus:outline-none focus:ring-1 focus:ring-dark-100"
+          >
+            No MIDI outputs found
+          </div>
+        {/if}
       {/if}
     </div>
   </div>

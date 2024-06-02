@@ -1,5 +1,6 @@
-// src/effects/Compressor.ts
-export class Compressor {
+import type { Effect } from "./chain";
+
+export class Compressor implements Effect {
   private audioContext: AudioContext;
   private compressor: DynamicsCompressorNode;
 
@@ -7,10 +8,10 @@ export class Compressor {
     this.audioContext = audioContext;
     this.compressor = this.audioContext.createDynamicsCompressor();
     this.compressor.threshold.setValueAtTime(-6, this.audioContext.currentTime);
-    this.compressor.knee.setValueAtTime(30, this.audioContext.currentTime);
+    this.compressor.knee.setValueAtTime(10, this.audioContext.currentTime);
     this.compressor.ratio.setValueAtTime(4, this.audioContext.currentTime);
-    this.compressor.attack.setValueAtTime(0.005, this.audioContext.currentTime);
-    this.compressor.release.setValueAtTime(0.05, this.audioContext.currentTime);
+    this.compressor.attack.setValueAtTime(0.1, this.audioContext.currentTime);
+    this.compressor.release.setValueAtTime(0.5, this.audioContext.currentTime);
   }
 
   connect(node: AudioNode) {

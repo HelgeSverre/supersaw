@@ -1,5 +1,6 @@
-// src/effects/Reverb.ts
-export class Reverb {
+import type { Effect } from "./chain";
+
+export class Reverb implements Effect {
   private audioContext: AudioContext;
   private reverb: ConvolverNode;
 

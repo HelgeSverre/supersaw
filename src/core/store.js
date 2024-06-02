@@ -44,6 +44,7 @@ import { audioManager } from "./audio.js";
 import { loadFromLocalStorage, saveToLocalStorage } from "./local.ts";
 import { extractNoteEvents, midiNoteToFrequency } from "./midi.js";
 import { Synth } from "../instruments/synth.js";
+import { MidiOut } from "../instruments/midiOut.ts";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
@@ -182,19 +183,47 @@ const scheduleAllClips = (currentTime, filterByTrackId = null) => {
             sources.set(clip.id, { trackId: track.id, source, gainNode });
           }
 
-          // MIDI Clips: Schedule notes that are supposed to start after the current time
-          if (clip.type === "midi" && clip.midiData) {
-            const instrument = audioManager.getInstrument(track.instrument);
-            let notes = extractNoteEvents(clip.midiData);
+          // MIDI Clips sent to MIDI out
+          if (track.instrument === "midi_out" && clip.type === "midi" && clip.midiData) {
+            if (track.midiOutput == null) return;
+            // TODO:  do this outside the loop
+            navigator.requestMIDIAccess().then((midiAccess) => {
+              const midiOutput = Array.from(midiAccess.outputs.values()).find(
+                (output) => output.name === track.midiOutput,
+              );
 
-            notes.forEach((midiEvent) => {
+              if (!midiOutput) {
+                console.log("MIDI output not found");
+                return;
+              }
+
+              console.log(midiOutput);
+              const instrument = new MidiOut(midiOutput);
+
+              extractNoteEvents(clip.midiData).forEach((midiEvent) => {
+                let state = get(playbackState);
+                console.log("Sending MIDI out - note");
+                const eventStart = clip.startTime + midiEvent.start;
+                if (eventStart >= currentTime) {
+                  instrument.playNote(midiNoteToFrequency(midiEvent.note), eventStart, midiEvent.duration);
+                }
+              });
+
+              instruments.set(clip.id, { trackId: track.id, instrument });
+            });
+          }
+
+          // MIDI Clips: Schedule notes that are supposed to start after the current time
+          if (track.instrument !== "midi_out" && clip.type === "midi" && clip.midiData) {
+            const instrument = audioManager.getInstrument(track.instrument);
+
+            extractNoteEvents(clip.midiData).forEach((midiEvent) => {
               const eventStart = clip.startTime + midiEvent.start / 1000;
               if (eventStart >= currentTime) {
                 const eventTime = audioManager.audioContext.currentTime + (eventStart - currentTime);
                 instrument.playNote(midiNoteToFrequency(midiEvent.note), eventTime, midiEvent.duration / 1000);
               }
             });
-
             instruments.set(clip.id, { trackId: track.id, instrument });
           }
         }
@@ -397,6 +426,27 @@ export const toggleSolo = (trackId) => {
       isSolo: track.id === trackId ? !track.isSolo : isAnySolo ? track.isSolo : false,
     }));
   });
+};
+
+export const updateTrack = (trackId, data) => {
+  tracks.update((allTracks) => {
+    return allTracks.map((track) =>
+      track.id === trackId
+        ? {
+            ...track,
+            ...data,
+          }
+        : track,
+    );
+  });
+};
+
+export const setInstrumentForTrack = (trackId, instrument) => {
+  updateTrack(trackId, { instrument });
+};
+
+export const setMidiOutputForTrack = (trackId, output) => {
+  updateTrack(trackId, { midiOutput: output });
 };
 
 export const changeBpm = (newBpm) => {

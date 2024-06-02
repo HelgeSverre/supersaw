@@ -49,6 +49,7 @@ export interface Track {
   name: string;
   type: "audio" | "instrument";
   instrument?: string;
+  midiOutput?: MIDIOutput;
   isMuted: boolean;
   isSolo: boolean;
   clips: Clip[];
