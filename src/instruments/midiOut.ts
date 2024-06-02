@@ -37,6 +37,7 @@ export class MidiOut implements Instrument {
     // 0x7b - All Notes Off
     // 0x00 - Value (ignored)
     this.output.send([0xb0, 0x7b, 0x00]);
+    this.output.close();
 
     console.log("Sending All Notes Off");
   }
