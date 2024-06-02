@@ -2,16 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/**
-#242527
-#1A1B1D
-#101012
-#3A3D3F
-#657073
-#0B0B0D
-#8CBFC3
-*/
-
 @layer base {
   :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
