@@ -241,23 +241,25 @@
           {/each}
         </select>
 
-        {#if midiOutputs.length}
-          <select
-            bind:value={track.midiOutput}
-            on:change={(e) => setMidiOutputForTrack(track.id, e.target.value)}
-            class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-dark-100"
-          >
-            <option>Select MIDI output</option>
-            {#each midiOutputs as output}
-              <option value={output.name}> {output.manufacturer} - {output.name}</option>
-            {/each}
-          </select>
-        {:else}
-          <div
-            class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 font-mono text-xs text-light-soft focus:outline-none focus:ring-1 focus:ring-dark-100"
-          >
-            No MIDI outputs found
-          </div>
+        {#if track.instrument === "midi_out"}
+          {#if midiOutputs.length}
+            <select
+              bind:value={track.midiOutput}
+              on:change={(e) => setMidiOutputForTrack(track.id, e.target.value)}
+              class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-dark-100"
+            >
+              <option>Select MIDI output</option>
+              {#each midiOutputs as output}
+                <option value={output.name}> {output.manufacturer} - {output.name}</option>
+              {/each}
+            </select>
+          {:else}
+            <div
+              class="w-full appearance-none rounded border border-dark-200 bg-dark-700 px-2 py-1 font-mono text-xs text-light-soft focus:outline-none focus:ring-1 focus:ring-dark-100"
+            >
+              No MIDI outputs found
+            </div>
+          {/if}
         {/if}
       {/if}
     </div>

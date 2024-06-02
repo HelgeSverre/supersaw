@@ -57,7 +57,7 @@
 </script>
 
 <div class="flex flex-col rounded border border-dark-100 bg-dark-700 p-2">
-  <div class="mb-2 flex w-full flex-row gap-2">
+  <div class="mb-2 flex w-full flex-row flex-wrap gap-2">
     <div class="flex flex-col gap-1">
       <span class="text-xs text-white/50">Attack</span>
       <input
@@ -107,7 +107,7 @@
       />
     </div>
   </div>
-  <div class="relative">
+  <div class="relative select-none">
     {#if progress !== null}
       <div style="left: {progress}%;" class="absolute inset-y-0 z-50 w-[1px] bg-red-500"></div>
     {/if}
