@@ -165,7 +165,7 @@
 </script>
 
 <aside class="mx-auto flex max-w-6xl flex-col bg-white">
-  <div class=" p-12">
+  <div class="p-12">
     <div
       class:power-on={powerOn}
       class:power-off={!powerOn}
@@ -519,8 +519,8 @@
             </section>
           </div>
 
-          <div class="mt-3 w-full text-center">
-            <img src="/public/assets/waldorf.svg" alt="" class="inline-block h-10" />
+          <div class="ml-6 mt-3 w-full text-center">
+            <img src="/public/assets/waldorf.svg" alt="Waldorf Music" class="inline-block h-10" />
           </div>
         </div>
       </div>
