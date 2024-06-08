@@ -98,10 +98,9 @@
 
   function onWheel(event) {
     event.preventDefault();
-    event.stopPropagation();
 
     const factor = calculateFactor(event.shiftKey ? fineTuneSensitivity : sensitivity);
-    const newValue = value + event.deltaY * factor;
+    let newValue = value + event.deltaY * factor;
     value = Math.max(min, Math.min(max, newValue));
     dispatch("input", { value });
   }

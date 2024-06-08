@@ -12,6 +12,7 @@
   import ADSR from "./ADSR.svelte";
   import { demoMidiFiles } from "../../core/midiDemos.ts";
   import Fader2 from "./Fader2.svelte";
+  import Encoder from "./Encoder.svelte";
 
   let knobValue = 30;
   let knobValue2 = 0;
@@ -120,6 +121,10 @@
           <h2 class="mb-4 px-2 py-1 text-xs font-light uppercase tracking-wide text-yellow-300">UI Components</h2>
         </div>
 
+        <div class="bg-dark-300 p-2">
+          <Encoder size={48} bind:value={knobValue} min={0} max={100} step={1} />
+          <Encoder size={48} bind:value={knobValue2} min={-1} max={1} step={0.1} />
+        </div>
         <div class="bg-dark-300 p-2">
           <Knob size={48} bind:value={knobValue} min={0} max={100} step={1} />
           <Knob size={48} bind:value={knobValue2} min={-1} max={1} step={0.1} />

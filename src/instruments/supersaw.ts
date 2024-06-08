@@ -42,7 +42,7 @@ export class Supersaw implements Instrument {
     this.reverbAmount = 0.25;
     this.reverbTime = 2;
     this.distortionAmount = 4;
-    this.lowPassFrequency = 44000;
+    this.lowPassFrequency = 22050;
 
     this.dryCompressor = new Compressor(this.audioContext);
     this.dryDistortion = new Distortion(this.audioContext, this.distortionAmount);
