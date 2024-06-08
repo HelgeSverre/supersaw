@@ -283,7 +283,6 @@
       {#each track.clips.filter((c) => c.type === "midi") as clip (clip.id)}
         <MidiClip clip={clip} />
       {/each}
-
     </div>
   </div>
 </section>

@@ -9,6 +9,7 @@ export class Filter implements Effect {
     this.filter = this.audioContext.createBiquadFilter();
     this.filter.type = type;
     this.filter.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+    this.filter.Q.setValueAtTime(2, this.audioContext.currentTime);
   }
 
   connect(node: AudioNode) {

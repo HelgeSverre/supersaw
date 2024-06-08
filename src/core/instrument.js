@@ -3,8 +3,10 @@ import { audioManager } from "./audio.js";
 
 export const detuneAmount = writable(20);
 export const reverbTime = writable(2);
+export const reverbAmount = writable(0.25);
 export const distortionAmount = writable(4);
-export const cutoff = writable(22000);
+export const cutoff = writable(20000);
+export const numOsc = writable(8);
 
 export const adsr = writable({
   attack: 0.01,
@@ -14,8 +16,15 @@ export const adsr = writable({
 });
 
 detuneAmount.subscribe((value) => (audioManager.getInstrument("supersaw").detuneAmount = value));
-reverbTime.subscribe((value) => (audioManager.getInstrument("supersaw").reverbTime = value));
-distortionAmount.subscribe((value) => (audioManager.getInstrument("supersaw").dryDistortion = value));
+reverbTime.subscribe((value) => audioManager.getInstrument("supersaw").reverb.setTime(value));
+reverbAmount.subscribe((value) =>
+  audioManager
+    .getInstrument("supersaw")
+    .reverbControl.getNode()
+    .gain.setValueAtTime(value, audioManager.audioContext.currentTime),
+);
+distortionAmount.subscribe((value) => audioManager.getInstrument("supersaw").dryDistortion.setAmount(value));
+numOsc.subscribe((value) => (audioManager.getInstrument("supersaw").numOscillators = value));
 cutoff.subscribe((value) =>
   audioManager
     .getInstrument("supersaw")

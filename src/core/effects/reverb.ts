@@ -23,6 +23,10 @@ export class Reverb implements Effect {
     return impulse;
   }
 
+  setTime(time: number) {
+    this.reverb.buffer = this.createReverbImpulse(time);
+  }
+
   connect(node: AudioNode) {
     this.reverb.connect(node);
   }

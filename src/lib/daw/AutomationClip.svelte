@@ -68,7 +68,7 @@
   class="automation-clip absolute inset-0 w-full bg-black/50"
   aria-hidden="true"
   on:mouseup|stopPropagation={(event) => {
-    event.stopPropagation()
+    event.stopPropagation();
     // TODO: bug must be done correctly
     if (isDragging) {
       setTimeout(() => {

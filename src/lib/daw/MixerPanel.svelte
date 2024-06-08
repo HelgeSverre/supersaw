@@ -4,7 +4,15 @@
   import ChannelStrip from "./ChannelStrip.svelte";
   import { isMixerOpen, tracks } from "../../core/store.js";
   import Knob from "../ui/Knob.svelte";
-  import { adsr, cutoff, detuneAmount, distortionAmount, reverbTime } from "../../core/instrument.js";
+  import {
+    adsr,
+    cutoff,
+    detuneAmount,
+    distortionAmount,
+    numOsc,
+    reverbAmount,
+    reverbTime,
+  } from "../../core/instrument.js";
   import ADSR from "../ui/ADSR.svelte";
 
   const openHeight = 350;
@@ -68,29 +76,43 @@
 
     <div class="mx-6 grid grid-cols-4 gap-3">
       <div class="flex flex-col">
-        <Knob bind:value={$cutoff} min={0} max={6000} />
+        <span class="text-center text-xs">numOsc</span>
+        <Knob bind:value={$numOsc} min={1} max={12} />
+        <span class="text-center text-xs">{$numOsc.toFixed(2)}</span>
+      </div>
+      <div class="flex flex-col">
         <span class="text-center text-xs">cutoff</span>
+        <Knob bind:value={$cutoff} min={0} max={22000} />
+        <span class="text-center text-xs">{$cutoff.toFixed(2)}</span>
       </div>
       <div class="flex flex-col">
-        <Knob bind:value={$reverbTime} />
+        <span class="text-center text-xs">reverbAmount</span>
+        <Knob bind:value={$reverbAmount} min={0} max={1} step="0.01" />
+        <span class="text-center text-xs">{$reverbAmount.toFixed(2)}</span>
+      </div>
+      <div class="flex flex-col">
         <span class="text-center text-xs">reverbTime</span>
+        <Knob bind:value={$reverbTime} max={10} step={0.1} />
+        <span class="text-center text-xs">{$reverbTime.toFixed(2)}</span>
       </div>
       <div class="flex flex-col">
-        <Knob bind:value={$detuneAmount} min={1} max={50} />
         <span class="text-center text-xs">detuneAmount</span>
+        <Knob bind:value={$detuneAmount} min={1} max={50} />
+        <span class="text-center text-xs">{$detuneAmount.toFixed(2)}</span>
       </div>
       <div class="flex flex-col">
-        <Knob bind:value={$distortionAmount} />
         <span class="text-center text-xs">distortionAmount</span>
+        <Knob bind:value={$distortionAmount} max={20} />
+        <span class="text-center text-xs">{$distortionAmount.toFixed(2)}</span>
       </div>
-      <div class="col-span-full">
-        <ADSR
-          bind:attack={$adsr.attack}
-          bind:decay={$adsr.decay}
-          bind:sustain={$adsr.sustain}
-          bind:release={$adsr.release}
-        />
-      </div>
+    </div>
+    <div class=" w-full max-w-lg">
+      <ADSR
+        bind:attack={$adsr.attack}
+        bind:decay={$adsr.decay}
+        bind:sustain={$adsr.sustain}
+        bind:release={$adsr.release}
+      />
     </div>
   </div>
 </div>

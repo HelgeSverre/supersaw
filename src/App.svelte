@@ -120,7 +120,7 @@
   <Toolbar />
 
   <!-- Timeline -->
-  <div class="flex size-full flex-col bg-red-600">
+  <div class="flex size-full flex-col">
     <div class="flex h-full flex-col gap-1 border-b border-dark-500 bg-dark-800">
       <!--      <div class="flex grow-0 flex-row flex-nowrap gap-1">-->
       <!--        <button-->

@@ -5,6 +5,7 @@
   import { audioManager } from "../../core/audio.js";
   import Knob from "../ui/Knob.svelte";
   import LevelMeter from "../ui/LevelMeter.svelte";
+  import Fader2 from "../ui/Fader2.svelte";
 
   export let channel;
   let peakMeter = 0;
@@ -61,8 +62,8 @@
 
       <div class="flex flex-1 flex-row gap-1 p-2">
         <!-- Vol -->
-        <div class="flex flex-col justify-stretch bg-[#4D4D4D] py-1 text-center">
-          <Fader bind:volume={$masterVolume} />
+        <div class="flex flex-col justify-stretch text-center">
+          <Fader2 bind:value={$masterVolume} min={0} max={1} step={0.01} />
         </div>
 
         <div class="flex flex-row gap-1">

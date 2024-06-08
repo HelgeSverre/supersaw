@@ -31,6 +31,10 @@ export class Distortion implements Effect {
     this.distortion.disconnect();
   }
 
+  setAmount(amount: number) {
+    this.distortion.curve = this.makeDistortionCurve(amount);
+  }
+
   getNode(): WaveShaperNode {
     return this.distortion;
   }

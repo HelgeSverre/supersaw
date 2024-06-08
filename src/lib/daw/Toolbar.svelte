@@ -3,7 +3,7 @@
     bpm,
     changeBpm,
     clearTracks,
-    createAudioTrack,
+    createAudioTrack, createDummyTranceTracks,
     createInstrumentTrack,
     currentView,
     loopRegion,
@@ -11,9 +11,9 @@
     playbackState,
     startPlayback,
     stopPlayback,
-    toggleLooping,
+    toggleLooping
   } from "../../core/store.js";
-  import { Pause, Play, Plus, Repeat2, Square, Trash } from "lucide-svelte";
+  import { Drum, Pause, Play, Plus, Repeat2, Square, Trash } from "lucide-svelte";
   import { formatTime, formatTimeDuration } from "../../core/utils.js";
   import { Lightbulb, Waveform } from "phosphor-svelte";
   import SegmentGroup from "../ui/SegmentGroup.svelte";
@@ -70,6 +70,7 @@
       <div class="ml-auto flex flex-row items-center justify-end gap-8">
         <SegmentGroup>
           <TextDisplay text={$currentView} />
+          <IconButton icon={Drum} onClick={() => createDummyTranceTracks()} />
           <IconButton icon={Plus} onClick={() => createInstrumentTrack()} />
           <IconButton icon={Waveform} onClick={() => createAudioTrack()} />
           <IconButton icon={Trash} onClick={clearTracks} />

@@ -40,18 +40,19 @@
   window.addEventListener("mousemove", onMouseMove);
   window.addEventListener("mouseup", onMouseUp);
   window.addEventListener("mouseleave", onMouseLeave);
+
+  $: scaledHeight = ((value - min) / (max - min)) * 100;
 </script>
 
-<div class="inline-block h-full w-6 bg-dark-800 p-0.5">
+<div class="inline-block h-full w-8 bg-[#4D4D4D] p-0.5">
   <div
     class="relative h-full w-full cursor-pointer bg-white/10"
     aria-hidden="true"
     bind:this={fader}
     on:mousedown={onMouseDown}
   >
-    <span class="block select-none py-1 text-center text-xs leading-none">{value}</span>
     <div
-      style="height: {value}%"
+      style="height: {scaledHeight}%"
       class="absolute inset-x-0 bottom-0 border-t-4 border-accent-blue bg-accent-blue/50 hover:bg-accent-blue/60"
     ></div>
   </div>

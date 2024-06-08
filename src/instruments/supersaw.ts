@@ -1,6 +1,7 @@
 import type { ADSR, Instrument } from "../core/types";
 import { Reverb } from "../core/effects/reverb";
 import { Filter } from "../core/effects/filter";
+import { Gain } from "../core/effects/gain";
 import { Distortion } from "../core/effects/distortion";
 import { Compressor } from "../core/effects/compressor";
 import { ParallelChain } from "../core/effects/parallelChain";
@@ -23,14 +24,14 @@ export class Supersaw implements Instrument {
   private distortionAmount: number;
   private lowPassFrequency: number;
 
-  private dryCompressor: Effect;
-  private dryDistortion: Effect;
-  private cutoffFilter: Effect;
-  private reverb: Effect;
+  public dryCompressor: Effect;
+  public dryDistortion: Effect;
+  public cutoffFilter: Effect;
+  public reverb: Effect;
+  public output: GainNode;
+  public reverbControl: Gain;
 
-  private output: GainNode;
-
-  private effectChain: ParallelChain;
+  public effectChain: ParallelChain;
 
   constructor(audioContext: AudioContext, mixer: AudioNode) {
     this.audioContext = audioContext;
@@ -39,7 +40,7 @@ export class Supersaw implements Instrument {
     this.adsr = { attack: 0.01, decay: 0.08, sustain: 0.2, release: 1.0 };
     this.numOscillators = 8;
     this.detuneAmount = 20;
-    this.reverbAmount = 0.25;
+    this.reverbAmount = 0.2;
     this.reverbTime = 2;
     this.distortionAmount = 4;
     this.lowPassFrequency = 22050;
@@ -47,15 +48,17 @@ export class Supersaw implements Instrument {
     this.dryCompressor = new Compressor(this.audioContext);
     this.dryDistortion = new Distortion(this.audioContext, this.distortionAmount);
     this.cutoffFilter = new Filter(this.audioContext, "lowpass", this.lowPassFrequency);
+    this.reverbControl = new Gain(this.audioContext, this.reverbAmount);
     this.reverb = new Reverb(this.audioContext, this.reverbTime);
 
     this.effectChain = new ParallelChain(audioContext, [
       new EffectChain(this.audioContext, [this.dryCompressor, this.dryDistortion, this.cutoffFilter]),
       new EffectChain(this.audioContext, [
-        this.reverb,
-        new Filter(this.audioContext, "highpass", 500),
-        new Filter(this.audioContext, "lowpass", 6000),
         this.cutoffFilter,
+        this.reverb,
+        this.reverbControl,
+        new Filter(this.audioContext, "highpass", 500),
+        new Filter(this.audioContext, "lowpass", 7000),
       ]),
     ]);
 

@@ -131,9 +131,9 @@
       {#each $tracks as track}
         <Track track={track} />
 
-<!--        <div class="flex h-8 w-full items-center bg-white/10 p-1 leading-snug">-->
-<!--          <span class="block bg-white/20 px-1"> automation </span>-->
-<!--        </div>-->
+        <!--        <div class="flex h-8 w-full items-center bg-white/10 p-1 leading-snug">-->
+        <!--          <span class="block bg-white/20 px-1"> automation </span>-->
+        <!--        </div>-->
       {/each}
     </div>
   </div>
