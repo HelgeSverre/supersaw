@@ -21,7 +21,6 @@
   import classNames from "classnames";
   import { onMount } from "svelte";
   import type { Track } from "../../core/types";
-  import AutomationClip from "./AutomationClip.svelte";
 
   export let track: Track;
 
@@ -158,7 +157,7 @@
     style="height: 200px; position: relative;"
   >
     <!-- Track header -->
-    <div class="track-header flex w-60 shrink-0 flex-col border-r-2 border-r-dark-900 bg-dark-300">
+    <div class="track-header flex w-60 shrink-0 flex-col">
       <div class="flex flex-row items-center justify-between gap-2 bg-dark-200 p-0.5">
         <button
           class="block w-full truncate rounded p-1 text-left text-xs font-medium text-light focus:outline-none focus:ring-1 focus:ring-dark-100"
@@ -185,7 +184,7 @@
         <button
           on:click={() => toggleMute(track.id)}
           class={classNames(
-            "inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
+            "control inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
             "focus:outline-none focus:ring-1 focus:ring-dark-100",
             {
               "bg-accent-yellow text-black hover:bg-accent-yellow/80": track.isMuted,
@@ -199,7 +198,7 @@
         <button
           on:click={() => toggleSolo(track.id)}
           class={classNames(
-            "inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
+            "control inline-flex items-center justify-center rounded border border-dark-600 px-2 py-1 text-sm ",
             "focus:outline-none focus:ring-1 focus:ring-dark-100",
             {
               "bg-accent-yellow text-black hover:bg-accent-yellow/80": track.isSolo,
@@ -283,12 +282,23 @@
       {#each track.clips.filter((c) => c.type === "midi") as clip (clip.id)}
         <MidiClip clip={clip} />
       {/each}
-
     </div>
   </div>
 </section>
 
 <style>
+  .track {
+    background-color: var(--surface-background);
+    border: 2px solid var(--surface-area-focus);
+    color: var(--foreground-main);
+  }
+
+  .track-header {
+    border-right: 2px solid var(--surface-area-focus);
+    background-color: var(--surface-highlight);
+    color: var(--control-foreground);
+  }
+
   .track-grid {
     position: absolute;
     left: 0;
@@ -296,5 +306,15 @@
     width: 100%;
     background-attachment: local;
     background-repeat: no-repeat;
+  }
+
+  .control {
+    background: var(--control-background);
+    color: var(--control-text-back);
+    border: 2px solid var(--control-contrast-frame);
+  }
+
+  .control:hover {
+    border-color: var(--control-selection-frame);
   }
 </style>

@@ -1,4 +1,6 @@
 <script>
+  import "./palette.css";
+
   import {
     addTrack,
     changeBpm,
@@ -22,6 +24,7 @@
   import Toolbar from "./lib/daw/Toolbar.svelte";
   import Timeline from "./lib/daw/Timeline.svelte";
   import Blofeld from "./lib/daw/instruments/Blofeld.svelte";
+  import { currentTheme } from "./core/theme.js";
 
   let instrumentDialog;
   let synthDialog;
@@ -114,41 +117,14 @@
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
-
-<main class="flex flex-1 flex-col">
+<main class="workspace flex flex-1 flex-col {$currentTheme}">
   <!-- Control Panel -->
   <Toolbar />
 
   <!-- Timeline -->
-  <div class="flex size-full flex-col bg-red-600">
-    <div class="flex h-full flex-col gap-1 border-b border-dark-500 bg-dark-800">
-      <!--      <div class="flex grow-0 flex-row flex-nowrap gap-1">-->
-      <!--        <button-->
-      <!--          on:click={() => switchView("timeline")}-->
-      <!--          class="text-light-y rounded bg-dark-600 px-3 py-1 text-sm leading-none"-->
-      <!--        >-->
-      <!--          Timeline-->
-      <!--        </button>-->
-      <!--        <button-->
-      <!--          on:click={() => switchView("midi")}-->
-      <!--          class="rounded bg-dark-600 px-3 py-1 text-sm leading-none text-light-secondary"-->
-      <!--        >-->
-      <!--          Midi-->
-      <!--        </button>-->
-      <!--        <button-->
-      <!--          on:click={() => switchView("playground")}-->
-      <!--          class="rounded bg-dark-600 px-3 py-1 text-sm leading-none text-light-secondary"-->
-      <!--        >-->
-      <!--          Play-->
-      <!--        </button>-->
-      <!--        <button-->
-      <!--          on:click={() => switchView("none")}-->
-      <!--          class="rounded bg-dark-600 px-3 py-1 text-sm leading-none text-light-secondary"-->
-      <!--        >-->
-      <!--          Design-->
-      <!--        </button>-->
-      <!--      </div>-->
-      <div class="min-h-0 shrink-0 grow bg-dark-900">
+  <div class=" flex size-full flex-col">
+    <div class=" flex h-full flex-col gap-1 border-b border-dark-500">
+      <div class="min-h-0 shrink-0 grow">
         {#if $currentView === "timeline" && $tracks.length}
           <section class="flex size-full flex-1">
             <Timeline />
@@ -177,3 +153,9 @@
 
   <MixerPanel />
 </main>
+
+<style>
+  .workspace {
+    background-color: var(--desktop);
+  }
+</style>

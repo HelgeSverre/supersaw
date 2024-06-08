@@ -39,9 +39,10 @@
           break;
         case "decay":
           decay = Math.max(0, Math.min(1, (x - attackX) / width));
-          break;
-        case "sustain":
-          sustain = Math.max(0, Math.min(1, 1 - y / height));
+
+          if (event.shiftKey === false) {
+            sustain = Math.max(0, Math.min(1, 1 - y / height));
+          }
           break;
         case "release":
           release = Math.max(0, Math.min(1, (width - x) / width));
@@ -56,7 +57,7 @@
   });
 </script>
 
-<div class="flex flex-col rounded border border-dark-100 bg-dark-700 p-2">
+<div class="adsr flex flex-col rounded p-2">
   <div class="mb-2 flex w-full flex-row flex-wrap gap-2">
     <div class="flex flex-col gap-1">
       <span class="text-xs text-white/50">Attack</span>
@@ -167,8 +168,7 @@
         r="5"
         stroke-width="1"
         stroke="silver"
-        fill="white"
-        class="cursor-pointer"
+        class=" handle cursor-pointer"
         on:mousedown={() => startDrag("attack")}
       />
 
@@ -180,8 +180,7 @@
         r="5"
         stroke-width="1"
         stroke="silver"
-        fill="white"
-        class="cursor-pointer"
+        class=" handle cursor-pointer"
         on:mousedown={() => startDrag("decay")}
       />
 
@@ -193,21 +192,7 @@
         r="5"
         stroke-width="1"
         stroke="silver"
-        fill="white"
-        class="cursor-pointer"
-        on:mousedown={() => startDrag("sustain")}
-      />
-
-      <!-- Release Control Point -->
-      <circle
-        aria-hidden="true"
-        cx={width}
-        cy={height}
-        r="5"
-        stroke-width="1"
-        stroke="silver"
-        fill="white"
-        class="cursor-pointer"
+        class=" handle cursor-pointer"
         on:mousedown={() => startDrag("release")}
       />
     </svg>
@@ -222,7 +207,27 @@
 
   input[type="number"]:focus {
     outline: none;
-    border-color: white;
+    border-color: var(--control-contrast-frame);
     transition: border-color 100ms ease-out;
+  }
+
+  .adsr {
+    background-color: var(--surface-background);
+    border: 1px solid var(--control-contrast-frame);
+  }
+
+  .adsr label {
+    color: var(--control-foreground);
+  }
+
+  .adsr input {
+    background-color: var(--control-text-back);
+    border-color: var(--control-contrast-frame);
+    color: var(--control-foreground);
+  }
+
+  .handle {
+    fill: var(--chosen-default);
+    stroke: var(--chosen-default);
   }
 </style>

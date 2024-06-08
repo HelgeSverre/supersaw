@@ -1,0 +1,155 @@
+/* ableton */
+.ableton {
+  /* "wallpaper"  */
+  --desktop: #373737;
+  /*  empty space and borders  */
+  --surface-area: #282828;
+  /* empty space not occupied by panels, or desktop  */
+  --surface-area-focus: #141414;
+  /* "panel backgrounds"  */
+  --surface-background: #414141;
+  /* panel header  */
+  --surface-highlight: #555555;
+
+  --alert: #ff6446;
+
+  /* Fill color for buttons but not buttons */
+  --chosen-default: #ffb532;
+  --chosen-alternative: #6dd7ff;
+
+  /** Controls (buttons, and button-like things **/
+  --control-foreground: #d2d2d2;
+  --control-off-foreground: #d2d2d2;
+  --control-on-foreground: #d2d2d2;
+  --control-background: #555555;
+  --control-text-back: #323232;
+  --control-fill-handle: #323232;
+  --control-contrast-frame: #1e1e1e;
+  --control-selection-frame: #1e1e1e --transport-off-background: #282828;
+
+  /** Retro display (spectrogram bg etc) **/
+  --retro-display-background: #1e1e1e;
+  --retro-display-background-line: red;
+  --retro-display-foreground: #ffb532;
+  --retro-display-foreground-2: #6dd7ff;
+  --retro-display-foreground-disabled: #8c8c8c;
+
+  /** Tree / Browser item selections **/
+  --tree-column-head-background: #555555;
+  --tree-column-head-foreground: #d2d2d2;
+  --tree-column-head-selected: #505050;
+  --tree-column-head-focus: #748790;
+  --tree-column-head-control: #282828;
+  --tree-row-category-foreground: #828282;
+  --tree-row-category-background: #748790;
+
+  /* Selection */
+  --selection-foreground: #141414;
+  --selection-background: #c7edff;
+
+  /* ====== OLD STUFF BELOW ===== */
+  --background-main: #141414;
+  --background-surface: #282828;
+  --background-overlay: #414141;
+
+  /* Text colors */
+  --text-disabled: #323232;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --text-muted: #707070;
+
+  /* Accent colors */
+  --accent-primary: #f26d21;
+  --accent-secondary: #1db954;
+  --accent-tertiary: #509ee3;
+
+  /* Border colors */
+  --border-main: #282828;
+  --border-light: #707070;
+
+  /* Element colors */
+  --element-active: #509ee3;
+  --element-hover: #404040;
+  --element-disabled: #2c2c2c;
+}
+
+/* ableton light */
+.ableton-light {
+  /* Background colors */
+  --background-main: #818181;
+  --background-surface: #a5a5a5;
+  --background-overlay: #bdbbbc;
+
+  /* Text colors */
+  --text-primary: #000000;
+  --text-secondary: #595959;
+  --text-muted: #9e9e9e;
+
+  /* Accent colors */
+  --accent-primary: #ff9900;
+  --accent-secondary: #33cc33;
+  --accent-tertiary: #3399ff;
+
+  /* Border colors */
+  --border-main: #818181;
+  --border-light: #e0e0e0;
+
+  /* Element colors */
+  --element-active: #3399ff;
+  --element-hover: #d6d6d6;
+  --element-disabled: #e0e0e0;
+}
+
+/* reaper*/
+.reaper {
+  /* Background colors */
+  --background-main: #181818;
+  --background-surface: #242424;
+  --background-overlay: #303030;
+
+  /* Text colors */
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-muted: #606060;
+
+  /* Accent colors */
+  --accent-primary: #e53935;
+  --accent-secondary: #39e53b;
+  --accent-tertiary: #3582e5;
+
+  /* Border colors */
+  --border-main: #383838;
+  --border-light: #505050;
+
+  /* Element colors */
+  --element-active: #3582e5;
+  --element-hover: #505050;
+  --element-disabled: #383838;
+}
+
+/* material */
+.material {
+  /* Background colors */
+  --background-main: #121212;
+  --background-surface: #1f1f1f;
+  --background-overlay: #2a2a2a;
+
+  /* Text colors */
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --text-muted: #7d7d7d;
+
+  /* Accent colors */
+  --accent-primary: #bb86fc;
+  --accent-secondary: #03dac6;
+  --accent-tertiary: #ff0266;
+
+  /* Border colors */
+  --border-main: #2e2e2e;
+  --border-light: #393939;
+
+  /* Element colors */
+  --element-active: #03dac6;
+  --element-hover: #393939;
+  --element-disabled: #2e2e2e;
+}

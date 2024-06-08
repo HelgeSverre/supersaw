@@ -6,6 +6,7 @@
   import Knob from "../ui/Knob.svelte";
   import { adsr, cutoff, detuneAmount, distortionAmount, reverbTime } from "../../core/instrument.js";
   import ADSR from "../ui/ADSR.svelte";
+  import Panel from "../ui/Panel.svelte";
 
   const openHeight = 350;
   const closedHeight = 0;
@@ -50,15 +51,15 @@
 
 <svelte:window on:keyup={handleKeyup} />
 
-<div class="mixer-panel relative" style:height="{$mixerHeight}px">
+<div class="mixer" style:height="{$mixerHeight}px">
   <div class="absolute -top-8">
-    <button class="block h-8 w-auto rounded-tr bg-[#2D2D30] px-4 text-sm text-white" on:click={toggleMixer}>
+    <button class="mixer-toggle block h-8 w-auto rounded-tr px-4 text-sm text-white" on:click={toggleMixer}>
       Mixer
     </button>
   </div>
-  <div aria-hidden="true" class="h-1 w-full cursor-row-resize bg-[#2D2D30]" on:mousedown={startResizing}></div>
-  <div class="flex h-full flex-row bg-[#2D2D30] p-1">
-    <div class="flex flex-row gap-px bg-black p-px">
+  <div aria-hidden="true" class="mixer-handle h-1 w-full cursor-row-resize" on:mousedown={startResizing}></div>
+  <div class="mixer-panel flex h-full flex-row p-1">
+    <div class="flex flex-row gap-px p-px">
       <ChannelStrip channel="master" />
 
       {#each $tracks as track}
@@ -92,17 +93,35 @@
         />
       </div>
     </div>
+    <div>
+      <Panel>hello</Panel>
+    </div>
   </div>
 </div>
 
 <style>
-  .mixer-panel {
+  .mixer {
+    position: relative;
     overflow: visible;
     width: 100%;
-    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 1000;
+    background-color: var(--surface-area);
+    border: 1px solid var(--surface-area-focus);
+  }
+
+  .mixer-toggle {
+    background-color: var(--surface-area);
+  }
+
+  .mixer-handle {
+    background-color: var(--border-light);
+  }
+
+  .mixer-panel {
+    background-color: var(--surface-area);
+    color: var(--control-foreground);
   }
 </style>

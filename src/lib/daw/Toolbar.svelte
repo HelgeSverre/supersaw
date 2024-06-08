@@ -22,19 +22,11 @@
   import Spectrogram from "./analyzers/Spectrogram.svelte";
   import IconButton from "../ui/IconButton.svelte";
   import TextButton from "../ui/TextButton.svelte";
-
-  function toggleTheme() {
-    if (document.documentElement.classList.contains("theme-dark")) {
-      document.documentElement.classList.remove("theme-dark");
-      document.documentElement.classList.add("theme-light");
-    } else {
-      document.documentElement.classList.remove("theme-light");
-      document.documentElement.classList.add("theme-dark");
-    }
-  }
+  import { availableThemes, changeTheme, currentTheme } from "../../core/theme.js";
+  import Select from "../ui/Input/Select.svelte";
 </script>
 
-<section class="bg-dark-600 px-2">
+<section class="toolbar px-2">
   <div class="flex h-14 flex-row items-center gap-2">
     <div class="flex w-full flex-row items-center justify-start gap-x-2 py-2">
       <SegmentGroup>
@@ -73,9 +65,26 @@
           <IconButton icon={Plus} onClick={() => createInstrumentTrack()} />
           <IconButton icon={Waveform} onClick={() => createAudioTrack()} />
           <IconButton icon={Trash} onClick={clearTracks} />
-          <IconButton icon={Lightbulb} onClick={toggleTheme} />
+        </SegmentGroup>
+        <SegmentGroup>
+          <Select
+            placeholder="Theme"
+            value={$currentTheme}
+            on:change={(e) => {
+              changeTheme(e.detail);
+            }}
+            options={$availableThemes.map((theme) => ({ value: theme, label: theme }))}
+          />
+
+          <IconButton icon={Lightbulb} onClick={() => changeTheme("ableton")} />
         </SegmentGroup>
       </div>
     </div>
   </div>
 </section>
+
+<style>
+  .toolbar {
+    background-color: var(--desktop);
+  }
+</style>

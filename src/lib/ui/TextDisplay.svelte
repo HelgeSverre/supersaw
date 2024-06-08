@@ -13,3 +13,10 @@
 >
   {text}
 </span>
+
+<style>
+  span {
+    background-color: var(--control-background);
+    color: var(--control-foreground);
+  }
+</style>
