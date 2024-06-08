@@ -2,7 +2,10 @@
   import { tweened } from "svelte/motion";
   import { quartInOut } from "svelte/easing";
   import ChannelStrip from "./ChannelStrip.svelte";
-  import { isMixerOpen } from "../../core/store.js";
+  import { isMixerOpen, tracks } from "../../core/store.js";
+  import Knob from "../ui/Knob.svelte";
+  import { adsr, cutoff, detuneAmount, distortionAmount, reverbTime } from "../../core/instrument.js";
+  import ADSR from "../ui/ADSR.svelte";
 
   const openHeight = 350;
   const closedHeight = 0;
@@ -57,8 +60,37 @@
   <div class="flex h-full flex-row bg-[#2D2D30] p-1">
     <div class="flex flex-row gap-px bg-black p-px">
       <ChannelStrip channel="master" />
-      <ChannelStrip channel="1" />
-      <ChannelStrip channel="2" />
+
+      {#each $tracks as track}
+        <ChannelStrip channel="Track {track.name}" />
+      {/each}
+    </div>
+
+    <div class="mx-6 grid grid-cols-4 gap-3">
+      <div class="flex flex-col">
+        <Knob bind:value={$cutoff} min={0} max={6000} />
+        <span class="text-center text-xs">cutoff</span>
+      </div>
+      <div class="flex flex-col">
+        <Knob bind:value={$reverbTime} />
+        <span class="text-center text-xs">reverbTime</span>
+      </div>
+      <div class="flex flex-col">
+        <Knob bind:value={$detuneAmount} min={1} max={50} />
+        <span class="text-center text-xs">detuneAmount</span>
+      </div>
+      <div class="flex flex-col">
+        <Knob bind:value={$distortionAmount} />
+        <span class="text-center text-xs">distortionAmount</span>
+      </div>
+      <div class="col-span-full">
+        <ADSR
+          bind:attack={$adsr.attack}
+          bind:decay={$adsr.decay}
+          bind:sustain={$adsr.sustain}
+          bind:release={$adsr.release}
+        />
+      </div>
     </div>
   </div>
 </div>

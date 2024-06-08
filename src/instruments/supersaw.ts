@@ -4,7 +4,7 @@ import { Filter } from "../core/effects/filter";
 import { Distortion } from "../core/effects/distortion";
 import { Compressor } from "../core/effects/compressor";
 import { ParallelChain } from "../core/effects/parallelChain";
-import { EffectChain } from "../core/effects/effectChain";
+import { type Effect, EffectChain } from "../core/effects/effectChain";
 
 interface Note {
   oscillators: OscillatorNode[];
@@ -21,6 +21,12 @@ export class Supersaw implements Instrument {
   private reverbAmount: number;
   private reverbTime: number;
   private distortionAmount: number;
+  private lowPassFrequency: number;
+
+  private dryCompressor: Effect;
+  private dryDistortion: Effect;
+  private cutoffFilter: Effect;
+  private reverb: Effect;
 
   private output: GainNode;
 
@@ -30,22 +36,26 @@ export class Supersaw implements Instrument {
     this.audioContext = audioContext;
     this.mixer = mixer;
     this.notes = new Map();
-    this.adsr = { attack: 0.01, decay: 0.08, sustain: 0.3, release: 1.1 };
+    this.adsr = { attack: 0.01, decay: 0.08, sustain: 0.2, release: 1.0 };
     this.numOscillators = 8;
     this.detuneAmount = 20;
     this.reverbAmount = 0.25;
     this.reverbTime = 2;
     this.distortionAmount = 4;
+    this.lowPassFrequency = 44000;
+
+    this.dryCompressor = new Compressor(this.audioContext);
+    this.dryDistortion = new Distortion(this.audioContext, this.distortionAmount);
+    this.cutoffFilter = new Filter(this.audioContext, "lowpass", this.lowPassFrequency);
+    this.reverb = new Reverb(this.audioContext, this.reverbTime);
 
     this.effectChain = new ParallelChain(audioContext, [
+      new EffectChain(this.audioContext, [this.dryCompressor, this.dryDistortion, this.cutoffFilter]),
       new EffectChain(this.audioContext, [
-        new Compressor(this.audioContext),
-        new Distortion(this.audioContext, this.distortionAmount),
-      ]),
-      new EffectChain(this.audioContext, [
-        new Reverb(this.audioContext, this.reverbTime),
+        this.reverb,
         new Filter(this.audioContext, "highpass", 500),
         new Filter(this.audioContext, "lowpass", 6000),
+        this.cutoffFilter,
       ]),
     ]);
 
@@ -56,64 +66,6 @@ export class Supersaw implements Instrument {
 
   private oscGain(gain = 1): number {
     return gain / Math.sqrt(this.numOscillators);
-  }
-
-  private createHighPassFilter(frequency: number): BiquadFilterNode {
-    const filter = this.audioContext.createBiquadFilter();
-    filter.type = "highpass";
-    filter.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-    return filter;
-  }
-
-  private createLowPassFilter(frequency: number): BiquadFilterNode {
-    const filter = this.audioContext.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-    return filter;
-  }
-
-  private createCompressor(): DynamicsCompressorNode {
-    const compressor = this.audioContext.createDynamicsCompressor();
-    compressor.threshold.setValueAtTime(-6, this.audioContext.currentTime);
-    compressor.knee.setValueAtTime(30, this.audioContext.currentTime);
-    compressor.ratio.setValueAtTime(4, this.audioContext.currentTime);
-    compressor.attack.setValueAtTime(0.005, this.audioContext.currentTime);
-    compressor.release.setValueAtTime(0.05, this.audioContext.currentTime);
-    return compressor;
-  }
-
-  private createDistortion(): WaveShaperNode {
-    const distortion = this.audioContext.createWaveShaper();
-    distortion.curve = this.makeDistortionCurve(this.distortionAmount);
-    distortion.oversample = "4x";
-    return distortion;
-  }
-
-  private makeDistortionCurve(amount: number): Float32Array {
-    const k = amount;
-    const n_samples = 44100;
-    const curve = new Float32Array(n_samples);
-    const deg = Math.PI / 180;
-    for (let i = 0; i < n_samples; ++i) {
-      const x = (i * 2) / n_samples - 1;
-      curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
-    }
-    return curve;
-  }
-
-  private createReverbImpulse(): ConvolverNode {
-    const reverb = this.audioContext.createConvolver();
-    const length = this.audioContext.sampleRate * this.reverbTime;
-    const impulse = this.audioContext.createBuffer(2, length, this.audioContext.sampleRate);
-    const impulseL = impulse.getChannelData(0);
-    const impulseR = impulse.getChannelData(1);
-
-    for (let i = 0; i < length; i++) {
-      impulseL[i] = (Math.random() * 2 - 1) * (1 - i / length);
-      impulseR[i] = (Math.random() * 2 - 1) * (1 - i / length);
-    }
-    reverb.buffer = impulse;
-    return reverb;
   }
 
   private createSupersawOscillators(frequency: number, time: number): OscillatorNode[] {

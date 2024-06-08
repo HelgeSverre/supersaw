@@ -4,7 +4,7 @@
   import { quartInOut } from "svelte/easing";
 
   export let size = 64;
-  export let value;
+  export let value = 0;
   export let min = 0;
   export let max = 127;
   export let step = 1;
@@ -142,28 +142,39 @@
   aria-valuenow={value}
 >
   <svg viewBox="0 0 100 100">
-    <!-- Background arc -->
-    <path
-      class="gauge"
-      d="M 30 70 A 30 30 0 1 1 70 70"
-      stroke="#707271"
-      stroke-linecap="round"
-      stroke-width="8"
-      fill="none"
+    <!-- Chrome-style knob with highlights -->
+    <circle
+      transform="rotate({rotation} 50 50)"
+      cx="50"
+      cy="50"
+      r="45"
+      fill="url(#metal)"
+      stroke="#cecece"
+      stroke-width="1"
     />
-
-    <!-- Needle -->
+    <circle transform="rotate({rotation} 50 50)" cx="50" cy="50" r="40" fill="url(#shine)" />
     <line
       class="needle"
       x1="50"
       y1="50"
       x2="50"
-      y2="20"
-      stroke="#EBEBEB"
-      stroke-width={$strokeWidth}
+      y2="15"
+      stroke="black"
+      opacity="0.1"
+      stroke-width="4"
       stroke-linecap="round"
       transform="rotate({rotation} 50 50)"
     />
+    <defs>
+      <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#E9EBEC;stop-opacity:0.5" />
+        <stop offset="100%" style="stop-color:#9A9494;stop-opacity:0.7" />
+      </linearGradient>
+      <radialGradient id="shine" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+        <stop offset="0%" style="stop-color:#d8d8d8;stop-opacity:0.5" />
+        <stop offset="100%" style="stop-color:#7A787D;stop-opacity:0.5" />
+      </radialGradient>
+    </defs>
   </svg>
 </div>
 
@@ -175,7 +186,8 @@
     align-items: center;
     justify-content: center;
     user-select: none;
-    border-radius: 55%;
+    width: var(--size);
+    height: var(--size);
   }
 
   .knob:focus-visible {

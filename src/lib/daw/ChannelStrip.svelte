@@ -46,33 +46,28 @@
   }
 </script>
 
-<div class="flex flex-col overflow-hidden bg-[#2D2D30]">
-  <div class="flex flex-1 flex-col items-center justify-start">
+<div class="flex max-w-20 flex-col border-b border-red-400 bg-[#2D2D30]">
+  <div class="flex flex-1 flex-col items-center justify-stretch">
     <!-- Name -->
-    <div class=" flex w-full flex-col items-center justify-center p-1">
-      <div class="text-center text-sm font-normal text-white">{channel}</div>
+    <div class=" flex h-12 w-full flex-col items-center justify-start border-b border-black bg-black/10 p-1">
+      <div class="line-clamp-2 text-center text-xs font-normal text-white">{channel}</div>
     </div>
 
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-1 flex-col gap-2">
       <!-- PAN -->
       <div class="flex flex-col items-center justify-center px-1 py-2 text-center">
         <Knob bind:value={$masterPan} min={-1} max={1} size="42" step={0.1} />
       </div>
 
-      <div class="flex flex-row gap-px p-2">
+      <div class="flex flex-1 flex-row gap-1 p-2">
         <!-- Vol -->
-        <div class="flex flex-col items-center justify-center py-1 text-center">
+        <div class="flex flex-col justify-stretch bg-[#4D4D4D] py-1 text-center">
           <Fader bind:volume={$masterVolume} />
         </div>
 
         <div class="flex flex-row gap-1">
           <LevelMeter bind:level={peakMeter} />
           <LevelMeter bind:level={peakMeter} />
-          <div>
-            {#each new Array(10) as _, i}
-              <span></span>
-            {/each}
-          </div>
         </div>
       </div>
     </div>

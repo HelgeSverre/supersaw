@@ -14,6 +14,6 @@
     bind:value={value}
     placeholder={placeholder}
     type="search"
-    class="h-10 w-full text-ellipsis bg-transparent pl-8 text-sm font-normal placeholder-light-secondary/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+    class="h-10 w-full text-ellipsis bg-transparent pl-8 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
   />
 </div>

@@ -11,12 +11,13 @@
   import Select from "./Input/Select.svelte";
   import ADSR from "./ADSR.svelte";
   import { demoMidiFiles } from "../../core/midiDemos.ts";
+  import Fader2 from "./Fader2.svelte";
 
   let knobValue = 30;
   let knobValue2 = 0;
 </script>
 
-<div class="m-2 flex flex-1 rounded border border-dark-200 bg-dark-900 p-4">
+<div class="flex flex-1">
   <div class="h-full w-full">
     <div class="grid grid-cols-4 gap-x-8 gap-y-4 text-sm">
       <div class="flex flex-col gap-2">
@@ -37,7 +38,7 @@
             </div>
             <div class="flex flex-col gap-2">
               <div class="rounded bg-light px-2 py-1 text-black">light</div>
-              <div class="rounded bg-light-secondary px-2 py-1 text-black">light-secondary</div>
+              <div class="rounded bg-light-soft px-2 py-1 text-black">light-soft</div>
               <div class="rounded bg-light-soft px-2 py-1 text-black">light-soft</div>
             </div>
 
@@ -64,7 +65,7 @@
             </div>
             <div class="flex flex-col gap-2">
               <div class="rounded bg-dark-100 px-2 py-1 text-light">light</div>
-              <div class="rounded bg-dark-100 px-2 py-1 text-light-secondary">light-secondary</div>
+              <div class="rounded bg-dark-100 px-2 py-1 text-light-soft">light-soft</div>
               <div class="rounded bg-dark-100 px-2 py-1 text-light-soft">light-soft</div>
             </div>
 
@@ -123,8 +124,9 @@
           <Knob size={48} bind:value={knobValue} min={0} max={100} step={1} />
           <Knob size={48} bind:value={knobValue2} min={-1} max={1} step={0.1} />
         </div>
-        <div class="bg-dark-300 p-2">
+        <div class="flex flex-row gap-2 bg-dark-300 p-2">
           <Fader />
+          <Fader2 />
         </div>
 
         <div>

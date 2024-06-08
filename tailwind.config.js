@@ -23,7 +23,6 @@ export default {
         },
         light: {
           DEFAULT: "rgb(var(--text-primary) / <alpha-value>)",
-          secondary: "rgb(var(--text-secondary) / <alpha-value>)",
           soft: "rgb(var(--text-soft) / <alpha-value>)",
         },
         accent: {
