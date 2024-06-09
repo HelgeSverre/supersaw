@@ -386,6 +386,7 @@ export const createClipFromUrl = async (url, name = null) => {
 
   return {
     id: crypto.randomUUID(),
+    type: "audio",
     name: name,
     audioUrl: url,
     startTime: 0,
