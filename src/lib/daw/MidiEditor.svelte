@@ -134,7 +134,7 @@
   let isResizing = false;
   let isDragging = false;
 
-  $: beatWidth = $timeToPixels(480 / 1000).toFixed(3);
+  $: beatWidth = $pixelsPerBeat;
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
 
