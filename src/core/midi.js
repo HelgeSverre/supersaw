@@ -62,10 +62,20 @@ function getDurationFromMidi(parsed) {
   return ticksToMilliseconds(highestTime, parsed.header.ticksPerBeat, trackBpm) / 1000;
 }
 
-function getNoteLabel(noteNumber) {
+export function noteToOctave(note) {
+  return Math.floor(note / 12) - 1;
+}
+
+function getNoteLabel(noteNumber, includeOctave = true) {
   const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const octave = Math.floor(noteNumber / 12) - 1;
-  return `${noteNames[noteNumber % 12]}${octave}`;
+  const noteName = noteNames[noteNumber % 12];
+
+  if (includeOctave) {
+    const octave = noteToOctave(noteNumber);
+    return `${noteName}${octave}`;
+  }
+
+  return noteName;
 }
 
 export function getBpmFromMidi(midi) {
