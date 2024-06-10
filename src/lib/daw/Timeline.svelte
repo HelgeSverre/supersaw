@@ -1,5 +1,6 @@
 <script>
   import {
+    disableLooping,
     enableLooping,
     loopRegion,
     pixelsToTime,
@@ -59,6 +60,7 @@
 
     if (Math.abs(delta) < 10) {
       setLoopRegion(0, 0);
+      disableLooping();
       return;
     }
 
