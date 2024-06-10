@@ -184,6 +184,12 @@ export function renderMidiToSvg(midiData) {
   return svg;
 }
 
+export function isBlackKey(note) {
+  const key = note % 12;
+  // These represent the black keys on a piano (C#, D#, F#, G#, A#)
+  return [1, 3, 6, 8, 10].includes(key);
+}
+
 export function midiNoteToFrequency(note) {
   return 440 * Math.pow(2, (note - 69) / 12);
 }
