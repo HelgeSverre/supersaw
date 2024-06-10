@@ -14,6 +14,7 @@
     reverbTime,
   } from "../../core/instrument.js";
   import ADSR from "../ui/ADSR.svelte";
+  import EQ from "./EQ.svelte";
 
   const openHeight = 350;
   const closedHeight = 0;
@@ -114,6 +115,7 @@
         bind:release={$adsr.release}
       />
     </div>
+
   </div>
 </div>
 
