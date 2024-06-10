@@ -11,7 +11,6 @@
     zoomByDelta,
   } from "../../core/store.js";
   import Track from "./Track.svelte";
-  import AutomationClip from "./AutomationClip.svelte";
 
   let timeline;
 

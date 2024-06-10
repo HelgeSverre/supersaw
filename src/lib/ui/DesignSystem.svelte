@@ -13,6 +13,7 @@
   import { demoMidiFiles } from "../../core/midiDemos.ts";
   import Fader2 from "./Fader2.svelte";
   import Encoder from "./Encoder.svelte";
+  import EQ from "../daw/EQ.svelte";
 
   let knobValue = 30;
   let knobValue2 = 0;
@@ -20,7 +21,7 @@
 
 <div class="flex flex-1">
   <div class="h-full w-full">
-    <div class="grid grid-cols-4 gap-x-8 gap-y-4 text-sm">
+    <div class="grid grid-cols-2 gap-x-8 gap-y-4 text-sm lg:grid-cols-4">
       <div class="flex flex-col gap-2">
         <h2 class="mb-4 px-2 py-1 text-xs font-light uppercase tracking-wide text-yellow-300">Colors</h2>
 
@@ -40,16 +41,15 @@
             <div class="flex flex-col gap-2">
               <div class="rounded bg-light px-2 py-1 text-black">light</div>
               <div class="rounded bg-light-soft px-2 py-1 text-black">light-soft</div>
-              <div class="rounded bg-light-soft px-2 py-1 text-black">light-soft</div>
             </div>
 
-            <div class="flex flex-col gap-2">
-              <div class="rounded bg-accent-blue px-2 py-1">accent-blue</div>
-              <div class="rounded bg-accent-purple px-2 py-1">accent-purple</div>
-              <div class="rounded bg-accent-green px-2 py-1">accent-green</div>
-              <div class="rounded bg-accent-pink px-2 py-1">accent-pink</div>
-              <div class="rounded bg-accent-red px-2 py-1">accent-red</div>
-              <div class="rounded bg-accent-yellow px-2 py-1">accent-yellow</div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="rounded bg-accent-blue px-2 py-1 font-semibold text-black">blue</div>
+              <div class="rounded bg-accent-purple px-2 py-1 font-semibold text-black">purple</div>
+              <div class="rounded bg-accent-green px-2 py-1 font-semibold text-black">green</div>
+              <div class="rounded bg-accent-pink px-2 py-1 font-semibold text-black">pink</div>
+              <div class="rounded bg-accent-red px-2 py-1 font-semibold text-black">red</div>
+              <div class="rounded bg-accent-yellow px-2 py-1 font-semibold text-black">yellow</div>
             </div>
           </div>
           <div class="flex flex-1 flex-col gap-2">
@@ -67,17 +67,8 @@
             <div class="flex flex-col gap-2">
               <div class="rounded bg-dark-100 px-2 py-1 text-light">light</div>
               <div class="rounded bg-dark-100 px-2 py-1 text-light-soft">light-soft</div>
-              <div class="rounded bg-dark-100 px-2 py-1 text-light-soft">light-soft</div>
             </div>
 
-            <div class="flex flex-col gap-2">
-              <div class="rounded bg-dark-100 px-2 py-1 text-accent-blue">accent-blue</div>
-              <div class="rounded bg-dark-100 px-2 py-1 text-accent-purple">accent-purple</div>
-              <div class="rounded bg-dark-100 px-2 py-1 text-accent-green">accent-green</div>
-              <div class="rounded bg-dark-100 px-2 py-1 text-accent-pink">accent-pink</div>
-              <div class="rounded bg-dark-100 px-2 py-1 text-accent-red">accent-red</div>
-              <div class="rounded bg-dark-100 px-2 py-1 text-accent-yellow">accent-yellow</div>
-            </div>
           </div>
         </div>
       </div>
@@ -101,6 +92,10 @@
           <IconButton icon={Stop} />
           <TextButton text="Pattern" />
         </SegmentGroup>
+
+        <div>
+          <EQ />
+        </div>
       </div>
 
       <div class="flex flex-col gap-2">
