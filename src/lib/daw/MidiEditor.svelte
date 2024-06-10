@@ -3,8 +3,15 @@
   import { audioManager } from "../../core/audio.js";
   import { resize } from "../actions/resize";
   import { drag } from "../actions/drag";
-  import { getSelectedClip, pixelsToTime, playbackState, timeToPixels, zoomByDelta } from "../../core/store.js";
-  import { extractNoteEvents, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
+  import {
+    getSelectedClip,
+    pixelsPerBeat,
+    pixelsToTime,
+    playbackState,
+    timeToPixels,
+    zoomByDelta,
+  } from "../../core/store.js";
+  import { extractNoteEvents, isBlackKey, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
   import { CassetteTape, Eraser, Keyboard, PaintBucket, Pencil } from "phosphor-svelte";
 
   const dispatch = createEventDispatcher();
@@ -96,11 +103,6 @@
 
   // Array to generate MIDI note numbers in reverse
   let notesArray = Array.from({ length: 128 }, (_, index) => 127 - index);
-
-  function isBlackKey(noteNumber) {
-    const key = noteNumber % 12;
-    return [1, 3, 6, 8, 10].includes(key); // These represent the black keys on a piano (C#, D#, F#, G#, A#)
-  }
 
   let highlightedNote = "";
   let selectedNotes = [];
@@ -206,6 +208,12 @@
           <!-- Play needle -->
           <div class="playhead" style="left: {playHeadPosition}px;"></div>
 
+          <div class="absolute inset-0">
+            {#each notesArray as noteNumber}
+              <div class=" note-lane {isBlackKey(noteNumber) ? 'black-key' : 'white-key'}"></div>
+            {/each}
+          </div>
+
           <!-- Notes -->
           {#each notesForDisplay as note}
             <div
@@ -296,7 +304,12 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow-y: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .piano-roll::-webkit-scrollbar {
+    display: none;
   }
 
   .piano-key {
@@ -309,25 +322,18 @@
     max-height: var(--note-height);
   }
 
-  .black-key {
+  .piano-key.black-key {
     background-color: black;
     color: white;
   }
 
-  .white-key {
+  .piano-key.white-key {
     background-color: white;
   }
 
   /*noinspection ALL*/
   .note-area {
     background: repeating-linear-gradient(
-        to bottom,
-        hsl(0, 0%, 100%, 10%),
-        hsl(0, 0%, 100%, 10%) 1px,
-        transparent 1px,
-        transparent var(--note-height)
-      ),
-      repeating-linear-gradient(
         to bottom,
         hsl(60, 100%, 50%, 30%),
         hsl(60, 100%, 50%, 30%) 1px,
@@ -350,6 +356,22 @@
       );
     background-attachment: local;
     background-repeat: no-repeat;
+    background-size: 200% 200%;
+    background-position: calc(-1 * var(--note-height) * 4);
+  }
+
+  .note-lane {
+    height: calc(var(--note-height));
+  }
+
+  .note-lane.white-key {
+    background-color: white;
+    opacity: 1%;
+    border-top: 2px solid black;
+  }
+
+  .note-lane.black-key {
+    visibility: hidden;
   }
 
   .note {
@@ -380,7 +402,7 @@
     position: absolute;
     width: 1px;
     top: 0;
-    height: calc((var(--note-height) * 12 * 11));
+    height: calc((var(--note-height) * 12 * 10));
     background: hsl(0, 90%, 55%);
   }
 </style>

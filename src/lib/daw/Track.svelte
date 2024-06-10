@@ -21,12 +21,11 @@
   import classNames from "classnames";
   import { onMount } from "svelte";
   import type { Track } from "../../core/types";
-  import AutomationClip from "./AutomationClip.svelte";
 
   export let track: Track;
 
   function handleDrop(event: DragEvent) {
-    if (event.dataTransfer.items) {
+    if (event.dataTransfer?.items) {
       for (let i = 0; i < event.dataTransfer.items.length; i++) {
         // If the dropped item is a file and the file is a MIDI file
         if (event.dataTransfer.items[i].kind === "file" && event.dataTransfer.items[i].type === "audio/midi") {
