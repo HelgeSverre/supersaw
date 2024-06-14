@@ -2,10 +2,10 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
   import {
-    getSelectedClip,
     pixelsPerBeat,
     pixelsToTime,
     playbackState,
+    selectedClip,
     timeToPixels,
     zoomByDelta,
   } from "../../core/store.js";
@@ -13,10 +13,6 @@
   import { CassetteTape, Eraser, Keyboard, PaintBucket, Pencil } from "phosphor-svelte";
 
   const dispatch = createEventDispatcher();
-
-  let snapToGrid = false;
-  let snapThreshold = 5;
-  let snapResolution = 1 / 4; // Default snap resolution (e.g., 1/4 beat)
 
   let noteHeight = 20;
   let notesForDisplay = [];
@@ -27,8 +23,8 @@
   onMount(() => {
     audioManager.audioContext.resume();
 
-    if ($getSelectedClip?.midiData) {
-      notesForDisplay = extractNoteEvents($getSelectedClip.midiData);
+    if ($selectedClip?.midiData) {
+      notesForDisplay = extractNoteEvents($selectedClip.midiData);
       scrollToFirstNote();
     }
   });
@@ -48,7 +44,7 @@
     }
   }
 
-  function handleNoteClick(event, note) {
+  function handleNoteClick(event, noteId) {
     if (isResizing) return;
     if (isDragging) return;
 
@@ -56,24 +52,23 @@
 
     // Select multiple notes with shift key
     if (event.shiftKey) {
-      if (selectedNotes.includes(note)) {
+      if (selectedNotes.includes(noteId)) {
         selectedNotes = selectedNotes.map((selected) => {
-          if (selected !== note) {
-            return selected;
+          if (selected.uuid !== noteId) {
+            return selected.uuid;
           }
         });
       } else {
-        selectedNotes = [...selectedNotes, note];
+        selectedNotes = [...selectedNotes, noteId];
       }
       return;
     }
 
     // Select single note
-    selectedNotes.includes(note) ? (selectedNotes = []) : (selectedNotes = [note]);
+    selectedNotes.includes(noteId) ? (selectedNotes = []) : (selectedNotes = [noteId]);
   }
 
   function handleClick(event) {
-    return;
     if (isResizing || isDragging) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
@@ -85,9 +80,10 @@
     notesForDisplay = [
       ...notesForDisplay,
       {
+        uuid: crypto.randomUUID(),
         start: $pixelsToTime(x) * 1000,
         label: noteLabel(note),
-        duration: 1000,
+        duration: 100,
         note: note,
         velocity: 100,
       },
@@ -96,9 +92,9 @@
 
   function scrollToFirstNote() {
     if (notesForDisplay.length > 0) {
-      const firstNote = notesForDisplay[0];
-      const firstNoteTop = calculateNoteTopPosition(firstNote);
-      noteArea.scrollTop = Math.max(0, firstNoteTop); // Scroll to first note with 100px padding
+      const offset = 200; // Padding from the top, eyeballed value.
+      const firstNoteTop = calculateNoteTopPosition(notesForDisplay[0]);
+      noteArea.scrollTop = Math.max(0, firstNoteTop - offset);
     }
   }
 
@@ -113,13 +109,15 @@
   let selectedNotes = [];
   let activeNotes = [];
   let previewInstrument = "pad";
+
+  let snapToGrid = true;
+  let snapThreshold = 5;
+  let snapResolution = 1 / 16;
   let snaps = [
-    { label: "1/1", value: 1 },
-    { label: "1/2", value: 1 / 2 },
-    { label: "1/4", value: 1 / 4 },
-    { label: "1/8", value: 1 / 8 },
-    { label: "1/16", value: 1 / 16 },
-    { label: "1/32", value: 1 / 32 },
+    { label: "1/4 beat", value: 1 / 16 }, // Quarter of a beat, 1/16 of a bar
+    { label: "1/8 beat", value: 1 / 32 }, // Eighth of a beat, 1/32 of a bar
+    { label: "1/16 beat", value: 1 / 64 }, // Sixteenth of a beat, 1/64 of a bar
+    { label: "1/32 beat", value: 1 / 128 }, // Thirty-second of a beat, 1/128 of a bar
   ];
 
   let debug = false;
@@ -138,7 +136,7 @@
 
   function handleKeyDown(event) {
     if (event.key === "Backspace" || event.key === "Delete") {
-      notesForDisplay = notesForDisplay.filter((n) => !selectedNotes.includes(n));
+      notesForDisplay = notesForDisplay.filter((note) => !selectedNotes.includes(note.uuid));
     }
 
     if (event.key === "d") {
@@ -146,44 +144,47 @@
     }
   }
 
-  function snapToResolution(value, resolution) {
-    return Math.round(value / resolution) * resolution;
-  }
-
   let isResizing = false;
   let isDragging = false;
   let draggedNote;
+  let resizedNote;
 
-  let dragThreshold = 10;
-  let hasMovedEnoughToDrag = false;
+  // How much we must offset the note position for it to align with the
+  // mouse cursor position within the note, when dragging
+  let noteGrabPositionOffset;
+
+  // Threshold in pixels to move before dragging starts
+  let dragThreshold = 5;
+
   let initialX, initialY;
 
-  let lastX, lastY;
-
   function updateNoteById(id, update) {
-    notesForDisplay = notesForDisplay.map((n) => {
-      if (n.uuid === id) {
-        return update(n);
+    notesForDisplay = notesForDisplay.map((note) => {
+      if (note.uuid === id) {
+        return update(note);
       }
 
-      return n;
+      return note;
     });
   }
 
   function handleMouseMove(event) {
-    const deltaX = event.clientX - lastX;
-    const deltaY = event.clientY - lastY;
+    const noteAreaRect = noteArea.getBoundingClientRect();
+    const localX = event.clientX - noteAreaRect.left + noteArea.scrollLeft - noteGrabPositionOffset;
     const totalX = Math.abs(event.clientX - initialX);
-    const totalY = Math.abs(event.clientY - initialY);
 
-    if (!hasMovedEnoughToDrag && (totalX > dragThreshold || totalY > dragThreshold)) {
-      hasMovedEnoughToDrag = true;
+    if (!isDragging && totalX > dragThreshold) {
       isDragging = true; // Only set isDragging to true if moved beyond threshold
     }
 
     if (isDragging) {
       updateNoteById(draggedNote, (note) => {
-        let newStartTime = Math.max(0, note.start + $pixelsToTime(deltaX) * 1000);
+        let newStartTime = Math.max(0, $pixelsToTime(localX) * 1000);
+
+        if (snapToGrid && event.shiftKey === false) {
+          const timePerSnapMs = $pixelsToTime(beatWidth * snapResolution) * 1000; // Convert pixels per snap to milliseconds
+          newStartTime = Math.round(newStartTime / timePerSnapMs) * timePerSnapMs;
+        }
 
         return {
           ...note,
@@ -191,32 +192,27 @@
         };
       });
     }
-
-    lastX = event.clientX;
-    lastY = event.clientY;
   }
 
   function handleMouseUp(event) {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
 
-    console.log("drag mouse up");
     requestAnimationFrame(() => {
       isDragging = false;
       draggedNote = null;
       initialX = null;
       initialY = null;
-      hasMovedEnoughToDrag = false;
     });
   }
 
-  function handleMouseDown(event, note) {
+  function handleMouseDown(event, noteId) {
     initialX = event.clientX;
     initialY = event.clientY;
-    lastX = initialX;
-    lastY = initialY;
-    draggedNote = note.uuid;
-    hasMovedEnoughToDrag = false; // Reset this flag on mouse down
+    draggedNote = noteId;
+
+    const noteRect = event.currentTarget.getBoundingClientRect();
+    noteGrabPositionOffset = initialX - noteRect.left;
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
@@ -230,19 +226,21 @@
     isDragging = false;
     isResizing = true;
 
+    resizedNote = noteId;
+
     resizeStartX = event.clientX;
     resizeStartWidth = event.currentTarget.parentElement.offsetWidth;
 
-    document.addEventListener("mousemove", (e) => handleResizeMouseMove(e, noteId));
-    document.addEventListener("mouseup", (e) => handleResizeMouseUp(e, noteId));
+    document.addEventListener("mousemove", (e) => handleResizeMouseMove(e));
+    document.addEventListener("mouseup", (e) => handleResizeMouseUp(e));
   }
 
-  function handleResizeMouseMove(event, noteId) {
+  function handleResizeMouseMove(event) {
     const deltaX = event.clientX - resizeStartX;
     const newWidth = resizeStartWidth + deltaX;
 
     if (isResizing) {
-      updateNoteById(noteId, (note) => {
+      updateNoteById(resizedNote, (note) => {
         return {
           ...note,
           duration: $pixelsToTime(newWidth) * 1000,
@@ -251,15 +249,13 @@
     }
   }
 
-  function handleResizeMouseUp(event, note) {
-    event.stopPropagation();
-
-    console.log("resize mouse up");
-
+  function handleResizeMouseUp(event) {
     document.removeEventListener("mousemove", handleResizeMouseMove);
     document.removeEventListener("mouseup", handleResizeMouseUp);
 
-    isResizing = false;
+    requestAnimationFrame(() => {
+      isResizing = false;
+    });
   }
 
   $: beatWidth = $pixelsPerBeat;
@@ -269,7 +265,7 @@
 <svelte:window on:keydown={handleKeyDown} />
 
 <div
-  style="--note-height: {noteHeight}px; --beat-width: {beatWidth}px"
+  style="--note-height: {noteHeight}px; --beat-width: {beatWidth}px; --snap-resolution: {snapResolution};"
   class="relative flex h-full min-h-0 flex-col p-2"
 >
   <div class="flex h-full min-h-0 flex-row gap-2 overflow-hidden">
@@ -300,17 +296,11 @@
     </div>
     <div class="flex flex-1 flex-col">
       <div class="mb-2 flex h-8 flex-row items-center justify-between gap-6 bg-dark-600 px-2">
-        <div class="flex flex-row gap-3 whitespace-nowrap font-mono text-xs">
-          <div>realdrag: {hasMovedEnoughToDrag ? "true" : "false"}</div>
-          <div>drag: {isDragging ? "true" : "false"}</div>
-          <div>resize: {isResizing ? "true" : "false"}</div>
-          <div>dragged: {draggedNote}</div>
-        </div>
         <div class="flex flex-row items-center gap-2">
-          {#if $getSelectedClip}
+          {#if $selectedClip}
             <CassetteTape class="text-accent-yellow/80" />
-            <span class="text-sm text-light">{$getSelectedClip?.name}</span>
-            <span class="text-sm text-light-soft">{$getSelectedClip?.duration.toFixed(2)}s</span>
+            <span class="text-sm text-light">{$selectedClip?.name}</span>
+            <span class="text-sm text-light-soft">{$selectedClip?.duration.toFixed(2)}s</span>
           {:else}
             <span>No clip selected</span>
           {/if}
@@ -323,7 +313,7 @@
             >
               Snap
             </button>
-            <select bind:value={snapResolution} class="bg-dark-400 py-0.5 text-sm text-light">
+            <select bind:value={snapResolution} class="bg-dark-400 py-0.5 font-mono text-sm tracking-tight text-light">
               {#each snaps as snap}
                 <option value={snap.value}>{snap.label}</option>
               {/each}
@@ -364,11 +354,11 @@
           {#each notesForDisplay as note (note.uuid)}
             <div
               aria-hidden="true"
-              on:click|stopPropagation={(event) => handleNoteClick(event, note)}
+              on:click|stopPropagation={(event) => handleNoteClick(event, note.uuid)}
               on:mouseenter={() => (highlightedNote = note.label)}
-              on:mousedown={(event) => handleMouseDown(event, note)}
-              class:selected={selectedNotes.includes(note)}
-              class:dragged={draggedNote === note.uuid}
+              on:mousedown={(event) => handleMouseDown(event, note.uuid)}
+              class:selected={selectedNotes.includes(note.uuid)}
+              class:dragged={isDragging && draggedNote === note.uuid}
               class="note flex cursor-pointer select-none flex-row items-center justify-between"
               style="left: {$timeToPixels(note.start / 1000)}px; top: {calculateNoteTopPosition(
                 note,
@@ -459,25 +449,25 @@
   /*noinspection ALL*/
   .note-area {
     background: repeating-linear-gradient(
-        to bottom,
-        hsl(60, 100%, 50%, 30%),
-        hsl(60, 100%, 50%, 30%) 1px,
-        transparent 1px,
-        transparent calc(var(--note-height) * 12) /* 1 octave */
-      ),
-      repeating-linear-gradient(
         to right,
         hsl(0, 0%, 100%, 10%),
         hsl(0, 0%, 100%, 10%) 1px,
         transparent 1px,
-        transparent var(--beat-width) /* 1 beat */
+        transparent calc(var(--beat-width) / 4) /* BEAT  ( 1/4 bar) */
       ),
       repeating-linear-gradient(
         to right,
-        hsl(60, 100%, 50%, 15%),
-        hsl(60, 100%, 50%, 15%) 1px,
+        hsl(60, 100%, 50%, 20%),
+        hsl(60, 100%, 50%, 20%) 1px,
         transparent 1px,
-        transparent calc(var(--beat-width) * 4) /* 1 bar */
+        transparent calc(var(--beat-width)) /* BAR */
+      ),
+      repeating-linear-gradient(
+        to right,
+        hsl(0, 0%, 100%, 5%),
+        hsl(0, 0%, 100%, 5%) 1px,
+        transparent 1px,
+        transparent calc(var(--beat-width) * var(--snap-resolution)) /* SNAP */
       );
     background-attachment: local;
     background-repeat: no-repeat;
@@ -505,12 +495,18 @@
     color: hsl(0, 0%, 0%, 80%);
     font-size: 8px;
     height: var(--note-height);
-    border-left: 0.5px solid black;
-    border-right: 0.5px solid black;
+    border: 0.5px solid hsl(0, 0%, 0%, 50%);
+    border-radius: 2px;
+    padding-left: 4px;
+    font-weight: 500;
   }
 
   .note .resize-handle {
-    @apply inline-block h-full w-[2px] cursor-col-resize bg-black/20;
+    width: 4px;
+    height: 100%;
+    display: inline-block;
+    cursor: col-resize;
+    background-color: transparent;
   }
 
   .note.selected {
@@ -518,7 +514,8 @@
   }
 
   .note.dragged {
-    background: rgb(50, 50, 50);
+    /*background: hsl(60, 100%, 90%);*/
+    filter: grayscale(1) opacity(0.5);
   }
 
   .note.active {
