@@ -3,7 +3,8 @@
     bpm,
     changeBpm,
     clearTracks,
-    createAudioTrack, createDummyTranceTracks,
+    createAudioTrack,
+    createDummyTranceTracks,
     createInstrumentTrack,
     currentView,
     loopRegion,
@@ -11,7 +12,7 @@
     playbackState,
     startPlayback,
     stopPlayback,
-    toggleLooping
+    toggleLooping,
   } from "../../core/store.js";
   import { Drum, Pause, Play, Plus, Repeat2, Square, Trash } from "lucide-svelte";
   import { formatTime, formatTimeDuration } from "../../core/utils.js";
