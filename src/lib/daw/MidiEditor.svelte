@@ -8,6 +8,7 @@
     selectedClip,
     timeToPixels,
     zoomByDelta,
+    zoomLevel,
   } from "../../core/store.js";
   import { extractNoteEvents, isBlackKey, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
   import { CassetteTape, Eraser, Keyboard, PaintBucket, Pencil } from "phosphor-svelte";
@@ -32,7 +33,27 @@
   function handleZoom(event) {
     if (event.shiftKey) {
       event.preventDefault();
+
+      const oldZoomLevel = $zoomLevel;
       zoomByDelta(event.deltaY);
+
+      const noteAreaRect = noteArea.getBoundingClientRect();
+      const currentScroll = noteArea.scrollLeft;
+
+      // Get the current position of the mouse relative to the note area
+      const mouseX = event.clientX - noteAreaRect.left;
+
+      // Calculate the zoom factor based on the old and new zoom levels
+      const newZoomFactor = $zoomLevel / 100;
+      const oldZoomFactor = oldZoomLevel / 100;
+      const scaleFactor = newZoomFactor / oldZoomFactor;
+
+      // Calculate the new scroll position to center the zoom on the mouse pointer
+      // The formula accounts for the scaling transformation around the mouse cursor
+      const newScroll = (currentScroll + mouseX) * scaleFactor - mouseX;
+
+      // Update the note area's scroll position to the newly calculated position
+      noteArea.scrollLeft = newScroll;
     }
   }
 
