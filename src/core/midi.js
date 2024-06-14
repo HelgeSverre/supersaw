@@ -127,6 +127,8 @@ export function extractNoteEvents(midi) {
     });
   });
 
+  notes = notes.sort((a, b) => a.start - b.start);
+
   return notes;
 }
 
