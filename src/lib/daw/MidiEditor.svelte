@@ -35,7 +35,7 @@
       event.preventDefault();
 
       const oldZoomLevel = $zoomLevel;
-      zoomByDelta(event.deltaY);
+      zoomByDelta(event.wheelDelta);
 
       const noteAreaRect = noteArea.getBoundingClientRect();
       const currentScroll = noteArea.scrollLeft;

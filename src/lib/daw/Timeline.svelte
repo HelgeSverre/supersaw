@@ -70,7 +70,8 @@
   function handleZoom(event) {
     if (event.shiftKey) {
       event.preventDefault();
-      zoomByDelta(event.deltaY);
+
+      zoomByDelta(event.wheelDelta);
     }
   }
 
