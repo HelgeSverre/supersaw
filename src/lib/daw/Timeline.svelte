@@ -90,6 +90,7 @@
   class:select-none={dragging}
   bind:this={timeline}
   on:wheel={handleZoom}
+  on:scroll={handleZoom}
 >
   <div class="relative">
     <div
