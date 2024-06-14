@@ -1,8 +1,6 @@
 <script>
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
-  import { resize } from "../actions/resize";
-  import { drag } from "../actions/drag";
   import {
     getSelectedClip,
     pixelsPerBeat,
@@ -16,8 +14,11 @@
 
   const dispatch = createEventDispatcher();
 
-  let noteHeight = 20;
+  let snapToGrid = false;
   let snapThreshold = 5;
+  let snapResolution = 1 / 4; // Default snap resolution (e.g., 1/4 beat)
+
+  let noteHeight = 20;
   let notesForDisplay = [];
 
   let pianoRoll;
@@ -49,6 +50,9 @@
 
   function handleNoteClick(event, note) {
     if (isResizing) return;
+    if (isDragging) return;
+
+    console.log("note click");
 
     // Select multiple notes with shift key
     if (event.shiftKey) {
@@ -69,6 +73,7 @@
   }
 
   function handleClick(event) {
+    return;
     if (isResizing || isDragging) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
@@ -108,6 +113,14 @@
   let selectedNotes = [];
   let activeNotes = [];
   let previewInstrument = "pad";
+  let snaps = [
+    { label: "1/1", value: 1 },
+    { label: "1/2", value: 1 / 2 },
+    { label: "1/4", value: 1 / 4 },
+    { label: "1/8", value: 1 / 8 },
+    { label: "1/16", value: 1 / 16 },
+    { label: "1/32", value: 1 / 32 },
+  ];
 
   let debug = false;
 
@@ -133,8 +146,121 @@
     }
   }
 
+  function snapToResolution(value, resolution) {
+    return Math.round(value / resolution) * resolution;
+  }
+
   let isResizing = false;
   let isDragging = false;
+  let draggedNote;
+
+  let dragThreshold = 10;
+  let hasMovedEnoughToDrag = false;
+  let initialX, initialY;
+
+  let lastX, lastY;
+
+  function updateNoteById(id, update) {
+    notesForDisplay = notesForDisplay.map((n) => {
+      if (n.uuid === id) {
+        return update(n);
+      }
+
+      return n;
+    });
+  }
+
+  function handleMouseMove(event) {
+    const deltaX = event.clientX - lastX;
+    const deltaY = event.clientY - lastY;
+    const totalX = Math.abs(event.clientX - initialX);
+    const totalY = Math.abs(event.clientY - initialY);
+
+    if (!hasMovedEnoughToDrag && (totalX > dragThreshold || totalY > dragThreshold)) {
+      hasMovedEnoughToDrag = true;
+      isDragging = true; // Only set isDragging to true if moved beyond threshold
+    }
+
+    if (isDragging) {
+      updateNoteById(draggedNote, (note) => {
+        let newStartTime = Math.max(0, note.start + $pixelsToTime(deltaX) * 1000);
+
+        return {
+          ...note,
+          start: newStartTime,
+        };
+      });
+    }
+
+    lastX = event.clientX;
+    lastY = event.clientY;
+  }
+
+  function handleMouseUp(event) {
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+
+    console.log("drag mouse up");
+    requestAnimationFrame(() => {
+      isDragging = false;
+      draggedNote = null;
+      initialX = null;
+      initialY = null;
+      hasMovedEnoughToDrag = false;
+    });
+  }
+
+  function handleMouseDown(event, note) {
+    initialX = event.clientX;
+    initialY = event.clientY;
+    lastX = initialX;
+    lastY = initialY;
+    draggedNote = note.uuid;
+    hasMovedEnoughToDrag = false; // Reset this flag on mouse down
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }
+
+  let resizeStartX, resizeStartWidth;
+
+  function handleResizeMouseDown(event, noteId) {
+    event.stopPropagation();
+
+    isDragging = false;
+    isResizing = true;
+
+    resizeStartX = event.clientX;
+    resizeStartWidth = event.currentTarget.parentElement.offsetWidth;
+
+    document.addEventListener("mousemove", (e) => handleResizeMouseMove(e, noteId));
+    document.addEventListener("mouseup", (e) => handleResizeMouseUp(e, noteId));
+  }
+
+  function handleResizeMouseMove(event, noteId) {
+    const deltaX = event.clientX - resizeStartX;
+    const newWidth = resizeStartWidth + deltaX;
+
+    if (isResizing) {
+      updateNoteById(noteId, (note) => {
+        return {
+          ...note,
+          duration: $pixelsToTime(newWidth) * 1000,
+        };
+      });
+    }
+  }
+
+  function handleResizeMouseUp(event, note) {
+    event.stopPropagation();
+
+    console.log("resize mouse up");
+
+    document.removeEventListener("mousemove", handleResizeMouseMove);
+    document.removeEventListener("mouseup", handleResizeMouseUp);
+
+    isResizing = false;
+  }
 
   $: beatWidth = $pixelsPerBeat;
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
@@ -174,6 +300,12 @@
     </div>
     <div class="flex flex-1 flex-col">
       <div class="mb-2 flex h-8 flex-row items-center justify-between gap-6 bg-dark-600 px-2">
+        <div class="flex flex-row gap-3 whitespace-nowrap font-mono text-xs">
+          <div>realdrag: {hasMovedEnoughToDrag ? "true" : "false"}</div>
+          <div>drag: {isDragging ? "true" : "false"}</div>
+          <div>resize: {isResizing ? "true" : "false"}</div>
+          <div>dragged: {draggedNote}</div>
+        </div>
         <div class="flex flex-row items-center gap-2">
           {#if $getSelectedClip}
             <CassetteTape class="text-accent-yellow/80" />
@@ -184,7 +316,21 @@
           {/if}
         </div>
         <div class="ml-auto flex flex-row items-center gap-2">
-          <div class="flex flex-row items-center gap-1 bg-dark-400 px-2 py-0.5">
+          <div class="flex flex-row items-center gap-1 rounded-sm bg-dark-400 px-2">
+            <button
+              on:click={() => (snapToGrid = !snapToGrid)}
+              class="py-0.5 text-xs {snapToGrid ? 'text-accent-yellow' : 'text-light-soft'}"
+            >
+              Snap
+            </button>
+            <select bind:value={snapResolution} class="bg-dark-400 py-0.5 text-sm text-light">
+              {#each snaps as snap}
+                <option value={snap.value}>{snap.label}</option>
+              {/each}
+            </select>
+          </div>
+
+          <div class="flex flex-row items-center gap-1 rounded-sm bg-dark-400 px-2 py-0.5">
             <Keyboard class="text-accent-yellow/80" />
             <span class="text-sm text-light">{previewInstrument}</span>
           </div>
@@ -215,46 +361,25 @@
           </div>
 
           <!-- Notes -->
-          {#each notesForDisplay as note}
+          {#each notesForDisplay as note (note.uuid)}
             <div
               aria-hidden="true"
               on:click|stopPropagation={(event) => handleNoteClick(event, note)}
               on:mouseenter={() => (highlightedNote = note.label)}
-              use:resize={{
-                handleSelector: ".resize-handle",
-                onResizeStart: () => {
-                  isResizing = true;
-                },
-                onResizeEnd: () => {
-                  setTimeout(() => (isResizing = false), 50);
-                },
-                onResize: (newWidth) => {
-                  if (isDragging) return;
-                  if (newWidth <= 1) return;
-
-                  note.duration = $pixelsToTime(newWidth) * 1000;
-                },
-              }}
-              use:drag={{
-                onDragStart: (startX, startY) => {
-                  isDragging = true;
-                },
-                onDrag: ({ deltaX, deltaY, initialY }) => {
-                  if (isResizing) return;
-                  note.start = Math.max(0, note.start + $pixelsToTime(deltaX) * 1000);
-                },
-                onDragEnd: () => {
-                  setTimeout(() => (isDragging = false), 50);
-                },
-              }}
+              on:mousedown={(event) => handleMouseDown(event, note)}
               class:selected={selectedNotes.includes(note)}
+              class:dragged={draggedNote === note.uuid}
               class="note flex cursor-pointer select-none flex-row items-center justify-between"
               style="left: {$timeToPixels(note.start / 1000)}px; top: {calculateNoteTopPosition(
                 note,
               )}px; width: {$timeToPixels(note.duration / 1000)}px;"
             >
               <div class="flex-1 truncate text-center">{note.label}</div>
-              <div class="resize-handle"></div>
+              <div
+                aria-hidden="true"
+                on:mousedown={(event) => handleResizeMouseDown(event, note.uuid)}
+                class="resize-handle"
+              ></div>
             </div>
           {/each}
         </div>
@@ -356,8 +481,8 @@
       );
     background-attachment: local;
     background-repeat: no-repeat;
-    background-size: 200% 200%;
-    background-position: calc(-1 * var(--note-height) * 4);
+    background-size: 100% 200%;
+    background-position: left calc(-1 * var(--note-height) * 4);
   }
 
   .note-lane {
@@ -380,6 +505,8 @@
     color: hsl(0, 0%, 0%, 80%);
     font-size: 8px;
     height: var(--note-height);
+    border-left: 0.5px solid black;
+    border-right: 0.5px solid black;
   }
 
   .note .resize-handle {
@@ -388,6 +515,10 @@
 
   .note.selected {
     background: rgb(153, 194, 255);
+  }
+
+  .note.dragged {
+    background: rgb(50, 50, 50);
   }
 
   .note.active {

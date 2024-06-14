@@ -104,6 +104,7 @@ export function extractNoteEvents(midi) {
 
       if (event.type === "noteOn") {
         notes.push({
+          uuid: crypto.randomUUID(),
           track: trackName,
           note: event.noteNumber,
           label: getNoteLabel(event.noteNumber),
