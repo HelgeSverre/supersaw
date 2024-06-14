@@ -87,20 +87,31 @@
     selectedNotes.includes(noteId) ? (selectedNotes = []) : (selectedNotes = [noteId]);
   }
 
+  function yPosToMidiPitch(y) {
+    return 127 - Math.floor((y + noteArea.scrollTop) / noteHeight);
+  }
+
   function handleClick(event) {
     if (isResizing || isDragging) return;
 
+    const currentScroll = noteArea.scrollLeft;
     const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
+    const x = event.clientX - rect.left + currentScroll;
     const y = event.clientY - rect.top;
 
-    const note = 127 - Math.floor((y + noteArea.scrollTop) / noteHeight);
+    const note = yPosToMidiPitch(y);
+    let startTime = $pixelsToTime(x) * 1000;
+
+    if (snapToGrid) {
+      const timePerSnapMs = $pixelsToTime(beatWidth * snapResolution) * 1000; // Convert pixels per snap to milliseconds
+      startTime = Math.round(startTime / timePerSnapMs) * timePerSnapMs;
+    }
 
     notesForDisplay = [
       ...notesForDisplay,
       {
         uuid: crypto.randomUUID(),
-        start: $pixelsToTime(x) * 1000,
+        start: startTime,
         label: noteLabel(note),
         duration: 100,
         note: note,
@@ -127,7 +138,7 @@
   let highlightedNote = "";
   let selectedNotes = [];
   let activeNotes = [];
-  let previewInstrument = "pad";
+  let previewInstrument = "supersaw";
 
   let snapToGrid = true;
   let snapThreshold = 5;
@@ -151,6 +162,10 @@
     dispatch("noteOff", { hz, note });
     audioManager.audioContext.resume();
     audioManager.getInstrument(previewInstrument).stopNote(hz);
+  }
+
+  function deleteNoteById(noteId) {
+    notesForDisplay = notesForDisplay.filter((note) => note.uuid !== noteId);
   }
 
   function handleKeyDown(event) {
@@ -377,7 +392,10 @@
             >
               Snap
             </button>
-            <select bind:value={snapResolution} class="bg-dark-400 py-0.5 font-mono text-sm tracking-tight text-light">
+            <select
+              bind:value={snapResolution}
+              class="bg-dark-400 py-0.5 pr-1 font-mono text-sm tracking-tight text-light"
+            >
               {#each snaps as snap}
                 <option value={snap.value}>{snap.label}</option>
               {/each}
@@ -386,7 +404,14 @@
 
           <div class="flex flex-row items-center gap-1 rounded-sm bg-dark-400 px-2 py-0.5">
             <Keyboard class="text-accent-yellow/80" />
-            <span class="text-sm text-light">{previewInstrument}</span>
+            <select
+              bind:value={previewInstrument}
+              class="bg-dark-400 py-0.5 pr-1 font-mono text-sm tracking-tight text-light"
+            >
+              {#each audioManager.instruments.keys() as instrument}
+                <option value={instrument}>{instrument}</option>
+              {/each}
+            </select>
           </div>
         </div>
         <div class="flex flex-row items-center gap-2">
@@ -402,6 +427,7 @@
           on:wheel={handleZoom}
           on:click={handleClick}
           bind:this={noteArea}
+          on:contextmenu|preventDefault={() => (selectedNotes = [])}
           aria-hidden="true"
           class="note-area absolute inset-0 overflow-scroll bg-dark-700/50"
         >
@@ -419,6 +445,7 @@
             <div
               aria-hidden="true"
               on:click|stopPropagation={(event) => handleNoteClick(event, note.uuid)}
+              on:contextmenu|preventDefault={(event) => deleteNoteById(note.uuid)}
               on:mouseenter={() => (highlightedNote = note.label)}
               on:mousedown={(event) => handleMouseDown(event, note.uuid)}
               class:selected={selectedNotes.includes(note.uuid)}
@@ -559,14 +586,14 @@
     color: hsl(0, 0%, 0%, 80%);
     font-size: 8px;
     height: var(--note-height);
-    border: 0.5px solid hsl(0, 0%, 0%, 50%);
     border-radius: 2px;
-    padding-left: 4px;
+    padding-left: 8px;
     font-weight: 500;
+    border: 0.5px solid hsl(0, 0%, 0%, 20%);
   }
 
   .note .resize-handle {
-    width: 4px;
+    width: 8px;
     height: 100%;
     display: inline-block;
     cursor: col-resize;
@@ -574,11 +601,10 @@
   }
 
   .note.selected {
-    background: rgb(153, 194, 255);
+    background: rgb(153, 224, 255);
   }
 
   .note.dragged {
-    /*background: hsl(60, 100%, 90%);*/
     filter: grayscale(1) opacity(0.5);
   }
 
