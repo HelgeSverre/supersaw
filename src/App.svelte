@@ -4,6 +4,7 @@
     changeBpm,
     clearTracks,
     currentView,
+    ensureTracksHaveChannels,
     nudge,
     pausePlayback,
     playbackState,

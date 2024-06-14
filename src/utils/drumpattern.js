@@ -38,13 +38,15 @@ export const createDrumPattern = async ({ name, kit = "roland-tr-808", steps, bp
       duration: stepInterval,
     });
   });
+  const id = crypto.randomUUID();
 
   return {
-    id: crypto.randomUUID(),
+    id: id,
     type: "audio",
     name: `${name} Pattern`,
     isMuted: false,
     isSolo: false,
+    channel: audioManager.createChannel(id),
     clips,
   };
 };

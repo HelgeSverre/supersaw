@@ -8,6 +8,7 @@ class AudioManager {
   mixer;
   sources = {};
   instruments = {};
+  channels = {};
 
   cache = {};
 
@@ -17,7 +18,8 @@ class AudioManager {
       sampleRate: 44100,
     });
 
-    // Mixer -> Pan -> Destination (Speakers)
+    this.channels = new Map();
+    //  Mixer -> Pan -> Destination (Speakers)
     this.mixer = this.audioContext.createGain();
     this.panNode = this.audioContext.createStereoPanner();
 
@@ -118,6 +120,16 @@ class AudioManager {
     return { source, gainNode };
   };
 
+  setupTrackAudioSource = (buffer, channelId) => {
+    const source = this.audioContext.createBufferSource();
+    source.buffer = buffer;
+
+    const channel = this.getChannel(channelId);
+    source.connect(channel.gainNode);
+
+    return { source, channel };
+  };
+
   playClip = (clipId, buffer, startTime, duration) => {
     const { source, gainNode } = this.setupAudioSource(buffer);
     source.start(this.audioContext.currentTime + startTime, 0, duration);
@@ -174,6 +186,76 @@ class AudioManager {
       gainNode.disconnect();
     };
   };
+
+  createChannel(channelId) {
+    console.log("creating channel with id", channelId);
+
+    const gainNode = this.audioContext.createGain();
+    const panNode = this.audioContext.createStereoPanner();
+    gainNode.connect(panNode);
+    panNode.connect(this.mixer);
+
+    const channel = {
+      id: channelId,
+      gainNode,
+      panNode,
+    };
+
+    this.channels.set(channelId, channel);
+
+    return channel;
+  }
+
+  getChannel(channelId) {
+    return this.channels.get(channelId);
+  }
+
+  setChannelVolume(channelId, volume) {
+    console.log("channelId", channelId);
+
+    if (channelId === "master") {
+      this.mixer.gain.value = volume;
+      return;
+    }
+
+    const channel = this.getChannel(channelId);
+    if (channel) {
+      channel.gainNode.gain.value = volume;
+    }
+  }
+
+  setChannelPan(channelId, pan) {
+    if (channelId === "master") {
+      this.panNode.pan.value = pan;
+      return;
+    }
+
+    const channel = this.getChannel(channelId);
+    if (channel) {
+      channel.panNode.pan.value = pan;
+    }
+  }
+
+  allChannels() {
+    return this.channels;
+  }
+
+  removeChannel(channelId) {
+    const channel = this.channels.get(channelId);
+    if (channel) {
+      channel.panNode.disconnect();
+      channel.gainNode.disconnect();
+      this.channels.delete(channelId);
+    }
+  }
+
+  getMasterChannel() {
+    return {
+      id: "master",
+      gainNode: this.mixer,
+      panNode: this.panNode,
+    };
+  }
 }
 
 export const audioManager = new AudioManager();

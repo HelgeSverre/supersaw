@@ -14,10 +14,11 @@
     reverbTime,
   } from "../../core/instrument.js";
   import ADSR from "../ui/ADSR.svelte";
-  import EQ from "./EQ.svelte";
+  import { audioManager } from "../../core/audio.js";
 
   const openHeight = 350;
   const closedHeight = 0;
+  const masterChannel = audioManager.getMasterChannel();
 
   const mixerHeight = tweened($isMixerOpen ? openHeight : closedHeight, {
     duration: 100,
@@ -68,10 +69,10 @@
   <div aria-hidden="true" class="h-1 w-full cursor-row-resize bg-[#2D2D30]" on:mousedown={startResizing}></div>
   <div class="flex h-full flex-row bg-[#2D2D30] p-1">
     <div class="flex flex-row gap-px bg-black p-px">
-      <ChannelStrip channel="master" />
+      <ChannelStrip label="Master" channel="master" />
 
-      {#each $tracks as track}
-        <ChannelStrip channel="Track {track.name}" />
+      {#each $tracks.filter((track) => track.channel) as track}
+        <ChannelStrip label={track.name} channel={track.id} />
       {/each}
     </div>
 

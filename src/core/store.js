@@ -45,6 +45,7 @@ import { loadFromLocalStorage, saveToLocalStorage } from "./local.ts";
 import { extractNoteEvents, midiNoteToFrequency } from "./midi.js";
 import { Synth } from "../instruments/synth.js";
 import { MidiOut } from "../instruments/midiOut.ts";
+import { Supersaw } from "../instruments/supersaw.ts";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
@@ -165,6 +166,8 @@ const clearScheduledClips = () => {
 const scheduleAllClips = (currentTime, filterByTrackId = null) => {
   const currentTracks = get(tracks);
 
+  ensureTracksHaveChannels();
+
   currentTracks
     .filter((track) => (filterByTrackId ? track.id === filterByTrackId : true))
     .forEach((track) => {
@@ -177,10 +180,11 @@ const scheduleAllClips = (currentTime, filterByTrackId = null) => {
           let offset = clip.startTime < currentTime ? currentTime - clip.startTime : 0;
 
           if (clip.type === "audio" && clip.audioBuffer) {
-            const { source, gainNode } = audioManager.setupAudioSource(clip.audioBuffer);
+            if (!track.channel) return;
+            const { source, channel } = audioManager.setupTrackAudioSource(clip.audioBuffer, track.id);
             // Start the audio clip at 'when', playing from 'offset' in the buffer
             source.start(when, offset);
-            sources.set(clip.id, { trackId: track.id, source, gainNode });
+            sources.set(clip.id, { trackId: track.id, source, gainNode: channel.gainNode });
           }
 
           // MIDI Clips sent to MIDI out
@@ -215,7 +219,8 @@ const scheduleAllClips = (currentTime, filterByTrackId = null) => {
 
           // MIDI Clips: Schedule notes that are supposed to start after the current time
           if (track.instrument !== "midi_out" && clip.type === "midi" && clip.midiData) {
-            const instrument = audioManager.getInstrument(track.instrument);
+            // const instrument = audioManager.getInstrument(track.instrument);
+            const instrument = new Supersaw(audioManager.audioContext, track.channel.gainNode);
 
             extractNoteEvents(clip.midiData).forEach((midiEvent) => {
               const eventStart = clip.startTime + midiEvent.start / 1000;
@@ -470,7 +475,23 @@ export const removeTrack = (trackId) => {
  * @param {Track} track
  */
 export const addTrack = (track) => {
+  if (!track.channel) {
+    track.channel = audioManager.createChannel(track.id);
+  }
+
   tracks.update((allTracks) => [...allTracks, track]);
+};
+
+export const ensureTracksHaveChannels = () => {
+  tracks.update((allTracks) => {
+    return allTracks.map((track) => {
+      if (!track.channel) {
+        return { ...track, channel: audioManager.createChannel(track.id) };
+      }
+
+      return track;
+    });
+  });
 };
 
 export const changeTrackName = (trackId, newName) => {
