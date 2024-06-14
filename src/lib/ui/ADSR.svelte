@@ -54,7 +54,6 @@
     window.addEventListener("mouseup", stopDrag);
     window.addEventListener("mousemove", drag);
   });
-
 </script>
 
 <div class="flex flex-col rounded border border-dark-100 bg-dark-700 p-2">

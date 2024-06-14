@@ -68,7 +68,6 @@
               <div class="rounded bg-dark-100 px-2 py-1 text-light">light</div>
               <div class="rounded bg-dark-100 px-2 py-1 text-light-soft">light-soft</div>
             </div>
-
           </div>
         </div>
       </div>

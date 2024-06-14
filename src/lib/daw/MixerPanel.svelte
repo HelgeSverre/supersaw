@@ -115,7 +115,6 @@
         bind:release={$adsr.release}
       />
     </div>
-
   </div>
 </div>
 
