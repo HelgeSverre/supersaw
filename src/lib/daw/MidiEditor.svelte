@@ -196,7 +196,7 @@
 
   // How much we must offset the note position for it to align with the
   // mouse cursor position within the note, when dragging
-  let noteGrabPositionOffset;
+  let noteGrabXOffset;
 
   // Threshold in pixels to move before dragging starts
   let dragThreshold = 5;
@@ -215,16 +215,20 @@
 
   function handleMouseMove(event) {
     const noteAreaRect = noteArea.getBoundingClientRect();
-    const localX = event.clientX - noteAreaRect.left + noteArea.scrollLeft - noteGrabPositionOffset;
+    const localX = event.clientX - noteAreaRect.left + noteArea.scrollLeft - noteGrabXOffset;
     const totalX = Math.abs(event.clientX - initialX);
 
-    if (!isDragging && totalX > dragThreshold) {
+    const localY = event.clientY - noteAreaRect.top;
+    const totalY = Math.abs(event.clientY - initialY);
+
+    if (!isDragging && (totalX > dragThreshold || totalY > dragThreshold)) {
       isDragging = true; // Only set isDragging to true if moved beyond threshold
     }
 
     if (isDragging) {
       updateNoteById(draggedNote, (note) => {
         let newStartTime = Math.max(0, $pixelsToTime(localX) * 1000);
+        let newPitch = yPosToMidiPitch(localY);
 
         if (snapToGrid && event.shiftKey === false) {
           const timePerSnapMs = $pixelsToTime(beatWidth * snapResolution) * 1000; // Convert pixels per snap to milliseconds
@@ -233,6 +237,8 @@
 
         return {
           ...note,
+          note: newPitch,
+          label: noteLabel(newPitch),
           start: newStartTime,
         };
       });
@@ -257,7 +263,7 @@
     draggedNote = noteId;
 
     const noteRect = event.currentTarget.getBoundingClientRect();
-    noteGrabPositionOffset = initialX - noteRect.left;
+    noteGrabXOffset = initialX - noteRect.left;
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
