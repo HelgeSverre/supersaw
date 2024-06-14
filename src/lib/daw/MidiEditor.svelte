@@ -238,12 +238,25 @@
   function handleResizeMouseMove(event) {
     const deltaX = event.clientX - resizeStartX;
     const newWidth = resizeStartWidth + deltaX;
+    const noteAreaRect = noteArea.getBoundingClientRect();
 
     if (isResizing) {
       updateNoteById(resizedNote, (note) => {
+        // Convert the width in pixels to time (milliseconds)
+        let newDurationMs = $pixelsToTime(newWidth) * 1000;
+
+        // Snap the new duration to the nearest grid point if snapping is enabled
+        if (snapToGrid && event.shiftKey === false) {
+          const pixelsPerSnap = beatWidth * snapResolution; // Calculate the number of pixels per snap point
+          const timePerSnapMs = $pixelsToTime(pixelsPerSnap) * 1000; // Convert pixels per snap to milliseconds
+
+          // Calculate new snapped duration
+          newDurationMs = Math.round(newDurationMs / timePerSnapMs) * timePerSnapMs;
+        }
+
         return {
           ...note,
-          duration: $pixelsToTime(newWidth) * 1000,
+          duration: newDurationMs,
         };
       });
     }
