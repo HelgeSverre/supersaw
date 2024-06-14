@@ -69,8 +69,6 @@
     if (isResizing) return;
     if (isDragging) return;
 
-    console.log("note click");
-
     // Select multiple notes with shift key
     if (event.shiftKey) {
       if (selectedNotes.includes(noteId)) {
