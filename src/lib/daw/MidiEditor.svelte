@@ -158,6 +158,32 @@
       notesForDisplay = notesForDisplay.filter((note) => !selectedNotes.includes(note.uuid));
     }
 
+    // Duplicate note with CMD + B
+    if (event.metaKey && event.key === "b") {
+      if (selectedNotes.length) {
+        let noteId = selectedNotes[selectedNotes.length - 1];
+        let note = notesForDisplay.find((note) => note.uuid === noteId);
+
+        if (!note) {
+          return;
+        }
+
+        const newId = crypto.randomUUID();
+        selectedNotes = [...selectedNotes, newId];
+        notesForDisplay = [
+          ...notesForDisplay,
+          {
+            uuid: newId,
+            start: note.start + note.duration,
+            label: note.label,
+            duration: note.duration,
+            note: note.note,
+            velocity: note.velocity,
+          },
+        ];
+      }
+    }
+
     if (event.key === "d") {
       debug = !debug;
     }
