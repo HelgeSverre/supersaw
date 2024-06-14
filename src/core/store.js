@@ -61,7 +61,7 @@ export const masterPan = writable(loadFromLocalStorage("masterPan", 0));
 
 export const bpm = writable(loadFromLocalStorage("bpm", 140));
 export const zoomLevel = writable(loadFromLocalStorage("zoomLevel", 50));
-export const selectedClip = writable(loadFromLocalStorage("selectedClip", null));
+export const selectedClipId = writable(loadFromLocalStorage("selectedClipId", null));
 export const selectedTrack = writable(loadFromLocalStorage("selectedTrack", 0));
 export const selectedInstrument = writable(null);
 export const currentView = writable(loadFromLocalStorage("currentView", "timeline"));
@@ -87,7 +87,7 @@ masterVolume.subscribe((value) => saveToLocalStorage("masterVolume", value));
 masterPan.subscribe((value) => saveToLocalStorage("masterPan", value));
 bpm.subscribe((value) => saveToLocalStorage("bpm", value));
 zoomLevel.subscribe((value) => saveToLocalStorage("zoomLevel", value));
-selectedClip.subscribe((value) => saveToLocalStorage("selectedClip", value));
+selectedClipId.subscribe((value) => saveToLocalStorage("selectedClipId", value));
 selectedTrack.subscribe((value) => saveToLocalStorage("selectedTrack", value));
 currentView.subscribe((value) => saveToLocalStorage("currentView", value));
 isMixerOpen.subscribe((value) => saveToLocalStorage("isMixerOpen", value));
@@ -550,7 +550,7 @@ export const removeClip = (clipId) => {
   );
 };
 
-export const getSelectedClip = derived([selectedClip, tracks], ([$selectedClip, $tracks]) => {
+export const selectedClip = derived([selectedClipId, tracks], ([$selectedClip, $tracks]) => {
   return $selectedClip ? $tracks.flatMap((track) => track.clips).find((clip) => clip.id === $selectedClip) : null;
 });
 
@@ -631,12 +631,12 @@ export const selectClip = (clipId) => {
     // Track was not found, might have gotten removed
     if (!track) {
       selectedTrack.set(null);
-      selectedClip.set(null);
+      selectedClipId.set(null);
       return;
     }
 
     selectedTrack.set(track.id);
-    selectedClip.set(clipId);
+    selectedClipId.set(clipId);
   });
 };
 
