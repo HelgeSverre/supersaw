@@ -68,7 +68,17 @@ export const selectedInstrument = writable(null);
 export const currentView = writable(loadFromLocalStorage("currentView", "timeline"));
 export const isMixerOpen = writable(loadFromLocalStorage("isMixerOpen", false));
 
-export const tracks = writable(loadFromLocalStorage("tracks", []));
+export const tracks = writable(
+  loadFromLocalStorage("tracks", []).map((track) => {
+    return {
+      ...track,
+      channel: null,
+      clips: track.clips.map((clip) => {
+        return { ...clip, audioBuffer: null };
+      }),
+    };
+  }),
+);
 
 tracks.subscribe((value) => {
   saveToLocalStorage(
@@ -97,8 +107,6 @@ export const toggleView = () => {
   currentView.update((view) => (view === "timeline" ? "midi" : "timeline"));
 };
 
-export const openMidiEditorView = () => currentView.update((view) => "midi");
-export const openTimelineView = () => currentView.update((view) => "timeline");
 export const switchView = (newView) => currentView.update((view) => newView);
 
 masterVolume.subscribe(($masterVolume) => {
@@ -482,8 +490,8 @@ export const addTrack = (track) => {
   tracks.update((allTracks) => [...allTracks, track]);
 };
 
-export const ensureTracksHaveChannels = () => {
-  tracks.update((allTracks) => {
+export const ensureTracksHaveChannels = async () => {
+  return tracks.update((allTracks) => {
     return allTracks.map((track) => {
       if (!track.channel) {
         return { ...track, channel: audioManager.createChannel(track.id) };
