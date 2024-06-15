@@ -119,45 +119,45 @@
     <div class="flex flex-row gap-1">
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="lowGain">Low Gain</label>
-        <Knob size="42" id="lowGain" min="-30" max="30" bind:value={lowGain} on:input={updateFilters} />
+        <Knob size="42" min="-30" max="30" bind:value={lowGain} on:input={updateFilters} />
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="lowFreq">Low Frequency</label>
-        <Knob size="42" id="lowFreq" min="20" max="500" bind:value={lowFreq} on:input={updateFilters} />
+        <Knob size="42" min="20" max="500" bind:value={lowFreq} on:input={updateFilters} />
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="lowQ">Low Q</label>
-        <Knob size="42" id="lowQ" min="0.1" max="10" step="0.1" bind:value={lowQ} on:input={updateFilters} />
+        <Knob size="42" min="0.1" max="10" step="0.1" bind:value={lowQ} on:input={updateFilters} />
       </div>
     </div>
 
     <div class="flex flex-row gap-1">
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="midGain">Mid Gain</label>
-        <Knob size="42" id="midGain" min="-30" max="30" bind:value={midGain} on:input={updateFilters} />
+        <Knob size="42" min="-30" max="30" bind:value={midGain} on:input={updateFilters} />
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="midFreq">Mid Frequency</label>
-        <Knob size="42" id="midFreq" min="500" max="5000" bind:value={midFreq} on:input={updateFilters} />
+        <Knob size="42" min="500" max="5000" bind:value={midFreq} on:input={updateFilters} />
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="midQ">Mid Q</label>
-        <Knob size="42" id="midQ" min="0.1" max="10" step="0.1" bind:value={midQ} on:input={updateFilters} />
+        <Knob size="42" min="0.1" max="10" step="0.1" bind:value={midQ} on:input={updateFilters} />
       </div>
     </div>
 
     <div class="flex flex-row gap-1">
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="highGain">High Gain</label>
-        <Knob size="42" id="highGain" min="-30" max="30" bind:value={highGain} on:input={updateFilters} />
+        <Knob size="42" min="-30" max="30" bind:value={highGain} on:input={updateFilters} />
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="highFreq">High Frequency</label>
-        <Knob size="42" id="highFreq" min="2000" max="12000" bind:value={highFreq} on:input={updateFilters} />
+        <Knob size="42" min="2000" max="12000" bind:value={highFreq} on:input={updateFilters} />
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label for="highQ">High Q</label>
-        <Knob size="42" id="highQ" min="0.1" max="10" step="0.1" bind:value={highQ} on:input={updateFilters} />
+        <Knob size="42" min="0.1" max="10" step="0.1" bind:value={highQ} on:input={updateFilters} />
       </div>
     </div>
   </div>
