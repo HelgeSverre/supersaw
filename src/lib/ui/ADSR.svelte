@@ -1,5 +1,6 @@
 <script>
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
+  import Knob from "./Knob.svelte";
 
   export let progress = null;
 
@@ -11,10 +12,14 @@
   export let width = 350;
   export let height = 150;
 
-  $: attackX = attack * width;
-  $: decayX = attackX + decay * width;
+  $: maxAttackWidth = width * 0.25;
+  $: maxDecayWidth = width * 0.25;
+  $: maxReleaseWidth = width * 0.25;
+
+  $: attackX = attack * maxAttackWidth;
+  $: decayX = attackX + decay * (width - maxAttackWidth - maxDecayWidth - maxReleaseWidth);
   $: sustainY = height - sustain * height;
-  $: sustainX = width - release * width;
+  $: sustainX = width - release * maxReleaseWidth;
 
   let svg;
   let draggingPoint = null;
@@ -35,16 +40,16 @@
 
       switch (draggingPoint) {
         case "attack":
-          attack = Math.max(0, Math.min(1, x / width));
+          attack = Math.max(0, Math.min(1, x / maxAttackWidth));
           break;
         case "decay":
-          decay = Math.max(0, Math.min(1, (x - attackX) / width));
+          decay = Math.max(0, Math.min(1, (x - attackX) / (width - maxAttackWidth - maxReleaseWidth)));
           break;
         case "sustain":
           sustain = Math.max(0, Math.min(1, 1 - y / height));
           break;
         case "release":
-          release = Math.max(0, Math.min(1, (width - x) / width));
+          release = Math.max(0, Math.min(1, (width - x) / maxReleaseWidth));
           break;
       }
     }
@@ -56,55 +61,23 @@
   });
 </script>
 
-<div class="flex flex-col rounded border border-dark-100 bg-dark-700 p-2">
-  <div class="mb-2 flex w-full flex-row flex-wrap gap-2">
+<div class="flex flex-col gap-2 rounded border border-dark-100 bg-dark-700 p-2">
+  <div class="flex w-full flex-row flex-wrap gap-2">
     <div class="flex flex-col gap-1">
-      <span class="text-xs text-white/50">Attack</span>
-      <input
-        class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
-        type="number"
-        min="0.0"
-        max="1"
-        step="0.01"
-        name="attack"
-        bind:value={attack}
-      />
+      <span class="text-xs text-light-soft">Attack</span>
+      <Knob size="42" min="0" max="1" step="0.01" bind:value={attack} />
     </div>
     <div class="flex flex-col gap-1">
-      <span class="text-xs text-white/50">Decay</span>
-      <input
-        class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
-        type="number"
-        min="0.0"
-        max="1"
-        step="0.01"
-        name="decay"
-        bind:value={decay}
-      />
+      <span class="text-xs text-light-soft">Decay</span>
+      <Knob size="42" min="0" max="1" step="0.01" bind:value={decay} />
     </div>
     <div class="flex flex-col gap-1">
-      <span class="text-xs text-white/50">Sustain</span>
-      <input
-        class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
-        type="number"
-        min="0.0"
-        max="1"
-        step="0.01"
-        name="sustain"
-        bind:value={sustain}
-      />
+      <span class="text-xs text-light-soft">Sustain</span>
+      <Knob size="42" min="0" max="1" step="0.01" bind:value={sustain} />
     </div>
     <div class="flex flex-col gap-1">
-      <span class="text-xs text-white/50">Release</span>
-      <input
-        class="w-full rounded-sm border border-dark-200 bg-dark-700 p-0 text-center text-xs text-white"
-        type="number"
-        min="0.0"
-        max="1"
-        step="0.01"
-        name="release"
-        bind:value={release}
-      />
+      <span class="text-xs text-light-soft">Release</span>
+      <Knob size="42" min="0" max="1" step="0.01" bind:value={release} />
     </div>
   </div>
   <div class="relative select-none">
@@ -153,7 +126,7 @@
 
       <!-- Envelope Curve -->
       <path
-        d={`M 0 ${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${width} ${height} Z`}
+        d={`M 0,${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${width} ${height} Z`}
         fill="rgba(255, 255, 255, 0.25)"
         stroke="silver"
         stroke-width="2"
@@ -164,9 +137,7 @@
         aria-hidden="true"
         cx={attackX}
         cy="0"
-        r="5"
-        stroke-width="1"
-        stroke="silver"
+        r="4"
         fill="white"
         class="cursor-pointer"
         on:mousedown={() => startDrag("attack")}
@@ -177,9 +148,7 @@
         aria-hidden="true"
         cx={decayX}
         cy={sustainY}
-        r="5"
-        stroke-width="1"
-        stroke="silver"
+        r="4"
         fill="white"
         class="cursor-pointer"
         on:mousedown={() => startDrag("decay")}
@@ -190,9 +159,7 @@
         aria-hidden="true"
         cx={sustainX}
         cy={sustainY}
-        r="5"
-        stroke-width="1"
-        stroke="silver"
+        r="4"
         fill="white"
         class="cursor-pointer"
         on:mousedown={() => startDrag("sustain")}
@@ -203,9 +170,7 @@
         aria-hidden="true"
         cx={width}
         cy={height}
-        r="5"
-        stroke-width="1"
-        stroke="silver"
+        r="4"
         fill="white"
         class="cursor-pointer"
         on:mousedown={() => startDrag("release")}
@@ -213,16 +178,3 @@
     </svg>
   </div>
 </div>
-
-<style>
-  input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-
-  input[type="number"]:focus {
-    outline: none;
-    border-color: white;
-    transition: border-color 100ms ease-out;
-  }
-</style>
