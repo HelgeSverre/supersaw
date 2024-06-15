@@ -104,6 +104,23 @@
     }
   }
 
+  function onTrackDoubleClick(event) {
+    const timelineElement = event.currentTarget;
+    const timelineRect = timelineElement.getBoundingClientRect();
+    const relativeX = event.clientX - timelineRect.left;
+
+    const newStartTime = $pixelsToTime(relativeX);
+
+    addClip(track.id, {
+      id: crypto.randomUUID(),
+      startTime: newStartTime,
+      duration: 1,
+      type: "midi",
+      name: "New midi clip",
+      midiData: null,
+    });
+  }
+
   function onTrackClick(event) {
     const timelineElement = event.currentTarget;
     const timelineRect = timelineElement.getBoundingClientRect();
@@ -273,6 +290,7 @@
       on:dragover|preventDefault
       on:drop|preventDefault={handleDrop}
       on:click={onTrackClick}
+      on:dblclick={onTrackDoubleClick}
     >
       <div class="track-grid" style={gradientStyle}></div>
 
