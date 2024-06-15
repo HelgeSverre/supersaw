@@ -1,4 +1,5 @@
 import { audioManager } from "../core/audio.js";
+import { Track } from "../core/track.js";
 
 /**
  * Create a step sequencer pattern for drum machines.
@@ -40,15 +41,10 @@ export const createDrumPattern = async ({ name, kit = "roland-tr-808", steps, bp
   });
   const id = crypto.randomUUID();
 
-  return {
-    id: id,
-    type: "audio",
-    name: `${name} Pattern`,
-    isMuted: false,
-    isSolo: false,
-    channel: audioManager.createChannel(id),
-    clips,
-  };
+  let track = new Track(id, `${name} Pattern`, "audio");
+  track.clips = clips;
+
+  return track;
 };
 
 export const createDrumPatternOld = async ({ name, folder, pattern, bpm, variations }) => {
