@@ -17,7 +17,7 @@
   function drawAnalyzer() {
     if (canvasCtx === null) return;
 
-    analyser.fftSize = 2048;
+    analyser.fftSize = 2048 * 4 ;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -54,6 +54,6 @@
   }
 </script>
 
-<div class="h-10 w-28 overflow-hidden rounded border-2 border-dark-400 bg-dark-400">
+<div class="h-10 w-96 overflow-hidden rounded border-2 border-dark-400 bg-dark-400">
   <canvas bind:this={canvas} class="h-full w-full"></canvas>
 </div>
