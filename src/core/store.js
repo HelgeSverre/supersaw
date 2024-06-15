@@ -1,14 +1,4 @@
 /**
- * @typedef {Object} Track
- * @property {string} id - Unique identifier for the track.
- * @property {string} name - Name of the track.
- * @property {"audio"|"instrument"} type - Type of the track (e.g., 'audio', 'midi').
- * @property {boolean} isMuted - Whether the track is muted.
- * @property {boolean} isSolo - Whether the track is soloed.
- * @property {Clip[]} clips - Array of clips in the track.
- */
-
-/**
  * @typedef {Object} Clip
  * @property {string} id - Unique identifier for the clip.
  * @property {"audio"|"midi"} type - Type of the clip (e.g., 'audio', 'midi').
@@ -41,6 +31,7 @@ import {
   createTranceEDMPattern,
 } from "../utils/drumpattern.js";
 import { audioManager } from "./audio.js";
+import { Track } from "./track.js";
 import { loadFromLocalStorage, saveToLocalStorage } from "./local.ts";
 import { extractNoteEvents, midiNoteToFrequency } from "./midi.js";
 import { Synth } from "../instruments/synth.js";
@@ -68,30 +59,50 @@ export const selectedInstrument = writable(null);
 export const currentView = writable(loadFromLocalStorage("currentView", "timeline"));
 export const isMixerOpen = writable(loadFromLocalStorage("isMixerOpen", false));
 
-export const tracks = writable(
-  loadFromLocalStorage("tracks", []).map((track) => {
-    return {
-      ...track,
-      channel: null,
-      clips: track.clips.map((clip) => {
-        return { ...clip, audioBuffer: null };
-      }),
-    };
-  }),
-);
+export const tracks = writable([]);
 
+// Function to load tracks from local storage and convert them into Track instances
+function initializeTracks() {
+  const storedTracks = loadFromLocalStorage("tracks", []);
+  const trackObjects = storedTracks.map((trackData) => {
+    const track = new Track(trackData.id, trackData.name, trackData.type);
+
+    track.isMuted = trackData.isMuted;
+    track.isSolo = trackData.isSolo;
+    track.instrument = trackData.instrument;
+
+    track.clips = trackData.clips;
+
+    return track;
+  });
+
+  console.log("initializeTracks", trackObjects);
+  tracks.set(trackObjects);
+}
+
+initializeTracks();
+
+// Subscribe to changes in the tracks to save to local storage
 tracks.subscribe((value) => {
-  saveToLocalStorage(
-    "tracks",
-    value.map((track) => {
-      return {
-        ...track,
-        clips: track.clips.map((clip) => {
-          return { ...clip, audioBuffer: null };
-        }),
-      };
-    }),
-  );
+  // Convert Track instances to plain objects before storing
+  const plainTracks = value.map((track) => ({
+    id: track.id,
+    name: track.name,
+    type: track.type,
+    instrument: track.instrument,
+    isMuted: track.isMuted,
+    isSolo: track.isSolo,
+    clips: track.clips.map((clip) => ({
+      id: clip.id,
+      type: clip.type,
+      name: clip.name,
+      audioUrl: clip.audioUrl,
+      startTime: clip.startTime,
+      duration: clip.duration,
+      midiData: clip.midiData,
+    })),
+  }));
+  saveToLocalStorage("tracks", plainTracks);
 });
 
 masterVolume.subscribe((value) => saveToLocalStorage("masterVolume", value));
@@ -456,11 +467,27 @@ export const updateTrack = (trackId, data) => {
 };
 
 export const setInstrumentForTrack = (trackId, instrument) => {
-  updateTrack(trackId, { instrument });
+  tracks.update((allTracks) => {
+    return allTracks.map((track) => {
+      if (track.id === trackId) {
+        track.setInstrument(instrument);
+      }
+
+      return track;
+    });
+  });
 };
 
 export const setMidiOutputForTrack = (trackId, output) => {
-  updateTrack(trackId, { midiOutput: output });
+  tracks.update((allTracks) => {
+    return allTracks.map((track) => {
+      if (track.id === trackId) {
+        track.setMidiOutput(output);
+      }
+
+      return track;
+    });
+  });
 };
 
 export const changeBpm = (newBpm) => {
@@ -483,10 +510,6 @@ export const removeTrack = (trackId) => {
  * @param {Track} track
  */
 export const addTrack = (track) => {
-  if (!track.channel) {
-    track.channel = audioManager.createChannel(track.id);
-  }
-
   tracks.update((allTracks) => [...allTracks, track]);
 };
 
@@ -549,6 +572,26 @@ export const loadAudioBuffersForAllTracks = async () => {
 export const addClip = (trackId, clip) => {
   tracks.update((allTracks) =>
     allTracks.map((track) => (track.id === trackId ? { ...track, clips: [...track.clips, clip] } : track)),
+  );
+};
+
+export const updateClip = (clipId, data) => {
+  tracks.update((allTracks) =>
+    allTracks.map((track) => {
+      let found = track.clips.find((clip) => clip.id === clipId);
+
+      if (found) {
+        track.clips = track.clips.map((clip) => {
+          if (clip.id === clipId) {
+            return { ...clip, ...data };
+          } else {
+            return clip;
+          }
+        });
+      }
+
+      return track;
+    }),
   );
 };
 
@@ -685,7 +728,7 @@ export const zoomByDelta = (delta) => {
   zoomLevel.update((level) => {
     let logZoomLevel = Math.log(level);
     let adjustedZoom = logZoomLevel + (delta < 0 ? 1 : -1) * ZOOM_FACTOR;
-    return Math.max(0.1, Math.min(Math.exp(adjustedZoom), 100));
+    return Math.max(0.1, Math.min(Math.exp(adjustedZoom), 500));
   });
 };
 

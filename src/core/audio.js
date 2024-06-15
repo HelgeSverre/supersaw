@@ -2,6 +2,7 @@ import { Synth } from "../instruments/synth.js";
 import { Piano } from "../instruments/piano.js";
 import { Pad } from "../instruments/pad.js";
 import { Supersaw } from "../instruments/supersaw.ts";
+import { AudioChannel } from "./channel.js";
 
 class AudioManager {
   audioContext;
@@ -195,12 +196,7 @@ class AudioManager {
     gainNode.connect(panNode);
     panNode.connect(this.mixer);
 
-    const channel = {
-      id: channelId,
-      gainNode,
-      panNode,
-    };
-
+    const channel = new AudioChannel(channelId, gainNode, panNode);
     this.channels.set(channelId, channel);
 
     return channel;
@@ -211,8 +207,6 @@ class AudioManager {
   }
 
   setChannelVolume(channelId, volume) {
-    console.log("channelId", channelId);
-
     if (channelId === "master") {
       this.mixer.gain.value = volume;
       return;
