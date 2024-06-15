@@ -4,7 +4,6 @@
     changeBpm,
     clearTracks,
     currentView,
-    ensureTracksHaveChannels,
     nudge,
     pausePlayback,
     playbackState,
@@ -23,6 +22,7 @@
   import Toolbar from "./lib/daw/Toolbar.svelte";
   import Timeline from "./lib/daw/Timeline.svelte";
   import Blofeld from "./lib/daw/instruments/Blofeld.svelte";
+  import { Track } from "./core/track.js";
 
   let instrumentDialog;
   let synthDialog;
@@ -50,15 +50,12 @@
     });
 
     createMidiClipFromUrl("/midi/moon-loves-the-sun.mid", "Nu-NRG - Moon Loves The Sun").then((clip) => {
-      addTrack({
-        id: crypto.randomUUID(),
-        type: "instrument",
-        instrument: "supersaw",
-        name: "Melody",
-        isMuted: false,
-        isSolo: false,
-        clips: [clip],
-      });
+      let track = new Track(crypto.randomUUID(), "Melody", "instrument");
+
+      track.clips = [clip];
+      track.instrument = "supersaw";
+
+      addTrack(track);
     });
   }
 
