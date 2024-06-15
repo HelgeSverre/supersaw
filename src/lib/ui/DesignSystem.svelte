@@ -21,7 +21,7 @@
 
 <div class="flex flex-1">
   <div class="h-full w-full">
-    <div class="grid grid-cols-2 gap-x-8 gap-y-4 text-sm lg:grid-cols-4 p-2">
+    <div class="grid grid-cols-2 gap-x-8 gap-y-4 p-2 text-sm lg:grid-cols-4">
       <div class="flex flex-col gap-2">
         <h2 class="mb-4 px-2 py-1 text-xs font-light uppercase tracking-wide text-yellow-300">Colors</h2>
 
