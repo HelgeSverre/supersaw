@@ -4,6 +4,8 @@
   import { onMount } from "svelte";
   import { HeadphonesIcon, PowerIcon } from "lucide-svelte";
   import classNames from "classnames";
+  import { audioManager } from "../../../core/audio.js";
+  import { Ticker } from "../../../core/misc/ticker.ts";
 
   let oscShape = 50;
   let oscSemitone = 0;
@@ -151,17 +153,32 @@
     return led === offColor ? onColor : offColor;
   }
 
+  function playTickSound() {
+    if (!audioManager.audioContext) return;
+
+    let ticker = new Ticker(audioManager.audioContext, audioManager.mixer);
+    ticker.play();
+  }
+
   function randomlyBlink() {
     ledMidi = ledMidi === offColor ? onColor : offColor;
-
     setTimeout(() => randomlyBlink(), Math.floor(Math.random() * 100) + 100);
   }
 
   let powerOn = false;
 
+  let metronome = null;
+
   onMount(() => {
     // randomlyBlink();
+    // metronome = new Metronome(audioManager.audioContext);
   });
+
+  // $: if (audioContext && $presetIndex) {
+  //   if (powerOn) {
+  //     playTickSound();
+  //   }
+  // }
 </script>
 
 <aside class="mx-auto flex max-w-6xl flex-col bg-white">
@@ -210,7 +227,13 @@
               <Encoder size="48" min={0} step={1} max={presetsInBank.length - 1} bind:value={presetIndex} />
 
               <div class="inline-flex w-[48px] flex-col items-center justify-center gap-1 text-center">
-                <button on:clikc={toggleLed(ledMidi)} class="tiny-button"></button>
+                <button
+                  on:click={() => {
+                    playTickSound();
+                    toggleLed(ledMidi);
+                  }}
+                  class="tiny-button"
+                ></button>
                 <span class="block text-xs font-semibold leading-none">Play</span>
               </div>
             </div>

@@ -10,7 +10,7 @@
   import TextDisplay from "./TextDisplay.svelte";
   import Select from "./Input/Select.svelte";
   import ADSR from "./ADSR.svelte";
-  import { demoMidiFiles } from "../../core/midiDemos.ts";
+  import { demoMidiFiles } from "../../core/misc/midiDemos.ts";
   import Fader2 from "./Fader2.svelte";
   import Encoder from "./Encoder.svelte";
   import EQ from "../daw/EQ.svelte";
