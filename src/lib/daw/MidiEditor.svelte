@@ -10,7 +10,7 @@
     timeToPixels,
     updateClip,
     zoomByDelta,
-    zoomLevel
+    zoomLevel,
   } from "../../core/store.js";
   import { extractNoteEvents, getBpmFromMidi, isBlackKey, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
   import { CassetteTape, Eraser, Keyboard, PaintBucket, Pencil } from "phosphor-svelte";
@@ -34,7 +34,6 @@
   });
 
   $: if (notesForDisplay.length > 0) {
-    console.log("notes changed", notesForDisplay);
     saveMidiChanges();
   }
 
@@ -74,8 +73,11 @@
       return [...acc, ...midiEvents];
     }, []);
 
+    const newDuration = notesForDisplay.reduce((acc, curr) => Math.max(acc, curr.start + curr.duration), 0) / 1000;
+
     let clip = {
       ...$selectedClip,
+      duration: newDuration,
       midiData: {
         header: {
           format: 1,
@@ -507,15 +509,6 @@
     </div>
     <div class="flex flex-1 flex-col">
       <div class="mb-2 flex h-8 flex-row items-center justify-between gap-6 bg-dark-600 px-2">
-        <div class="flex flex-row">
-          <button
-            on:click={() => saveMidiChanges()}
-            class="text-accent-neon inline-block rounded-sm bg-dark-400 px-2 py-0.5 font-mono text-xs lowercase hover:bg-dark-200"
-          >
-            Save
-          </button>
-        </div>
-
         <div class="flex flex-row items-center gap-2">
           {#if $selectedClip}
             <CassetteTape class="text-accent-yellow/80" />
@@ -528,6 +521,7 @@
         <div class="ml-auto flex flex-row items-center gap-2">
           <div class="flex flex-row items-center gap-1 rounded-sm bg-dark-400 px-2">
             <button
+              title="Snap to grid"
               on:click={() => (snapToGrid = !snapToGrid)}
               class="py-0.5 text-xs {snapToGrid ? 'text-accent-yellow' : 'text-light-soft'}"
             >
