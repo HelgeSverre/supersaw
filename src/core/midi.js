@@ -200,6 +200,10 @@ export function frequencyToMidiNote(frequency) {
   return Math.round(12 * Math.log2(frequency / 440) + 69);
 }
 
+export function noteOctave(midiNoteNumber) {
+  return Math.floor(midiNoteNumber / 12) - 1;
+}
+
 export function noteLabel(midiNoteNumber) {
   const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   const octave = Math.floor(midiNoteNumber / 12) - 1;

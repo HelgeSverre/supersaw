@@ -4,6 +4,7 @@
   import { audioManager } from "../../core/audio.js";
 
   let audioElement;
+  let svgElement;
 
   let lowGain = 0;
   let lowFreq = 320;
@@ -20,9 +21,14 @@
   let audioContext;
   let audioSource;
   let lowFilter, midFilter, highFilter;
+  let centerY;
 
-  let linePath = "";
-  let circles = [];
+  let control1X;
+  let control2X;
+  let control1Y;
+  let control2Y;
+
+  let pathData = "";
 
   onMount(() => {
     audioContext = audioManager.audioContext;
@@ -66,54 +72,43 @@
     highFilter.frequency.setValueAtTime(highFreq, now);
     highFilter.Q.setValueAtTime(highQ, now);
 
-    drawEQLine();
+    updatePaths();
   }
 
-  function drawEQLine() {
-    const width = 360;
-    const height = 100;
+  let pathDataLow = "";
+  let pathDataHigh = "";
 
-    const points = [
-      { x: 0, y: height / 2 - lowGain },
-      { x: width / 2, y: height / 2 - midGain },
-      { x: width, y: height / 2 - highGain },
-    ];
+  function updatePaths() {
+    // Constants to define the SVG drawing space
+    const centerY = 200; // Midline of the EQ
 
-    // Calculate control points for Bezier curves based on Q value
-    const controlPoints = [
-      { x: width / 4, y: height / 2 - lowGain * lowQ },
-      { x: (width * 3) / 4, y: height / 2 - highGain * highQ },
-    ];
+    // Updating the Low Shelf Curve
+    let lowControlPointY = centerY - lowGain * 50; // Dynamic control point
+    pathDataLow = `M 50,${centerY} L 200,${centerY - lowGain * 100} C 300,${lowControlPointY} 400,${centerY - lowGain * 100} 500,${centerY}`;
 
-    linePath = `
-            M${points[0].x},${points[0].y}
-            C${controlPoints[0].x},${controlPoints[0].y},${controlPoints[0].x},${controlPoints[0].y},${points[1].x},${points[1].y}
-            C${controlPoints[1].x},${controlPoints[1].y},${controlPoints[1].x},${controlPoints[1].y},${points[2].x},${points[2].y}
-        `;
-
-    // Circles for visualizing peaks
-    circles = points.map((point) => {
-      return {
-        cx: point.x,
-        cy: point.y,
-        r: 5,
-      };
-    });
+    // Updating the High Shelf Curve
+    let highControlPointY = centerY - highGain * 50; // Dynamic control point
+    pathDataHigh = `M 500,${centerY} C 600,${highControlPointY} 700,${centerY - highGain * 100} 850,${centerY - highGain * 100} L 1000,${centerY}`;
   }
 </script>
 
-<div class="flex flex-col rounded border border-dark-100 bg-dark-700 p-2">
-  <h1>3-Pole Equalizer</h1>
-  <audio bind:this={audioElement} controls>
+<div class="flex flex-col gap-3 rounded border border-dark-400 bg-dark-700 p-2">
+  <audio bind:this={audioElement} controls class="w-full">
     <source src="/SoundHelix-Song-1.mp3" type="audio/mp3" />
   </audio>
 
-  <div class="my-3 flex items-center justify-center">
-    <svg id="frequencyResponse" width="200" height="100" class="border border-white">
-      <path d={linePath} stroke="black" stroke-width="2" fill="none" />
-      {#each circles as { cx, cy, r }}
-        <circle cx={cx} cy={cy} r={r} fill="red" />
+  <div class="h-24 rounded-md border border-dark-400 bg-dark-900">
+    <svg bind:this={svgElement} viewBox="0 0 1000 400" class="h-full w-full">
+      {#each [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as i}
+        <line x1={i * 100} y1="0" x2={i * 100} y2="400" stroke="#222" stroke-width="1" />
       {/each}
+
+      {#each [1, 2, 3, 4, 5, 6, 7, 8] as i}
+        <line x1="0" y1={i * 50} x2="1000" y2={i * 50} stroke="#444" stroke-width="1" />
+      {/each}
+
+      <path d={pathDataLow} fill="none" stroke="blue" stroke-width="2" />
+      <path d={pathDataHigh} fill="none" stroke="red" stroke-width="2" />
     </svg>
   </div>
 
@@ -122,14 +117,17 @@
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="lowGain">Low Gain</label>
         <Knob size="38" min="-30" max="30" bind:value={lowGain} on:input={updateFilters} />
+        <small class="text-xs">{lowGain}</small>
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="lowFreq">Low Freq</label>
         <Knob size="38" min="20" max="500" bind:value={lowFreq} on:input={updateFilters} />
+        <small class="text-xs">{lowFreq}</small>
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="lowQ">Low Q</label>
         <Knob size="38" min="0.1" max="10" step="0.1" bind:value={lowQ} on:input={updateFilters} />
+        <small class="text-xs">{lowQ}</small>
       </div>
     </div>
 
@@ -137,14 +135,17 @@
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="midGain">Mid Gain</label>
         <Knob size="38" min="-30" max="30" bind:value={midGain} on:input={updateFilters} />
+        <small class="text-xs">{midGain}</small>
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="midFreq">Mid Freq</label>
         <Knob size="38" min="500" max="5000" bind:value={midFreq} on:input={updateFilters} />
+        <small class="text-xs">{midFreq}</small>
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="midQ">Mid Q</label>
         <Knob size="38" min="0.1" max="10" step="0.1" bind:value={midQ} on:input={updateFilters} />
+        <small class="text-xs">{midQ}</small>
       </div>
     </div>
 
@@ -152,21 +153,18 @@
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="highGain">High Gain</label>
         <Knob size="38" min="-30" max="30" bind:value={highGain} on:input={updateFilters} />
+        <small class="text-xs">{highGain}</small>
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="highFreq">High Freq</label>
         <Knob size="38" min="2000" max="12000" bind:value={highFreq} on:input={updateFilters} />
+        <small class="text-xs">{highFreq}</small>
       </div>
       <div class="flex w-full flex-col items-center justify-center text-xs text-light-soft">
         <label class="text-center text-xs" for="highQ">High Q</label>
         <Knob size="38" min="0.1" max="10" step="0.1" bind:value={highQ} on:input={updateFilters} />
+        <small class="text-xs">{highQ}</small>
       </div>
     </div>
   </div>
 </div>
-
-<style>
-  svg {
-    width: 100%;
-  }
-</style>
