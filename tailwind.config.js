@@ -26,6 +26,7 @@ export default {
           soft: "rgb(var(--text-soft) / <alpha-value>)",
         },
         accent: {
+          neon: "rgb(var(--accent-neon) / <alpha-value>)",
           blue: "rgb(var(--accent-blue) / <alpha-value>)",
           purple: "rgb(var(--accent-purple) / <alpha-value>)",
           green: "rgb(var(--accent-green) / <alpha-value>)",
