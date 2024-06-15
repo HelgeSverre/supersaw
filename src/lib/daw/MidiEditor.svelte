@@ -2,16 +2,19 @@
   import { createEventDispatcher, onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
   import {
+    bpm,
     pixelsPerBeat,
     pixelsToTime,
     playbackState,
     selectedClip,
     timeToPixels,
+    updateClip,
     zoomByDelta,
-    zoomLevel,
+    zoomLevel
   } from "../../core/store.js";
-  import { extractNoteEvents, isBlackKey, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
+  import { extractNoteEvents, getBpmFromMidi, isBlackKey, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
   import { CassetteTape, Eraser, Keyboard, PaintBucket, Pencil } from "phosphor-svelte";
+  import { TimeConverter } from "../../core/time";
 
   const dispatch = createEventDispatcher();
 
@@ -29,6 +32,71 @@
       scrollToFirstNote();
     }
   });
+
+  $: if (notesForDisplay.length > 0) {
+    console.log("notes changed", notesForDisplay);
+    saveMidiChanges();
+  }
+
+  function saveMidiChanges() {
+    const converter = new TimeConverter($bpm, 96);
+
+    let midiEvents = [];
+    let sortedEvents = notesForDisplay.sort((a, b) => a.start - b.start);
+
+    sortedEvents.reduce((acc, curr, index) => {
+      let deltaTime = 0;
+
+      if (index > 0) {
+        // Time between the current note start time and the previous note end time
+        let prev = sortedEvents[index - 1];
+        let prevEnd = prev.start + prev.duration;
+
+        deltaTime = converter.msToTicks(curr.start - prevEnd);
+      }
+
+      midiEvents.push({
+        type: "noteOn",
+        velocity: curr.velocity,
+        channel: 1, // TODO: configurable
+        deltaTime: deltaTime,
+        noteNumber: curr.note,
+      });
+
+      midiEvents.push({
+        type: "noteOff",
+        velocity: curr.velocity,
+        channel: 1, // TODO: configurable
+        deltaTime: converter.msToTicks(curr.duration),
+        noteNumber: curr.note,
+      });
+
+      return [...acc, ...midiEvents];
+    }, []);
+
+    let clip = {
+      ...$selectedClip,
+      midiData: {
+        header: {
+          format: 1,
+          numTracks: 1,
+          ticksPerBeat: 96,
+        },
+        tracks: [
+          [
+            {
+              type: "setTempo",
+              microsecondsPerBeat: converter.getMicrosecondsPerBeat(), // Set microseconds per beat based on BPM
+              deltaTime: 0,
+            },
+            ...midiEvents,
+          ],
+        ],
+      },
+    };
+
+    updateClip($selectedClip.id, clip);
+  }
 
   function handleZoom(event) {
     if (event.shiftKey) {
@@ -122,7 +190,7 @@
 
   function scrollToFirstNote() {
     if (notesForDisplay.length > 0) {
-      const offset = 200; // Padding from the top, eyeballed value.
+      const offset = 400; // Padding from the top, eyeballed value.
       const firstNoteTop = calculateNoteTopPosition(notesForDisplay[0]);
       noteArea.scrollTop = Math.max(0, firstNoteTop - offset);
     }
@@ -164,18 +232,81 @@
     audioManager.getInstrument(previewInstrument).stopNote(hz);
   }
 
+  function findNoteBy(noteId) {
+    return notesForDisplay.find((note) => note.uuid === noteId);
+  }
+
   function deleteNoteById(noteId) {
     notesForDisplay = notesForDisplay.filter((note) => note.uuid !== noteId);
   }
 
   function handleKeyDown(event) {
+    // Delete selected notes
     if (event.key === "Backspace" || event.key === "Delete") {
       notesForDisplay = notesForDisplay.filter((note) => !selectedNotes.includes(note.uuid));
     }
 
-    // Duplicate note with CMD + B
+    // Select all notes
+    if (event.metaKey && event.key === "a") {
+      event.preventDefault();
+      selectedNotes = notesForDisplay.map((note) => note.uuid);
+      return;
+    }
+
+    // Move selected notes up/down
+    if (event.shiftKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+      if (selectedNotes.length === 0) {
+        return;
+      }
+
+      let delta = event.key === "ArrowUp" ? 1 : -1;
+
+      // Move by whole octave if CMD is pressed
+      if (event.metaKey) {
+        delta = delta * 12;
+      }
+
+      notesForDisplay = notesForDisplay.map((note) => {
+        if (selectedNotes.includes(note.uuid)) {
+          return {
+            ...note,
+            note: Math.min(127, note.note + delta),
+            label: noteLabel(Math.min(127, note.note + delta)),
+          };
+        }
+
+        return note;
+      });
+
+      return;
+    }
+
+    // Duplicate  note with CMD + B
     if (event.metaKey && event.key === "b") {
-      if (selectedNotes.length) {
+      if (selectedNotes.length === 1) {
+        let note = findNoteBy(selectedNotes[selectedNotes.length - 1]);
+
+        if (!note) {
+          return;
+        }
+
+        const newId = crypto.randomUUID();
+        selectedNotes = [...selectedNotes, newId];
+        notesForDisplay = [
+          ...notesForDisplay,
+          {
+            uuid: newId,
+            start: note.start + note.duration,
+            label: note.label,
+            duration: note.duration,
+            note: note.note,
+            velocity: note.velocity,
+          },
+        ];
+        return;
+      }
+
+      if (selectedNotes.length > 1) {
         let noteId = selectedNotes[selectedNotes.length - 1];
         let note = notesForDisplay.find((note) => note.uuid === noteId);
 
@@ -199,6 +330,7 @@
       }
     }
 
+    // Open debug menu with D
     if (event.key === "d") {
       debug = !debug;
     }
@@ -375,6 +507,15 @@
     </div>
     <div class="flex flex-1 flex-col">
       <div class="mb-2 flex h-8 flex-row items-center justify-between gap-6 bg-dark-600 px-2">
+        <div class="flex flex-row">
+          <button
+            on:click={() => saveMidiChanges()}
+            class="text-accent-neon inline-block rounded-sm bg-dark-400 px-2 py-0.5 font-mono text-xs lowercase hover:bg-dark-200"
+          >
+            Save
+          </button>
+        </div>
+
         <div class="flex flex-row items-center gap-2">
           {#if $selectedClip}
             <CassetteTape class="text-accent-yellow/80" />
@@ -467,31 +608,68 @@
 
         <!-- Debug -->
         {#if debug}
-          <div class="absolute inset-y-0 left-0 w-[900px] overflow-y-scroll border-dark-800 bg-dark-600">
+          <div
+            class="absolute inset-y-0 left-0 min-w-[400px] max-w-[900px] overflow-y-scroll border-dark-800 bg-dark-600"
+          >
             <div class="flex-1">
               <div class="flex h-full flex-col overflow-y-scroll">
+                <div class="mb-6 grid grid-cols-4 gap-2">
+                  <div class="col-span-full flex flex-col gap-1 p-2">
+                    <div class="text-xs text-light-soft">BPM</div>
+                    <div class="text-light">
+                      <pre class="border border-dark-200 bg-dark-500 p-2 text-xs">{JSON.stringify(
+                          getBpmFromMidi($selectedClip?.midiData),
+                          null,
+                          2,
+                        )}</pre>
+                    </div>
+                  </div>
+
+                  <div class="col-span-full flex flex-col gap-1 p-2">
+                    <div class="text-xs text-light-soft">Header</div>
+                    <div class="text-light">
+                      <pre class="border border-dark-200 bg-dark-500 p-2 text-xs">{JSON.stringify(
+                          $selectedClip?.midiData.header,
+                          null,
+                          2,
+                        )}</pre>
+                    </div>
+                  </div>
+
+                  <div class="col-span-full flex flex-col gap-1 p-2">
+                    <div class="text-xs text-light-soft">Tracks</div>
+                    <div class="text-light">
+                      <pre class="border border-dark-200 bg-dark-500 p-2 text-xs">{JSON.stringify(
+                          $selectedClip?.midiData.tracks,
+                          null,
+                          2,
+                        )}</pre>
+                    </div>
+                  </div>
+                </div>
+
                 <table class="text-left">
                   <thead>
                     <tr>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Start</th>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Duration</th>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Velocity</th>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Note Num</th>
-                      <th class="whitespace-nowrap px-1 font-mono text-xs">Label</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Start</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Duration</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Velocity</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Note Num</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Label</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody class="divide-y divide-dark-500">
                     {#each notesForDisplay as event}
-                      <tr>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">
+                      <tr class="hover:bg-dark-200">
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">
                           {(event.start / 1000).toFixed(3)}s
                         </td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">
                           {(event.duration / 1000).toFixed(3)}s
                         </td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.velocity}</td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.note}</td>
-                        <td class="whitespace-nowrap px-1 font-mono text-xs">{event.label}</td>
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.velocity}</td>
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.note}</td>
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.label}</td>
                       </tr>
                     {/each}
                   </tbody>
