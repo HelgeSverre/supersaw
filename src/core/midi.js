@@ -100,7 +100,7 @@ export function extractNoteEvents(midi) {
     track.forEach((event) => {
       // Timing
       wallTime += event.deltaTime;
-      wallTimeInMilliseconds = ticksToMilliseconds(wallTime, midi.header.ticksPerBeat, get(bpm));
+      wallTimeInMilliseconds = ticksToMilliseconds(wallTime, midi.header.ticksPerBeat, parseInt(get(bpm)));
 
       if (event.type === "noteOn") {
         notes.push({
@@ -116,7 +116,6 @@ export function extractNoteEvents(midi) {
 
       if (event.type === "noteOff") {
         let note = notes
-
           .filter((note) => note.start < wallTimeInMilliseconds && note.duration === 0)
           .find((note) => note.note === event.noteNumber);
 
