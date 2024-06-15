@@ -23,6 +23,8 @@
   import Timeline from "./lib/daw/Timeline.svelte";
   import Blofeld from "./lib/daw/instruments/Blofeld.svelte";
   import { Track } from "./core/track.js";
+  import Piano from "./lib/daw/Piano.svelte";
+  import Kick from "./lib/daw/instruments/Kick.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -80,26 +82,20 @@
       synthDialog.showModal();
     }
 
-    // Shift + 1 - Switch to timeline view
-    if (event.shiftKey && keyCode === 49) {
-      switchView("timeline");
-    }
+    // prettier-ignore
+    const keyToViewMap = {
+      49: "timeline",   // Shift + 1
+      50: "midi",       // Shift + 2
+      51: "playground", // Shift + 3
+      52: "blofeld",    // Shift + 4
+      53: "blank",      // Shift + 5
+      54: "piano",      // Shift + 6
+      55: "kick"        // Shift + 7
+    };
 
-    // Shift + 2 - Switch to midi view
-    if (event.shiftKey && keyCode === 50) {
-      switchView("midi");
+    if (event.shiftKey && keyToViewMap[keyCode]) {
+      switchView(keyToViewMap[keyCode]);
     }
-
-    // Shift + 3 - Switch to midi view
-    if (event.shiftKey && keyCode === 51) {
-      switchView("playground");
-    }
-
-    // Shift + 4, wip
-    if (event.shiftKey && keyCode === 52) {
-      switchView("wip");
-    }
-
     // Arrow keys - Move playhead left/right by 100 ms, if shift, move by 1 second
     if (keyCode === 37) {
       // Left arrow
@@ -157,10 +153,22 @@
           </section>
         {:else if $currentView === "playground"}
           <DesignSystem />
-        {:else if $currentView === "wip"}
+        {:else if $currentView === "blofeld"}
           <div>
             <Blofeld />
           </div>
+        {:else if $currentView === "piano"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <Piano />
+          </section>
+        {:else if $currentView === "kick"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <Kick />
+          </section>
+        {:else if $currentView === "blank"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <div class="text-center text-sm text-dark-100">"Silence is a source of great strength." — Lao Tzu</div>
+          </section>
         {:else}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <div class="text-center text-sm text-dark-100">No tracks</div>
