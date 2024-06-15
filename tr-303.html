@@ -3,122 +3,207 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TB-303 Emulator</title>
+    <title>TB-303 Synth Emulator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.4/dist/tailwind.min.css" rel="stylesheet" />
     <style>
       body {
-        font-family: Arial, sans-serif;
-        background: #333;
-        color: #fff;
-        padding: 20px;
+        background: #282c34;
+        color: white;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       }
 
-      input,
-      button {
-        margin-top: 10px;
+      .slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 15px;
+        border-radius: 5px;
+        background: #4caf50;
+        outline: none;
+        opacity: 0.7;
+        -webkit-transition: 0.2s;
+        transition: opacity 0.2s;
+      }
+
+      .slider:hover {
+        opacity: 1;
+      }
+
+      .slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .slider::-moz-range-thumb {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: #fff;
+        cursor: pointer;
       }
     </style>
   </head>
-  <body>
-    <h1>TB-303 Synth Emulator</h1>
-    <!doctype html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>TB-303 Clone</title>
-      </head>
-      <body>
-        <h1>TB-303 Clone</h1>
-        <button onclick="playNote()">Play Note</button>
-        <button onclick="stopNote()">Stop Note</button>
+  <body class="p-6">
+    <h1 class="mb-4 text-3xl">TB-303 Synth Emulator</h1>
+    <button class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700" onclick="synth.playPattern()">
+      Play Pattern
+    </button>
+    <button class="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700" onclick="synth.stopPattern()">
+      Stop Pattern
+    </button>
 
-        <script src="tr-303-clone.js"></script>
-      </body>
-    </html>
+    <div class="mt-4">
+      <label for="cutoff">Filter Cutoff Frequency:</label>
+      <input
+        type="range"
+        id="cutoff"
+        class="slider"
+        min="100"
+        max="5000"
+        value="1200"
+        step="10"
+        oninput="synth.updateFilterFrequency(this.value)"
+      />
+      <span id="cutoffValue">1200 Hz</span>
+    </div>
+    <div class="mt-4">
+      <label for="resonance">Filter Resonance (Q):</label>
+      <input
+        type="range"
+        id="resonance"
+        class="slider"
+        min="1"
+        max="20"
+        value="10"
+        step="1"
+        oninput="synth.updateResonance(this.value)"
+      />
+      <span id="resonanceValue">10</span>
+    </div>
+    <div class="mt-4">
+      <label for="volume">Master Volume:</label>
+      <input
+        type="range"
+        id="volume"
+        class="slider"
+        min="0"
+        max="1"
+        value="0.9"
+        step="0.01"
+        oninput="synth.updateVolume(this.value)"
+      />
+      <span id="volumeValue">90%</span>
+    </div>
 
     <script>
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const synth = (() => {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let oscillator, filter, envelope, gainNode;
+        let currentStep = 0;
+        let isPlaying = false;
+        const tempo = 200;
+        const pattern = [65.41, 65.41, 65.41, 65.41, 65.41, 98.0, 87.31];
+        const intervalTime = 60 / tempo / 2;
 
-      let oscillator, filter, envelope, gainNode;
-      let currentStep = 0;
-      let isPlaying = false;
-      const tempo = 200; // BPM
-      const pattern = [65.41, 65.41, 65.41, 65.41, 65.41, 98.0, 87.31];
-      const intervalTime = 60 / tempo / 2; // time for each 16th note
-
-      function createOscillator(frequency) {
-        oscillator = audioContext.createOscillator();
-        oscillator.type = "sawtooth";
-        oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-        oscillator.start();
-      }
-
-      function createFilter() {
-        filter = audioContext.createBiquadFilter();
-        filter.type = "lowpass";
-        filter.frequency.setValueAtTime(1000, audioContext.currentTime);
-        filter.Q.setValueAtTime(8, audioContext.currentTime); // Emulate TB-303 resonance
-      }
-
-      function createEnvelope() {
-        envelope = audioContext.createGain();
-        envelope.gain.setValueAtTime(0.00001, audioContext.currentTime);
-        envelope.gain.exponentialRampToValueAtTime(1, audioContext.currentTime + 0.01);
-        envelope.gain.exponentialRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
-        envelope.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
-      }
-
-      function createGainNode() {
-        gainNode = audioContext.createGain();
-        gainNode.gain.setValueAtTime(0.9, audioContext.currentTime);
-      }
-
-      function playNote() {
-        if (currentStep >= pattern.length) {
-          currentStep = 0;
+        function createOscillator(frequency) {
+          oscillator = audioContext.createOscillator();
+          oscillator.type = "sawtooth";
+          oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+          oscillator.start();
+          return oscillator;
         }
 
-        createOscillator(pattern[currentStep]); // Get the frequency from the pattern
-        createFilter();
-        createEnvelope();
-        createGainNode();
-
-        oscillator.connect(filter);
-        filter.connect(envelope);
-        envelope.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        stopNoteAfterDuration();
-
-        currentStep++;
-      }
-
-      setInterval(() => startPattern(), intervalTime); // Start the pattern
-
-      function stopNoteAfterDuration() {
-        envelope.gain.cancelScheduledValues(audioContext.currentTime);
-        envelope.gain.setValueAtTime(envelope.gain.value, audioContext.currentTime);
-        envelope.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
-        oscillator.stop(audioContext.currentTime + 0.1);
-      }
-
-      function startPattern() {
-        if (!isPlaying) {
-          isPlaying = true;
-          playPattern();
+        function createFilter(frequency, q) {
+          filter = audioContext.createBiquadFilter();
+          filter.type = "lowpass";
+          filter.frequency.setValueAtTime(frequency, audioContext.currentTime);
+          filter.Q.setValueAtTime(q, audioContext.currentTime);
+          return filter;
         }
-      }
 
-      function playPattern() {
-        if (isPlaying) {
-          playNote();
-          setTimeout(playPattern, intervalTime * 1000); // Schedule the next note
+        function createEnvelope() {
+          envelope = audioContext.createGain();
+          envelope.gain.setValueAtTime(0.00001, audioContext.currentTime);
+          envelope.gain.exponentialRampToValueAtTime(1, audioContext.currentTime + 0.01);
+          envelope.gain.exponentialRampToValueAtTime(0.3, audioContext.currentTime + 0.2);
+          envelope.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 1);
+          return envelope;
         }
-      }
 
-      function stopPattern() {
-        isPlaying = false;
-      }
+        function createGainNode(volume) {
+          gainNode = audioContext.createGain();
+          gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+          return gainNode;
+        }
+
+        function playNote() {
+          const freq = pattern[currentStep % pattern.length];
+          const cutoff = parseInt(document.getElementById("cutoff").value);
+          const q = parseInt(document.getElementById("resonance").value);
+          const volume = parseFloat(document.getElementById("volume").value);
+
+          const osc = createOscillator(freq);
+          const filt = createFilter(cutoff, q);
+          const env = createEnvelope();
+          const gain = createGainNode(volume);
+
+          osc.connect(filt);
+          filt.connect(env);
+          env.connect(gain);
+          gain.connect(audioContext.destination);
+
+          setTimeout(() => {
+            osc.stop();
+            currentStep++;
+          }, intervalTime * 1000);
+        }
+
+        function playPattern() {
+          if (!isPlaying) {
+            isPlaying = true;
+            setInterval(() => {
+              if (isPlaying) playNote();
+            }, intervalTime * 1000);
+          }
+        }
+
+        function stopPattern() {
+          isPlaying = false;
+        }
+
+        function updateFilterFrequency(value) {
+          if (filter) {
+            filter.frequency.setValueAtTime(value, audioContext.currentTime);
+          }
+          document.getElementById("cutoffValue").textContent = value + " Hz";
+        }
+
+        function updateResonance(value) {
+          if (filter) {
+            filter.Q.setValueAtTime(value, audioContext.currentTime);
+          }
+          document.getElementById("resonanceValue").textContent = value;
+        }
+
+        function updateVolume(value) {
+          if (gainNode) {
+            gainNode.gain.setValueAtTime(value, audioContext.currentTime);
+          }
+          document.getElementById("volumeValue").textContent = Math.round(value * 100) + "%";
+        }
+
+        return {
+          playPattern,
+          stopPattern,
+          updateFilterFrequency,
+          updateResonance,
+          updateVolume,
+        };
+      })();
     </script>
   </body>
 </html>
