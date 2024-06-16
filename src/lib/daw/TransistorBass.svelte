@@ -372,7 +372,7 @@
 
       <div class="mx-auto flex w-full flex-row items-center justify-center gap-12">
         <div class="flex-1">
-          <div class="grid grid-cols-7 gap-3 rounded-lg bg-gray-200 p-4">
+          <div class="grid grid-cols-8 gap-3 rounded-lg bg-gray-200 p-4">
             <div class="flex flex-col gap-1 text-xs leading-none">
               <span class="text-light-soft">Tempo</span>
               <span class="font-mono font-bold text-dark-700">{tempo?.toFixed(2)}</span>
