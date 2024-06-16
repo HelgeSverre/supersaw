@@ -29,8 +29,9 @@
   let envMod = 0.5; // Envelope modulation depth
   let decay = 0.2; // Decay time
   let accentIntensity = 0.5; // Intensity of the accent
+  let distortionAmount = 0;
 
-  let oscillator, filter, envelope, gainNode;
+  let oscillator, filter, envelope, distortion, gainNode;
 
   let selectedPattern;
   let elapsedPlayTime = 0;
@@ -138,11 +139,29 @@
     gainNode = audioContext.createGain();
     gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
 
+    distortion = audioContext.createWaveShaper();
+    distortion.curve = makeDistortionCurve(0); // 400 is a sample value for amount of distortion
+    distortion.oversample = "4x"; // Higher quality of the distortion
+
     // Connect the audio nodes
     oscillator.connect(filter);
     filter.connect(envelope);
-    envelope.connect(gainNode);
+    envelope.connect(distortion);
+    distortion.connect(gainNode);
     gainNode.connect(audioManager.mixer);
+  }
+
+  function makeDistortionCurve(amount) {
+    let n_samples = 44100 * 16,
+      curve = new Float32Array(n_samples),
+      deg = Math.PI / 180,
+      i = 0,
+      x;
+    for (; i < n_samples; ++i) {
+      x = (i * 2) / n_samples - 1;
+      curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
+    }
+    return curve;
   }
 
   function playNote() {
@@ -151,36 +170,6 @@
     let index = currentStep % pattern.length;
     const step = pattern[index];
     const nextFrequency = step.frequency * Math.pow(2, tuning / 1200);
-
-    // Duration of a quarter note in seconds
-    let noteDuration = 60 / tempo / 4;
-
-    // if (step.glide && currentStep > 0) {
-    //   // Use a fraction of the note duration for the glide effect.
-    //   let glideDuration = noteDuration * 0.75; // Glide over half the duration of a note
-    //   let glideEndTime = audioContext.currentTime + glideDuration;
-    //   oscillator.frequency.linearRampToValueAtTime(nextFrequency, glideEndTime);
-    // } else {
-    //   oscillator.frequency.setValueAtTime(nextFrequency, audioContext.currentTime);
-    // }
-    //
-    // envelope.gain.cancelScheduledValues(audioContext.currentTime);
-    // envelope.gain.setValueAtTime(1, audioContext.currentTime);
-    // envelope.gain.exponentialRampToValueAtTime(0.1, audioContext.currentTime + decay);
-    // envelope.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + decay + 0.01);
-    //
-    // // Modulate the filter's cutoff based on the envelope modulator
-    // let baseCutoff = cutoff;
-    // let modulatedCutoff = baseCutoff + envMod * 2000; // `2000` is an arbitrary scale factor for demonstration
-    // filter.frequency.setValueAtTime(baseCutoff, audioContext.currentTime);
-    // filter.frequency.linearRampToValueAtTime(modulatedCutoff, audioContext.currentTime + decay);
-    //
-    // // Adjust resonance based on whether an accent is applied
-    // if (step.accent) {
-    //   filter.Q.setValueAtTime(resonance * (1 + accentIntensity), audioContext.currentTime);
-    // } else {
-    //   filter.Q.setValueAtTime(resonance, audioContext.currentTime);
-    // }
 
     if (step.glide && currentStep > 0) {
       oscillator.frequency.linearRampToValueAtTime(nextFrequency, audioContext.currentTime + 60 / tempo / 8);
@@ -255,6 +244,9 @@
   $: if (gainNode) {
     gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
   }
+  $: if (distortionAmount) {
+    distortion.curve = makeDistortionCurve(distortionAmount);
+  }
 
   $: patternIndex = currentStep % pattern.length;
 </script>
@@ -265,16 +257,6 @@
       <div class="flex flex-row items-center justify-center gap-1">
         <SmileySticker size="24" weight="duotone" color="gray" />
         <span class="font-mono text-xs leading-tight tracking-tighter text-gray-500">Roland TR-303 Emulation</span>
-      </div>
-
-      <div class="flex flex-row items-center justify-center gap-1">
-        <Metronome size="24" weight="duotone" color="gray" />
-        <span class="font-mono text-xs leading-tight tracking-tighter text-gray-500">
-          {currentStep} -- {patternIndex + 1} / {pattern.length}
-          --
-          {tempo} BPM --
-          {60 / tempo / 4} s /{elapsedPlayTime} s
-        </span>
       </div>
 
       <div class="flex flex-row items-center gap-3">
@@ -345,7 +327,16 @@
               <Encoder size="42" bind:value={accentIntensity} min="0" max="1" step="0.01" />
             </div>
           </div>
+          <div class="flex flex-col items-center justify-center gap-1 text-center">
+            <label class="whitespace-nowrap text-xs uppercase tracking-tight text-light-soft" for="distortion"
+              >Distortion</label
+            >
+            <div class="flex flex-col items-center justify-center">
+              <Encoder size="42" bind:value={distortionAmount} min="0" max="500" step="0.1" />
+            </div>
+          </div>
         </div>
+
         <div class="flex flex-col items-start justify-between gap-3">
           <div class="whitespace-nowrap text-2xl font-light leading-none tracking-tight text-black opacity-70">
             Bass Line
@@ -409,6 +400,10 @@
             <div class="flex flex-col gap-1 text-xs leading-none">
               <span class="text-light-soft">Accent</span>
               <span class="font-mono font-bold text-dark-700">{accentIntensity?.toFixed(2)}</span>
+            </div>
+            <div class="flex flex-col gap-1 text-xs leading-none">
+              <span class="text-light-soft">Distortion</span>
+              <span class="font-mono font-bold text-dark-700">{distortionAmount?.toFixed(2)}</span>
             </div>
           </div>
         </div>
