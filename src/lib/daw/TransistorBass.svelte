@@ -508,13 +508,6 @@
       </div>
     </div>
   </div>
-
-  <img
-    src="https://mediadl.musictribe.com/media/PLM/data/images/products/P0DTD/2000Wx2000H/TD-3-SR_P0DTD_Top_XL.png"
-    alt=""
-    class="w-full"
-  />
-  <img src="/assets/tb303.jpg" alt="" class="w-full" />
 </main>
 
 <style>
