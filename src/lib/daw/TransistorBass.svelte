@@ -4,7 +4,7 @@
   import Encoder from "../ui/Encoder.svelte";
   import LED from "../ui/LED.svelte";
   import { frequencyToMidiNote, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
-  import { Metronome, Sliders, SmileySticker, WaveSawtooth, WaveSquare, WaveTriangle } from "phosphor-svelte";
+  import { Sliders, SmileySticker, WaveSawtooth, WaveSquare, WaveTriangle } from "phosphor-svelte";
   import classNames from "classnames";
 
   let audioContext;
@@ -93,6 +93,19 @@
         { frequency: midiNoteToFrequency(67), accent: false, glide: false },
         { frequency: midiNoteToFrequency(69), accent: true, glide: true },
         { frequency: midiNoteToFrequency(71), accent: false, glide: false },
+      ],
+    },
+    {
+      name: "Lower",
+      steps: [
+        { frequency: midiNoteToFrequency(60 - 12 * 2), accent: true, glide: false },
+        { frequency: midiNoteToFrequency(60 - 12 * 2), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(62 - 12 * 2), accent: true, glide: false },
+        { frequency: midiNoteToFrequency(64 - 12 * 2), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(65 - 12 * 2), accent: true, glide: true },
+        { frequency: midiNoteToFrequency(67 - 12 * 2), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(69 - 12 * 2), accent: true, glide: true },
+        { frequency: midiNoteToFrequency(71 - 12 * 2), accent: false, glide: false },
       ],
     },
     {
@@ -233,7 +246,7 @@
   $: if (oscillator) {
     const step = pattern[currentStep % pattern.length];
     oscillator.type = waveform;
-    // oscillator.frequency.setValueAtTime(step.frequency * Math.pow(2, tuning / 1200), audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(step.frequency * Math.pow(2, tuning / 1200), audioContext.currentTime);
   }
 
   $: if (filter) {
@@ -316,7 +329,7 @@
           <div class="flex flex-col items-center justify-center gap-1 text-center">
             <label class="whitespace-nowrap text-xs uppercase tracking-tight text-light-soft" for="decay">Decay</label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="42" bind:value={decay} min="0.1" max="2" step="0.01" />
+              <Encoder size="42" bind:value={decay} min="0.01" max="2" step="0.01" />
             </div>
           </div>
           <div class="flex flex-col items-center justify-center gap-1 text-center">
@@ -332,7 +345,7 @@
               >Distortion</label
             >
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="42" bind:value={distortionAmount} min="0" max="500" step="0.1" />
+              <Encoder size="42" bind:value={distortionAmount} min="0" max="200" step="1" />
             </div>
           </div>
         </div>
