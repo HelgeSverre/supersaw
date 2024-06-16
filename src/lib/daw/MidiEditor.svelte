@@ -3,17 +3,18 @@
   import { audioManager } from "../../core/audio.js";
   import {
     bpm,
-    setLoopRegion,
     enableLooping,
     expandLoopRegion,
     pixelsPerBeat,
     pixelsToTime,
     playbackState,
+    seekToTime,
     selectedClip,
+    setLoopRegion,
     timeToPixels,
     updateClip,
     zoomByDelta,
-    zoomLevel
+    zoomLevel,
   } from "../../core/store.js";
   import {
     extractNoteEvents,
@@ -21,7 +22,7 @@
     getBpmFromMidi,
     isBlackKey,
     midiNoteToFrequency,
-    noteLabel
+    noteLabel,
   } from "../../core/midi.js";
   import { Biohazard, CassetteTape, Keyboard } from "phosphor-svelte";
   import { TimeConverter } from "../../core/time";
@@ -71,7 +72,7 @@
         velocity: curr.velocity,
         channel: 1, // TODO: configurable
         deltaTime: deltaTime,
-        noteNumber: curr.note
+        noteNumber: curr.note,
       });
 
       midiEvents.push({
@@ -79,7 +80,7 @@
         velocity: curr.velocity,
         channel: 1, // TODO: configurable
         deltaTime: converter.msToTicks(curr.duration),
-        noteNumber: curr.note
+        noteNumber: curr.note,
       });
 
       return [...acc, ...midiEvents];
@@ -94,19 +95,19 @@
         header: {
           format: 1,
           numTracks: 1,
-          ticksPerBeat: 96
+          ticksPerBeat: 96,
         },
         tracks: [
           [
             {
               type: "setTempo",
               microsecondsPerBeat: converter.getMicrosecondsPerBeat(), // Set microseconds per beat based on BPM
-              deltaTime: 0
+              deltaTime: 0,
             },
-            ...midiEvents
-          ]
-        ]
-      }
+            ...midiEvents,
+          ],
+        ],
+      },
     };
 
     updateClip($selectedClip.id, clip);
@@ -197,14 +198,13 @@
         label: noteLabel(note),
         duration: 100,
         note: note,
-        velocity: 100
-      }
+        velocity: 100,
+      },
     ];
   }
 
-  function scrollToFirstNote() {
+  function scrollToFirstNote(offset = 400) {
     if (notesForDisplay.length > 0) {
-      const offset = 400; // Padding from the top, eyeballed value.
       const firstNoteTop = calculateNoteTopPosition(notesForDisplay[0]);
       noteArea.scrollTop = Math.max(0, firstNoteTop - offset);
     }
@@ -231,7 +231,7 @@
     "Locrian": [0, 1, 3, 5, 6, 8, 10],
     "Harmonic Minor": [0, 2, 3, 5, 7, 8, 11],
     "Melodic Minor": [0, 2, 3, 5, 7, 9, 11],
-    "Whole Tone": [0, 2, 4, 6, 8, 10]
+    "Whole Tone": [0, 2, 4, 6, 8, 10],
   };
 
   function isNoteInScale(noteNumber, scaleName) {
@@ -255,7 +255,7 @@
     { label: "1/4 beat", value: 1 / 16 }, // Quarter of a beat, 1/16 of a bar
     { label: "1/8 beat", value: 1 / 32 }, // Eighth of a beat, 1/32 of a bar
     { label: "1/16 beat", value: 1 / 64 }, // Sixteenth of a beat, 1/64 of a bar
-    { label: "1/32 beat", value: 1 / 128 } // Thirty-second of a beat, 1/128 of a bar
+    { label: "1/32 beat", value: 1 / 128 }, // Thirty-second of a beat, 1/128 of a bar
   ];
 
   let debug = false;
@@ -311,7 +311,7 @@
           return {
             ...note,
             note: Math.min(127, note.note + delta),
-            label: noteLabel(Math.min(127, note.note + delta))
+            label: noteLabel(Math.min(127, note.note + delta)),
           };
         }
 
@@ -340,8 +340,8 @@
             label: note.label,
             duration: note.duration,
             note: note.note,
-            velocity: note.velocity
-          }
+            velocity: note.velocity,
+          },
         ];
         return;
       }
@@ -364,8 +364,8 @@
             label: note.label,
             duration: note.duration,
             note: note.note,
-            velocity: note.velocity
-          }
+            velocity: note.velocity,
+          },
         ];
       }
     }
@@ -426,7 +426,7 @@
           ...note,
           note: newPitch,
           label: noteLabel(newPitch),
-          start: newStartTime
+          start: newStartTime,
         };
       });
     }
@@ -494,7 +494,7 @@
 
         return {
           ...note,
-          duration: newDurationMs
+          duration: newDurationMs,
         };
       });
     }
@@ -515,15 +515,32 @@
 
     // Middle C
     const generator = new MusicGenerator(midiNoteToFrequency(60), $bpm);
-    let bars = 4;
+    let bars = 8;
 
+    // Start at begining
+    seekToTime(0);
+
+    // Loop the pattern
     enableLooping();
     setLoopRegion(0, 0);
     expandLoopRegion(bars * 4);
 
-    let melody = generator.generateHardstyleMelodyPentatonicSyncopation(bars);
-    let bassline = generator.generateHardstyleBasslineSimple(melody, bars);
-    let kicks = generator.generateHardstyleKick(bars);
+    let roots = [
+      // "B3", "A3", "G3", "A3",
+      // "B3", "A3", "B3", "D4",
+      "A4",
+      "G4",
+      "F4",
+      "G4",
+      "A4",
+      "G4",
+      "F4",
+      "G4",
+    ];
+
+    let melody = generator.generateMelodyWithMotif(bars, roots);
+    let bassline = generator.generateTripletBassline(bars, roots);
+    // let kicks = generator.generateHardstyleKick(bars);
 
     let melodyNotes = melody.map((note, index) => {
       return {
@@ -533,7 +550,7 @@
         note: frequencyToMidiNote(note.frequency),
         label: noteLabel(frequencyToMidiNote(note.frequency)),
         duration: note.duration,
-        velocity: 100
+        velocity: 100,
       };
     });
     let bassNotes = bassline.map((note, index) => {
@@ -541,29 +558,31 @@
         uuid: crypto.randomUUID(),
         start: note.startTime,
         color: note.color,
-        note: frequencyToMidiNote(note.frequency) - 12 * 2,
+        note: frequencyToMidiNote(note.frequency) - 12,
         label: noteLabel(frequencyToMidiNote(note.frequency)),
         duration: note.duration,
-        velocity: 100
+        velocity: 100,
       };
     });
-    let kickNotes = kicks.map((note, index) => {
-      return {
-        uuid: crypto.randomUUID(),
-        start: note.startTime,
-        color: note.color,
-        note: frequencyToMidiNote(note.frequency),
-        label: noteLabel(frequencyToMidiNote(note.frequency)),
-        duration: note.duration,
-        velocity: 100
-      };
-    });
+    // let kickNotes = kicks.map((note, index) => {
+    //   return {
+    //     uuid: crypto.randomUUID(),
+    //     start: note.startTime,
+    //     color: note.color,
+    //     note: frequencyToMidiNote(note.frequency),
+    //     label: noteLabel(frequencyToMidiNote(note.frequency)),
+    //     duration: note.duration,
+    //     velocity: 100,
+    //   };
+    // });
 
     notesForDisplay = [
       ...melodyNotes,
-      ...bassNotes
+      ...bassNotes,
       // ...kickNotes
     ];
+
+    scrollToFirstNote(200);
 
     console.log(melody);
   }
@@ -609,10 +628,10 @@
         <div class="flex flex-row items-center gap-2">
           {#if $selectedClip}
             <CassetteTape class="text-accent-yellow/80" />
-            <span class="text-sm text-light">{$selectedClip?.name}</span>
-            <span class="text-sm text-light-soft">{$selectedClip?.duration.toFixed(2)}s</span>
+            <span class="whitespace-nowrap text-sm text-light">{$selectedClip?.name}</span>
+            <span class="whitespace-nowrap text-sm text-light-soft">{$selectedClip?.duration.toFixed(2)}s</span>
           {:else}
-            <span>No clip selected</span>
+            <span class="whitespace-nowrap text-sm text-light-soft">No clip selected</span>
           {/if}
         </div>
         <div class="ml-auto flex flex-row items-center gap-2">
@@ -728,38 +747,38 @@
                     <div class="text-xs text-light-soft">BPM</div>
                     <div class="text-light">
                       <pre class="border border-dark-200 bg-dark-500 p-2 text-xs">{JSON.stringify(
-                        getBpmFromMidi($selectedClip?.midiData),
-                        null,
-                        2,
-                      )}</pre>
+                          getBpmFromMidi($selectedClip?.midiData),
+                          null,
+                          2,
+                        )}</pre>
                     </div>
                   </div>
                 </div>
 
                 <table class="text-left">
                   <thead>
-                  <tr>
-                    <th class="whitespace-nowrap px-3 font-mono text-xs">Start</th>
-                    <th class="whitespace-nowrap px-3 font-mono text-xs">Duration</th>
-                    <th class="whitespace-nowrap px-3 font-mono text-xs">Velocity</th>
-                    <th class="whitespace-nowrap px-3 font-mono text-xs">Note Num</th>
-                    <th class="whitespace-nowrap px-3 font-mono text-xs">Label</th>
-                  </tr>
+                    <tr>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Start</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Duration</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Velocity</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Note Num</th>
+                      <th class="whitespace-nowrap px-3 font-mono text-xs">Label</th>
+                    </tr>
                   </thead>
                   <tbody class="divide-y divide-dark-500">
-                  {#each notesForDisplay as event}
-                    <tr class="hover:bg-dark-200">
-                      <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">
-                        {(event.start / 1000).toFixed(3)}s
-                      </td>
-                      <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">
-                        {(event.duration / 1000).toFixed(3)}s
-                      </td>
-                      <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.velocity}</td>
-                      <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.note}</td>
-                      <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.label}</td>
-                    </tr>
-                  {/each}
+                    {#each notesForDisplay as event}
+                      <tr class="hover:bg-dark-200">
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">
+                          {(event.start / 1000).toFixed(3)}s
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">
+                          {(event.duration / 1000).toFixed(3)}s
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.velocity}</td>
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.note}</td>
+                        <td class="whitespace-nowrap px-3 py-0.5 font-mono text-xs">{event.label}</td>
+                      </tr>
+                    {/each}
                   </tbody>
                 </table>
               </div>
@@ -772,121 +791,121 @@
 </div>
 
 <style>
-    .piano-roll {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
+  .piano-roll {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
-    .piano-roll::-webkit-scrollbar {
-        display: none;
-    }
+  .piano-roll::-webkit-scrollbar {
+    display: none;
+  }
 
-    .piano-key {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        color: black;
-        font-size: 10px;
-        min-height: var(--note-height);
-        max-height: var(--note-height);
-    }
+  .piano-key {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: black;
+    font-size: 10px;
+    min-height: var(--note-height);
+    max-height: var(--note-height);
+  }
 
-    .piano-key.black-key {
-        background-color: black;
-        color: white;
-    }
+  .piano-key.black-key {
+    background-color: black;
+    color: white;
+  }
 
-    .piano-key.white-key {
-        background-color: white;
-    }
+  .piano-key.white-key {
+    background-color: white;
+  }
 
-    /*noinspection ALL*/
-    .note-area {
-        background: repeating-linear-gradient(
-                to right,
-                hsl(0, 0%, 100%, 10%),
-                hsl(0, 0%, 100%, 10%) 1px,
-                transparent 1px,
-                transparent calc(var(--beat-width) / 4) /* BEAT  ( 1/4 bar) */
-        ),
-        repeating-linear-gradient(
-                to right,
-                hsl(60, 100%, 50%, 20%),
-                hsl(60, 100%, 50%, 20%) 1px,
-                transparent 1px,
-                transparent calc(var(--beat-width)) /* BAR */
-        ),
-        repeating-linear-gradient(
-                to right,
-                hsl(0, 0%, 100%, 5%),
-                hsl(0, 0%, 100%, 5%) 1px,
-                transparent 1px,
-                transparent calc(var(--beat-width) * var(--snap-resolution)) /* SNAP */
-        );
-        background-attachment: local;
-        background-repeat: no-repeat;
-        background-size: 100% 200%;
-        background-position: left calc(-1 * var(--note-height) * 4);
-    }
+  /*noinspection ALL*/
+  .note-area {
+    background: repeating-linear-gradient(
+        to right,
+        hsl(0, 0%, 100%, 10%),
+        hsl(0, 0%, 100%, 10%) 1px,
+        transparent 1px,
+        transparent calc(var(--beat-width) / 4) /* BEAT  ( 1/4 bar) */
+      ),
+      repeating-linear-gradient(
+        to right,
+        hsl(60, 100%, 50%, 20%),
+        hsl(60, 100%, 50%, 20%) 1px,
+        transparent 1px,
+        transparent calc(var(--beat-width)) /* BAR */
+      ),
+      repeating-linear-gradient(
+        to right,
+        hsl(0, 0%, 100%, 5%),
+        hsl(0, 0%, 100%, 5%) 1px,
+        transparent 1px,
+        transparent calc(var(--beat-width) * var(--snap-resolution)) /* SNAP */
+      );
+    background-attachment: local;
+    background-repeat: no-repeat;
+    background-size: 100% 200%;
+    background-position: left calc(-1 * var(--note-height) * 4);
+  }
 
-    .note-lane {
-        height: calc(var(--note-height));
-    }
+  .note-lane {
+    height: calc(var(--note-height));
+  }
 
-    .note-lane.in-scale {
-        background-color: white;
-        opacity: 2%;
-        border-top: 2px solid black;
-    }
+  .note-lane.in-scale {
+    background-color: white;
+    opacity: 2%;
+    border-top: 2px solid black;
+  }
 
-    .note-lane.not-in-scale {
-        visibility: hidden;
-    }
+  .note-lane.not-in-scale {
+    visibility: hidden;
+  }
 
-    .note {
-        position: absolute;
-        background: hsl(60, 100%, 80%);
-        color: hsl(0, 0%, 0%, 80%);
-        font-size: 8px;
-        height: var(--note-height);
-        border-radius: 2px;
-        padding-left: 8px;
-        font-weight: 500;
-        border: 0.5px solid hsl(0, 0%, 0%, 20%);
-    }
+  .note {
+    position: absolute;
+    background: hsl(60, 100%, 80%);
+    color: hsl(0, 0%, 0%, 80%);
+    font-size: 8px;
+    height: var(--note-height);
+    border-radius: 2px;
+    padding-left: 8px;
+    font-weight: 500;
+    border: 0.5px solid hsl(0, 0%, 0%, 20%);
+  }
 
-    .note .resize-handle {
-        width: 8px;
-        height: 100%;
-        display: inline-block;
-        cursor: col-resize;
-        background-color: transparent;
-    }
+  .note .resize-handle {
+    width: 8px;
+    height: 100%;
+    display: inline-block;
+    cursor: col-resize;
+    background-color: transparent;
+  }
 
-    .note.selected {
-        background: rgb(153, 224, 255);
-    }
+  .note.selected {
+    background: rgb(153, 224, 255);
+  }
 
-    .note.dragged {
-        filter: grayscale(1) opacity(0.5);
-    }
+  .note.dragged {
+    filter: grayscale(1) opacity(0.5);
+  }
 
-    .note.active {
-        background: rgb(182, 255, 153);
-    }
+  .note.active {
+    background: rgb(182, 255, 153);
+  }
 
-    .note.inactive {
-        background: hsl(0, 0%, 90%);
-    }
+  .note.inactive {
+    background: hsl(0, 0%, 90%);
+  }
 
-    .playhead {
-        position: absolute;
-        width: 1px;
-        top: 0;
-        height: calc((var(--note-height) * 12 * 10));
-        background: hsl(0, 90%, 55%);
-    }
+  .playhead {
+    position: absolute;
+    width: 1px;
+    top: 0;
+    height: calc((var(--note-height) * 12 * 10));
+    background: hsl(0, 90%, 55%);
+  }
 </style>

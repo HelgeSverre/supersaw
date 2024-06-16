@@ -25,6 +25,7 @@
   import { Track } from "./core/track.js";
   import Piano from "./lib/daw/Piano.svelte";
   import Kick from "./lib/daw/instruments/Kick.svelte";
+  import TransistorBass from "./lib/daw/TransistorBass.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -68,10 +69,12 @@
     if (key === " ") {
       event.preventDefault();
 
-      if ($playbackState.playing) {
-        pausePlayback();
-      } else {
-        startPlayback();
+      if ($currentView === "timeline" || $currentView === "midi") {
+        if ($playbackState.playing) {
+          pausePlayback();
+        } else {
+          startPlayback();
+        }
       }
     }
 
@@ -90,7 +93,8 @@
       52: "blofeld",    // Shift + 4
       53: "blank",      // Shift + 5
       54: "piano",      // Shift + 6
-      55: "kick"        // Shift + 7
+      55: "kick",       // Shift + 7
+      56: "tb303"       // Shift + 8
     };
 
     if (event.shiftKey && keyToViewMap[keyCode]) {
@@ -168,6 +172,10 @@
         {:else if $currentView === "blank"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <div class="text-center text-sm text-dark-100">"Silence is a source of great strength." — Lao Tzu</div>
+          </section>
+        {:else if $currentView === "tb303"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <TransistorBass />
           </section>
         {:else}
           <section class="flex h-full flex-1 grow items-center justify-center">

@@ -220,7 +220,7 @@
           <div class="flex flex-row justify-between gap-6 rounded bg-[#4E5E65] p-3">
             <div class="flex flex-col items-center justify-between gap-3 px-3">
               <div class="inline-flex flex-row items-center justify-center gap-1">
-                <LED color={ledMidi} />
+                <LED on={true} color={ledMidi} />
                 <span class="text-xs font-semibold">MIDI</span>
               </div>
 
@@ -327,15 +327,15 @@
                 </div>
                 <div class="flex w-[60px] shrink-0 grow-0 flex-col gap-1">
                   <div class="flex flex-row items-center gap-1">
-                    <LED color={powerOn && ledUtilityNum === 0 ? onColor : offColor} />
+                    <LED on={true} color={powerOn && ledUtilityNum === 0 ? onColor : offColor} />
                     <span class="text-label">1</span>
                   </div>
                   <div class="flex flex-row items-center gap-1">
-                    <LED color={powerOn && ledUtilityNum === 1 ? onColor : offColor} />
+                    <LED on={true} color={powerOn && ledUtilityNum === 1 ? onColor : offColor} />
                     <span class="text-label">2</span>
                   </div>
                   <div class="flex flex-row items-center gap-1">
-                    <LED color={powerOn && ledUtilityNum === 2 ? onColor : offColor} />
+                    <LED on={true} color={powerOn && ledUtilityNum === 2 ? onColor : offColor} />
                     <span class="text-label">3</span>
                   </div>
                 </div>
@@ -378,11 +378,11 @@
                 </div>
                 <div class="flex w-[60px] shrink-0 grow-0 flex-col gap-1">
                   <div class="flex flex-row items-center gap-1">
-                    <LED color={powerOn && ledGlobalNum === 0 ? onColor : offColor} />
+                    <LED on={true} color={powerOn && ledGlobalNum === 0 ? onColor : offColor} />
                     <span class="text-label">1</span>
                   </div>
                   <div class="flex flex-row items-center gap-1">
-                    <LED color={powerOn && ledGlobalNum === 1 ? onColor : offColor} />
+                    <LED on={true} color={powerOn && ledGlobalNum === 1 ? onColor : offColor} />
                     <span class="text-label">2</span>
                   </div>
                 </div>
@@ -430,11 +430,11 @@
                   <div class="flex h-6 flex-1 flex-row items-end justify-between">
                     <div class="flex w-[60px] shrink-0 grow-0 flex-col gap-1">
                       <div class="flex flex-row items-center gap-1">
-                        <LED color={powerOn && ledModulationNum === 0 ? onColor : offColor} />
+                        <LED on={true} color={powerOn && ledModulationNum === 0 ? onColor : offColor} />
                         <span class="text-label">Filter Env</span>
                       </div>
                       <div class="flex flex-row items-center gap-1">
-                        <LED color={powerOn && ledModulationNum === 1 ? onColor : offColor} />
+                        <LED on={true} color={powerOn && ledModulationNum === 1 ? onColor : offColor} />
                         <span class="text-label">Amp Env</span>
                       </div>
                     </div>
@@ -454,7 +454,7 @@
                   <div class="flex h-6 flex-1 flex-row items-center justify-between">
                     <div class="flex w-[60px] shrink-0 grow-0 flex-col gap-1">
                       <div class="flex flex-row items-center gap-1">
-                        <LED color={powerOn && ledModulationNum === 2 ? onColor : offColor} />
+                        <LED on={true} color={powerOn && ledModulationNum === 2 ? onColor : offColor} />
                         <span class="text-label">LFO</span>
                       </div>
                     </div>
@@ -474,7 +474,7 @@
                   <div class="flex h-6 flex-1 flex-row justify-between">
                     <div class="flex w-[60px] shrink-0 grow-0 flex-col gap-1">
                       <div class="flex flex-row items-center gap-1">
-                        <LED color={powerOn && ledModulationNum === 3 ? onColor : offColor} />
+                        <LED on={true} color={powerOn && ledModulationNum === 3 ? onColor : offColor} />
                         <span class="text-label">Matrix</span>
                       </div>
                     </div>
@@ -517,7 +517,7 @@
                     </div>
                   </div>
                   <div class="flex w-[60px] shrink-0 grow-0 flex-col">
-                    <LED color={powerOn ? ledShiftColor : offColor} />
+                    <LED on={true} color={powerOn ? ledShiftColor : offColor} />
                   </div>
                 </div>
                 <div class="divider-accent flex flex-1 flex-row items-start justify-between divide-x">

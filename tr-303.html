@@ -11,7 +11,6 @@
         color: white;
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       }
-
       .slider {
         -webkit-appearance: none;
         width: 100%;
@@ -23,12 +22,11 @@
         -webkit-transition: 0.2s;
         transition: opacity 0.2s;
       }
-
       .slider:hover {
         opacity: 1;
       }
-
-      .slider::-webkit-slider-thumb {
+      .slider::-webkit-slider-thumb,
+      .slider::-moz-range-thumb {
         -webkit-appearance: none;
         appearance: none;
         width: 25px;
@@ -37,13 +35,14 @@
         background: #fff;
         cursor: pointer;
       }
-
-      .slider::-moz-range-thumb {
-        width: 25px;
-        height: 25px;
-        border-radius: 50%;
-        background: #fff;
-        cursor: pointer;
+      table {
+        width: 100%;
+        table-layout: fixed;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: center;
       }
     </style>
   </head>
@@ -99,15 +98,26 @@
       <span id="volumeValue">90%</span>
     </div>
 
+    <h2 class="mb-3 mt-6 text-2xl">Pattern Editor</h2>
+    <table id="patternEditor">
+      <tr>
+        <th>Note Frequency (Hz)</th>
+        <th>Actions</th>
+      </tr>
+    </table>
+    <button onclick="addNote()">Add Note</button>
+
     <script>
       const synth = (() => {
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         let oscillator, filter, envelope, gainNode;
         let currentStep = 0;
         let isPlaying = false;
+        let pattern = [65.41, 65.41, 65.41, 65.41, 65.41, 98.0, 87.31];
         const tempo = 200;
-        const pattern = [65.41, 65.41, 65.41, 65.41, 65.41, 98.0, 87.31];
         const intervalTime = 60 / tempo / 2;
+
+        document.addEventListener("DOMContentLoaded", renderPatternEditor);
 
         function createOscillator(frequency) {
           oscillator = audioContext.createOscillator();
@@ -196,12 +206,46 @@
           document.getElementById("volumeValue").textContent = Math.round(value * 100) + "%";
         }
 
+        function renderPatternEditor() {
+          const table = document.getElementById("patternEditor");
+          table.innerHTML = `
+                    <tr>
+                        <th>Note Frequency (Hz)</th>
+                        <th>Actions</th>
+                    </tr>
+                `;
+          pattern.forEach((note, index) => {
+            const row = table.insertRow(-1);
+            const cell1 = row.insertCell(0);
+            const cell2 = row.insertCell(1);
+            cell1.innerHTML = `<input type='number' value='${note}' step='0.01' onchange='synth.updateNoteFrequency(${index}, this.value)' />`;
+            cell2.innerHTML = `<button onclick='synth.removeNote(${index})'>Remove</button>`;
+          });
+        }
+
+        function addNote() {
+          pattern.push(440); // Default to A4
+          renderPatternEditor();
+        }
+
+        function updateNoteFrequency(index, frequency) {
+          pattern[index] = parseFloat(frequency);
+        }
+
+        function removeNote(index) {
+          pattern.splice(index, 1);
+          renderPatternEditor();
+        }
+
         return {
           playPattern,
           stopPattern,
           updateFilterFrequency,
           updateResonance,
           updateVolume,
+          updateNoteFrequency,
+          addNote,
+          removeNote,
         };
       })();
     </script>
