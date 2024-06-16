@@ -118,7 +118,7 @@
     audioContext = audioManager.audioContext;
     initAudioNodes();
 
-    selectPresetPattern(1);
+    selectPresetPattern(2);
   });
 
   function initAudioNodes() {
@@ -145,8 +145,6 @@
     gainNode.connect(audioManager.mixer);
   }
 
-  let prevFrequency;
-
   function playNote() {
     elapsedPlayTime += 60 / tempo / 4;
 
@@ -157,35 +155,50 @@
     // Duration of a quarter note in seconds
     let noteDuration = 60 / tempo / 4;
 
+    // if (step.glide && currentStep > 0) {
+    //   // Use a fraction of the note duration for the glide effect.
+    //   let glideDuration = noteDuration * 0.75; // Glide over half the duration of a note
+    //   let glideEndTime = audioContext.currentTime + glideDuration;
+    //   oscillator.frequency.linearRampToValueAtTime(nextFrequency, glideEndTime);
+    // } else {
+    //   oscillator.frequency.setValueAtTime(nextFrequency, audioContext.currentTime);
+    // }
+    //
+    // envelope.gain.cancelScheduledValues(audioContext.currentTime);
+    // envelope.gain.setValueAtTime(1, audioContext.currentTime);
+    // envelope.gain.exponentialRampToValueAtTime(0.1, audioContext.currentTime + decay);
+    // envelope.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + decay + 0.01);
+    //
+    // // Modulate the filter's cutoff based on the envelope modulator
+    // let baseCutoff = cutoff;
+    // let modulatedCutoff = baseCutoff + envMod * 2000; // `2000` is an arbitrary scale factor for demonstration
+    // filter.frequency.setValueAtTime(baseCutoff, audioContext.currentTime);
+    // filter.frequency.linearRampToValueAtTime(modulatedCutoff, audioContext.currentTime + decay);
+    //
+    // // Adjust resonance based on whether an accent is applied
+    // if (step.accent) {
+    //   filter.Q.setValueAtTime(resonance * (1 + accentIntensity), audioContext.currentTime);
+    // } else {
+    //   filter.Q.setValueAtTime(resonance, audioContext.currentTime);
+    // }
+
     if (step.glide && currentStep > 0) {
-      // Use a fraction of the note duration for the glide effect.
-      let glideDuration = noteDuration * 0.75; // Glide over half the duration of a note
-      let glideEndTime = audioContext.currentTime + glideDuration;
-      oscillator.frequency.linearRampToValueAtTime(nextFrequency, glideEndTime);
-      console.log("Glide from", prevFrequency, "to", nextFrequency, "over", glideDuration, "seconds");
+      oscillator.frequency.linearRampToValueAtTime(nextFrequency, audioContext.currentTime + 60 / tempo / 8);
     } else {
       oscillator.frequency.setValueAtTime(nextFrequency, audioContext.currentTime);
     }
 
+    // Handle the decay envelope for both amplitude and filter cutoff
+    let initialGain = step.accent ? 1.2 : 1; // Boost gain if accent is true
     envelope.gain.cancelScheduledValues(audioContext.currentTime);
-    envelope.gain.setValueAtTime(1, audioContext.currentTime);
+    envelope.gain.setValueAtTime(initialGain, audioContext.currentTime);
     envelope.gain.exponentialRampToValueAtTime(0.1, audioContext.currentTime + decay);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + decay + 0.01);
 
-    // Modulate the filter's cutoff based on the envelope modulator
-    let baseCutoff = cutoff;
-    let modulatedCutoff = baseCutoff + envMod * 2000; // `2000` is an arbitrary scale factor for demonstration
-    filter.frequency.setValueAtTime(baseCutoff, audioContext.currentTime);
-    filter.frequency.linearRampToValueAtTime(modulatedCutoff, audioContext.currentTime + decay);
+    let modulatedCutoff = step.accent ? cutoff + envMod * 1000 : cutoff;
+    filter.Q.setValueAtTime(resonance * (1 + accentIntensity), audioContext.currentTime);
+    filter.frequency.setValueAtTime(modulatedCutoff, audioContext.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(cutoff, audioContext.currentTime + decay);
 
-    // Adjust resonance based on whether an accent is applied
-    if (step.accent) {
-      filter.Q.setValueAtTime(resonance * (1 + accentIntensity), audioContext.currentTime);
-    } else {
-      filter.Q.setValueAtTime(resonance, audioContext.currentTime);
-    }
-
-    prevFrequency = nextFrequency;
     currentStep++;
   }
 
@@ -291,7 +304,7 @@
               Tuning
             </label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="42" bind:value={tuning} min="-100" max="100" step="1" />
+              <Encoder size="42" bind:value={tuning} min="-500" max="500" step="1" />
             </div>
           </div>
           <div class="flex flex-col items-center justify-center gap-1 text-center">
@@ -412,7 +425,7 @@
           <div class="flex flex-col items-center justify-center gap-1 text-center">
             <label class="text-xs uppercase text-light-soft" for="tempo">Tempo </label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="60" bind:value={tempo} min="30" max="300" step="1" />
+              <Encoder size="60" bind:value={tempo} min="40" max="300" step="1" />
             </div>
           </div>
 
