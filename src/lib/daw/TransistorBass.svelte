@@ -5,9 +5,10 @@
   import LED from "../ui/LED.svelte";
   import { frequencyToMidiNote, noteLabel } from "../../core/midi.js";
   import { WaveSawtooth, WaveSquare, WaveTriangle } from "phosphor-svelte";
+  import classNames from "classnames";
+  import { Ticker } from "../../core/misc/ticker";
 
   let audioContext;
-  let oscillator, filter, envelope, gainNode;
   let currentStep = 0;
   let isPlaying = false;
   let intervalId;
@@ -21,75 +22,85 @@
       on: true,
     }));
 
-  let cutoff = 1200;
-  let resonance = 10;
-  let volume = 0.9;
+  let cutoff = 1000; // Initial filter cutoff frequency
+  let resonance = 10; // Initial filter resonance
+  let volume = 0.9; // Initial volume
+  let tempo = 90; // BPM
+  let tuning = 0; // Detune amount
+  let envMod = 0.5; // Envelope modulation depth
+  let decay = 0.1; // Decay time
+  let accentIntensity = 0.5; // Intensity of the accent
 
-  let tempo = 120;
-  let tuning = 0;
-  let envMod = 0.5;
-  let decay = 0.1;
-  let accent = 0.5;
+  let oscillator, filter, envelope, gainNode;
 
   onMount(() => {
     audioContext = audioManager.audioContext;
+    initAudioNodes();
   });
 
-  function createOscillator(frequency) {
+  function initAudioNodes() {
     oscillator = audioContext.createOscillator();
     oscillator.type = waveform;
-    // oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-    oscillator.frequency.setValueAtTime(frequency * Math.pow(2, tuning / 1200), audioContext.currentTime);
-
+    oscillator.frequency.setValueAtTime(65.41, audioContext.currentTime); // Default frequency
     oscillator.start();
-    return oscillator;
-  }
 
-  function createFilter() {
     filter = audioContext.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.setValueAtTime(cutoff, audioContext.currentTime);
-    // filter.frequency.setValueAtTime(cutoff + envMod * 1000, audioContext.currentTime); // Envelope modulation influences cutoff
-
     filter.Q.setValueAtTime(resonance, audioContext.currentTime);
-    return filter;
-  }
 
-  function createEnvelope() {
     envelope = audioContext.createGain();
-    envelope.gain.setValueAtTime(accent, audioContext.currentTime); // Accent affects initial gain
-    envelope.gain.exponentialRampToValueAtTime(1, audioContext.currentTime + 0.01);
-    envelope.gain.exponentialRampToValueAtTime(0.3, audioContext.currentTime + decay); // Decay modifies the envelope
-    envelope.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + decay + 0.1);
+    envelope.gain.setValueAtTime(0, audioContext.currentTime); // Start muted
 
-    return envelope;
-  }
-
-  function createGainNode() {
     gainNode = audioContext.createGain();
     gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-    return gainNode;
+
+    // Connect the audio nodes
+    oscillator.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(gainNode);
+    gainNode.connect(audioManager.mixer);
   }
 
   function playNote() {
-    const freq = pattern[currentStep % pattern.length];
-    const osc = createOscillator(freq);
-    const filt = createFilter();
-    const env = createEnvelope();
-    const gain = createGainNode();
+    let index = currentStep % pattern.length;
+    const step = pattern[index];
+    const nextFrequency = step.frequency;
+    // const nextFrequency = step.frequency * Math.pow(2, tuning / 1200);
 
-    osc.connect(filt);
-    filt.connect(env);
-    env.connect(gain);
-    gain.connect(audioManager.mixer);
+    console.log(nextFrequency, step.frequency * Math.pow(2, tuning / 1200));
 
-    setTimeout(
-      () => {
-        osc.stop();
-        currentStep++;
-      },
-      60000 / tempo / 4,
-    );
+    if (index === 0) {
+      let ticker = new Ticker(audioManager.audioContext);
+      ticker.play();
+    }
+
+    if (step.glide && currentStep > 0) {
+      // oscillator.frequency.exponentialRampToValueAtTime(nextFrequency, audioContext.currentTime + 60 / tempo / 4);
+      oscillator.frequency.linearRampToValueAtTime(nextFrequency, audioContext.currentTime + 60 / tempo / 4);
+    } else {
+      oscillator.frequency.setValueAtTime(nextFrequency, audioContext.currentTime);
+    }
+
+    envelope.gain.cancelScheduledValues(audioContext.currentTime);
+    envelope.gain.setValueAtTime(1, audioContext.currentTime);
+    envelope.gain.exponentialRampToValueAtTime(0.1, audioContext.currentTime + decay);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + decay + 0.01);
+
+    // Modulate the filter's cutoff based on the envelope modulator
+    let baseCutoff = cutoff;
+    let modulatedCutoff = baseCutoff + envMod * 5000; // `2000` is an arbitrary scale factor for demonstration
+    filter.frequency.setValueAtTime(baseCutoff, audioContext.currentTime);
+    filter.frequency.linearRampToValueAtTime(modulatedCutoff, audioContext.currentTime + decay);
+
+    // Adjust resonance based on whether an accent is applied
+    if (step.accent) {
+      filter.Q.setValueAtTime(resonance * (1 + accentIntensity), audioContext.currentTime);
+    } else {
+      filter.Q.setValueAtTime(resonance, audioContext.currentTime);
+    }
+
+    currentStep++;
   }
 
   function togglePlay() {
@@ -107,6 +118,9 @@
     if (isPlaying) {
       clearInterval(intervalId);
       isPlaying = false;
+      envelope.gain.cancelScheduledValues(audioContext.currentTime);
+      envelope.gain.setValueAtTime(envelope.gain.value, audioContext.currentTime);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.01);
     }
   }
 
@@ -127,6 +141,21 @@
     pattern[index].frequency = parseFloat(frequency);
   }
 
+  $: if (oscillator) {
+    const step = pattern[currentStep % pattern.length];
+    oscillator.type = waveform;
+    oscillator.frequency.setValueAtTime(step.frequency * Math.pow(2, tuning / 1200), audioContext.currentTime);
+  }
+
+  $: if (filter) {
+    filter.frequency.setValueAtTime(cutoff, audioContext.currentTime);
+    filter.Q.setValueAtTime(resonance, audioContext.currentTime);
+  }
+
+  $: if (gainNode) {
+    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+  }
+
   $: patternIndex = currentStep % pattern.length;
 </script>
 
@@ -144,7 +173,7 @@
               Tuning
             </label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="48" bind:value={tuning} min="100" max="5000" step="10" />
+              <Encoder size="42" bind:value={tuning} min="-100" max="100" step="1" />
             </div>
           </div>
           <div class="flex flex-col items-center justify-center gap-1 text-center">
@@ -152,7 +181,7 @@
               Cutoff
             </label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="48" bind:value={cutoff} min="10" max="5000" step="10" />
+              <Encoder size="42" bind:value={cutoff} min="20" max="6000" step="10" />
             </div>
           </div>
           <div class="flex flex-col items-center justify-center gap-1 text-center">
@@ -160,21 +189,21 @@
               Resonance
             </label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="48" bind:value={resonance} min="1" max="20" step="1" />
+              <Encoder size="42" bind:value={resonance} min="0" max="30" step="0.1" />
             </div>
           </div>
           <div class="flex flex-col items-center justify-center gap-1 text-center">
             <label class="whitespace-nowrap text-xs uppercase tracking-tight text-light-soft" for="env-mod">
-              Env Mod
+              Envelope
             </label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="48" bind:value={envMod} min="0" max="10" step="0.01" />
+              <Encoder size="42" bind:value={envMod} min="0" max="1" step="0.01" />
             </div>
           </div>
           <div class="flex flex-col items-center justify-center gap-1 text-center">
             <label class="whitespace-nowrap text-xs uppercase tracking-tight text-light-soft" for="decay">Decay</label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="48" bind:value={decay} min="0" max="2" step="0.01" />
+              <Encoder size="42" bind:value={decay} min="0.1" max="2" step="0.01" />
             </div>
           </div>
           <div class="flex flex-col items-center justify-center gap-1 text-center">
@@ -182,7 +211,7 @@
               >Accent
             </label>
             <div class="flex flex-col items-center justify-center">
-              <Encoder size="48" bind:value={accent} min="0" max="1" step="0.01" />
+              <Encoder size="42" bind:value={accentIntensity} min="0" max="1" step="0.01" />
             </div>
           </div>
         </div>
@@ -192,7 +221,7 @@
           </div>
           <div class="flex w-full flex-row justify-between">
             <button
-              class="rounded p-1 {waveform == 'square' ? 'bg-black text-white' : 'text-light-soft'}"
+              class="rounded p-1 {waveform === 'square' ? 'bg-black text-white' : 'text-light-soft'}"
               on:click={() => {
                 waveform = "square";
               }}
@@ -200,7 +229,7 @@
               <WaveSquare size="18" />
             </button>
             <button
-              class="rounded p-1 {waveform == 'sawtooth' ? 'bg-black text-white' : 'text-light-soft'}"
+              class="rounded p-1 {waveform === 'sawtooth' ? 'bg-black text-white' : 'text-light-soft'}"
               on:click={() => {
                 waveform = "sawtooth";
               }}
@@ -208,7 +237,7 @@
               <WaveSawtooth size="18" />
             </button>
             <button
-              class="rounded p-1 {waveform == 'triangle' ? 'bg-black text-white' : 'text-light-soft'}"
+              class="rounded p-1 {waveform === 'triangle' ? 'bg-black text-white' : 'text-light-soft'}"
               on:click={() => {
                 waveform = "triangle";
               }}
@@ -220,15 +249,8 @@
       </div>
 
       <div class="mx-auto flex w-full max-w-3xl flex-row items-center justify-center gap-12">
-        <div class="flex flex-col items-center justify-center gap-3 text-center">
-          <label class="text-xs uppercase text-light-soft" for="tempo">Tempo </label>
-          <div class="flex flex-col items-center justify-center">
-            <Encoder size="72" bind:value={tempo} min="30" max="300" step="1" />
-          </div>
-        </div>
-
         <div class="flex-1">
-          <div class="grid grid-cols-3 gap-3 rounded-lg bg-gray-200 p-4">
+          <div class="grid grid-cols-7 gap-3 rounded-lg bg-gray-200 p-4">
             <div class="flex flex-col gap-1 text-xs leading-none">
               <span class="text-light-soft">Tempo</span>
               <span class="font-mono font-bold text-dark-700">{tempo?.toFixed(2)}</span>
@@ -255,27 +277,34 @@
             </div>
             <div class="flex flex-col gap-1 text-xs leading-none">
               <span class="text-light-soft">Accent</span>
-              <span class="font-mono font-bold text-dark-700">{accent?.toFixed(2)}</span>
+              <span class="font-mono font-bold text-dark-700">{accentIntensity?.toFixed(2)}</span>
             </div>
           </div>
         </div>
 
         <div class="flex flex-col justify-end text-right">
-          <span class="tracking block text-2xl font-light tabular-nums leading-none text-gray-700">TB-303</span>
+          <span class="block text-2xl font-light tabular-nums leading-none text-gray-700">TB-303</span>
           <div class="my-0.5 block w-full border-b border-gray-500" />
-          <span class="block text-lg font-medium leading-none tracking-tight text-gray-700">Computer Controlled</span>
-        </div>
-
-        <div class="flex flex-col items-center justify-center gap-3 text-center">
-          <label class="text-xs uppercase text-light-soft" for="volume">Volume </label>
-          <div class="flex flex-col items-center justify-center">
-            <Encoder size="72" bind:value={volume} min="0" max="1" step="0.01" />
-          </div>
+          <span class="block text-lg leading-none tracking-tighter text-gray-500">Computer Controlled</span>
         </div>
       </div>
 
       <div class="flex flex-row items-end gap-6 rounded-lg border border-gray-200 p-4">
         <div class="flex flex-col gap-3">
+          <div class="flex flex-col items-center justify-center gap-1 text-center">
+            <label class="text-xs uppercase text-light-soft" for="tempo">Tempo </label>
+            <div class="flex flex-col items-center justify-center">
+              <Encoder size="60" bind:value={tempo} min="30" max="300" step="1" />
+            </div>
+          </div>
+
+          <div class="flex flex-col items-center justify-center gap-1 text-center">
+            <label class="text-xs uppercase text-light-soft" for="volume">Volume </label>
+            <div class="flex flex-col items-center justify-center">
+              <Encoder size="60" bind:value={volume} min="0" max="1" step="0.01" />
+            </div>
+          </div>
+
           <div class="flex flex-col gap-1">
             <button class="metal h-10 w-20 px-4 py-2" on:click={clearPattern}></button>
             <div class="mx-auto block text-xs font-medium uppercase tracking-tighter text-gray-500">Clear</div>
@@ -289,23 +318,24 @@
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-8 gap-4 p-4">
+        <div class="grid grid-cols-8 gap-x-2 gap-y-3 p-4">
           {#each pattern as note, index (note + index)}
-            <div class="flex flex-col items-center justify-between gap-2">
+            <div class="flex flex-col items-center justify-between gap-2 rounded-lg bg-black/5 px-1.5 py-2">
               <div>
                 <LED size="14" on={patternIndex === index} />
               </div>
               <span class="text-xs">{noteLabel(frequencyToMidiNote(note.frequency))}</span>
               <div
-                class="block w-full rounded text-center font-mono text-lg {patternIndex === index
-                  ? 'bg-accent-neon text-black'
-                  : 'bg-dark-900 text-white'}"
+                class={classNames("block w-full rounded p-1 text-center text-xs text-gray-700", {
+                  "bg-accent-neon": patternIndex === index,
+                  "bg-gray-300": patternIndex !== index,
+                })}
               >
                 <span>{index + 1}</span>
               </div>
               <input
                 type="number"
-                class=" block w-full rounded bg-dark-900 p-1 text-center font-mono text-sm text-white"
+                class="block w-full appearance-none rounded border border-gray-300 bg-gray-100 p-1 text-center font-mono text-sm text-light-soft"
                 value={note.frequency.toFixed(2)}
                 step="0.01"
                 on:change={(e) => updateNoteFrequency(index, e.target.value)}
@@ -314,13 +344,15 @@
               <div class="flex w-full flex-col items-center gap-1">
                 <div class="flex w-full gap-1">
                   <button
-                    class="w-full rounded px-1 text-white {note.accent ? 'bg-accent-neon' : 'bg-dark-900'}"
+                    class="metal w-full py-1 text-sm leading-tight text-dark-100"
+                    class:active={note.accent}
                     on:click={() => (note.accent = !note.accent)}
                   >
                     A
                   </button>
                   <button
-                    class="w-full rounded px-1 text-white {note.glide ? 'bg-accent-neon' : 'bg-dark-900'}"
+                    class="metal w-full py-1 text-sm leading-tight text-dark-100"
+                    class:active={note.glide}
                     on:click={() => (note.glide = !note.glide)}
                   >
                     G
@@ -334,6 +366,11 @@
     </div>
   </div>
 
+  <img
+    src="https://mediadl.musictribe.com/media/PLM/data/images/products/P0DTD/2000Wx2000H/TD-3-SR_P0DTD_Top_XL.png"
+    alt=""
+    class="w-full"
+  />
   <img src="/assets/tb303.jpg" alt="" class="w-full" />
 </main>
 
@@ -344,6 +381,24 @@
   }
 
   .metal {
-    @apply block rounded border border-gray-400 bg-gradient-to-br from-gray-300 to-gray-400  font-semibold text-white;
+    @apply block rounded border border-gray-400 bg-gradient-to-br from-gray-300 to-gray-400 transition duration-75 ease-in-out;
+  }
+
+  .metal:hover {
+    @apply brightness-105 transition duration-75 ease-in-out;
+  }
+
+  .metal.active {
+    @apply text-white brightness-75;
+  }
+
+  .metal:active {
+    @apply brightness-90 transition duration-75 ease-in-out;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 </style>
