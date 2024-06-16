@@ -538,8 +538,8 @@
       "G4",
     ];
 
-    let melody = generator.generateMelodyWithMotif(bars, roots);
-    let bassline = generator.generateTripletBassline(bars, roots);
+    let melody = generator.generateHardstyleMelodyHarmonicMinor(bars);
+    let bassline = generator.generateHardstyleBassline(melody, bars);
     // let kicks = generator.generateHardstyleKick(bars);
 
     let melodyNotes = melody.map((note, index) => {
