@@ -3,21 +3,29 @@
   import { audioManager } from "../../core/audio.js";
   import Encoder from "../ui/Encoder.svelte";
   import LED from "../ui/LED.svelte";
+  import { frequencyToMidiNote, noteLabel } from "../../core/midi.js";
+  import { WaveSawtooth, WaveSquare, WaveTriangle } from "phosphor-svelte";
 
   let audioContext;
   let oscillator, filter, envelope, gainNode;
   let currentStep = 0;
   let isPlaying = false;
   let intervalId;
-  let waveform = "square";
-  let pattern = [
-    65.41, 65.41, 65.41, 65.41, 65.41, 65.41, 98.0, 87.31, 65.41, 65.41, 65.41, 65.41, 65.41, 65.41, 98.0, 87.31,
-  ];
+  let waveform = "sawtooth";
+  let pattern = Array(16)
+    .fill()
+    .map((_, i) => ({
+      frequency: 65.41,
+      accent: false,
+      glide: false,
+      on: true,
+    }));
+
   let cutoff = 1200;
   let resonance = 10;
   let volume = 0.9;
 
-  let tempo = 100;
+  let tempo = 120;
   let tuning = 0;
   let envMod = 0.5;
   let decay = 0.1;
@@ -102,16 +110,21 @@
     }
   }
 
-  function addNote() {
-    pattern = [...pattern, 440];
+  function clearPattern() {
+    stopPattern();
+    currentStep = 0;
+    pattern = Array(16)
+      .fill()
+      .map((_, i) => ({
+        frequency: 65.41,
+        accent: false,
+        glide: false,
+        on: true,
+      }));
   }
 
   function updateNoteFrequency(index, frequency) {
-    pattern[index] = parseFloat(frequency);
-  }
-
-  function removeNote(index) {
-    pattern = pattern.filter((_, i) => i !== index);
+    pattern[index].frequency = parseFloat(frequency);
   }
 
   $: patternIndex = currentStep % pattern.length;
@@ -173,8 +186,36 @@
             </div>
           </div>
         </div>
-        <div class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-black opacity-70">
-          Bass Line
+        <div class="flex flex-col items-start justify-between gap-3">
+          <div class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-black opacity-70">
+            Bass Line
+          </div>
+          <div class="flex w-full flex-row justify-between">
+            <button
+              class="rounded p-1 {waveform == 'square' ? 'bg-black text-white' : 'text-light-soft'}"
+              on:click={() => {
+                waveform = "square";
+              }}
+            >
+              <WaveSquare size="18" />
+            </button>
+            <button
+              class="rounded p-1 {waveform == 'sawtooth' ? 'bg-black text-white' : 'text-light-soft'}"
+              on:click={() => {
+                waveform = "sawtooth";
+              }}
+            >
+              <WaveSawtooth size="18" />
+            </button>
+            <button
+              class="rounded p-1 {waveform == 'triangle' ? 'bg-black text-white' : 'text-light-soft'}"
+              on:click={() => {
+                waveform = "triangle";
+              }}
+            >
+              <WaveTriangle size="18" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -233,46 +274,62 @@
         </div>
       </div>
 
-      <div class="rounded-lg border border-gray-200 p-4">
+      <div class="flex flex-row items-end gap-6 rounded-lg border border-gray-200 p-4">
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-col gap-1">
+            <button class="metal h-10 w-20 px-4 py-2" on:click={clearPattern}></button>
+            <div class="mx-auto block text-xs font-medium uppercase tracking-tighter text-gray-500">Clear</div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <button class="metal h-10 w-20 px-4 py-2" on:click={togglePlay}></button>
+            <div class="flex items-center justify-center gap-1">
+              <LED on={isPlaying} />
+              <span class="block text-xs font-medium uppercase tracking-tighter text-gray-500">Play</span>
+            </div>
+          </div>
+        </div>
         <div class="grid grid-cols-8 gap-4 p-4">
           {#each pattern as note, index (note + index)}
             <div class="flex flex-col items-center justify-between gap-2">
               <div>
                 <LED size="14" on={patternIndex === index} />
               </div>
+              <span class="text-xs">{noteLabel(frequencyToMidiNote(note.frequency))}</span>
               <div
                 class="block w-full rounded text-center font-mono text-lg {patternIndex === index
                   ? 'bg-accent-neon text-black'
                   : 'bg-dark-900 text-white'}"
               >
-                {index + 1}
+                <span>{index + 1}</span>
               </div>
               <input
                 type="number"
-                class="none block h-full w-full rounded bg-dark-900 p-1 text-center font-mono text-sm text-white"
-                value={note}
+                class=" block w-full rounded bg-dark-900 p-1 text-center font-mono text-sm text-white"
+                value={note.frequency.toFixed(2)}
                 step="0.01"
                 on:change={(e) => updateNoteFrequency(index, e.target.value)}
               />
 
               <div class="flex w-full flex-col items-center gap-1">
                 <div class="flex w-full gap-1">
-                  <button class="metal w-full px-1 !text-white">A</button>
-                  <button class="metal w-full px-1 !text-white">M</button>
+                  <button
+                    class="w-full rounded px-1 text-white {note.accent ? 'bg-accent-neon' : 'bg-dark-900'}"
+                    on:click={() => (note.accent = !note.accent)}
+                  >
+                    A
+                  </button>
+                  <button
+                    class="w-full rounded px-1 text-white {note.glide ? 'bg-accent-neon' : 'bg-dark-900'}"
+                    on:click={() => (note.glide = !note.glide)}
+                  >
+                    G
+                  </button>
                 </div>
               </div>
             </div>
           {/each}
         </div>
-      </div>
-      <div class="flex items-center justify-between">
-        <button class="flex flex-col gap-1" on:click={togglePlay}>
-          <span class="metal h-10 w-20 px-4 py-2"></span>
-          <div class="flex items-center gap-1">
-            <LED on={isPlaying} />
-            <span class="block text-xs font-medium uppercase tracking-tighter text-gray-500"> Run / Stop </span>
-          </div>
-        </button>
       </div>
     </div>
   </div>
