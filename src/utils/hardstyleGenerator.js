@@ -30,63 +30,133 @@ export class MusicGenerator {
     return 440 * Math.pow(2, (noteNumber - 57) / 12);
   }
 
-  createBasicMotif(baseFrequency, barLength) {
-    // Define the motif structure in terms of a fraction of the bar length
+  createBasicMotif(baseFrequency) {
     return [
-      { note: baseFrequency, duration: 2 / 3 }, // Two-thirds of a beat
-      { note: baseFrequency * Math.pow(2, 3 / 12), duration: 1 / 6 }, // One-sixth of a beat
-      { note: baseFrequency * Math.pow(2, 7 / 12), duration: 1 / 6 }, // One-sixth of a beat
+      { note: baseFrequency, duration: 2 / 3 }, // Root note
+      { note: baseFrequency * Math.pow(2, 3 / 12), duration: 1 / 6 }, // Minor third
+      { note: baseFrequency * Math.pow(2, 7 / 12), duration: 1 / 6 }, // Perfect fifth
     ];
   }
 
-  varyMotif(motif, variationType) {
+  varyMotif(baseMotif, variationType) {
+    let variedMotif = JSON.parse(JSON.stringify(baseMotif)); // Deep copy
     switch (variationType) {
       case "rhythm":
-        // Shift the timing of notes
-        motif[1].duration *= 0.5;
-        motif[2].duration *= 2;
-        break;
-      case "interval":
-        // Change the intervals of the notes
-        motif[1].note *= Math.pow(2, 1 / 12); // Minor second up
-        motif[2].note /= Math.pow(2, 1 / 12); // Minor second down
-        break;
-      case "inversion":
-        // Invert the motif intervals
-        motif = motif.map((note, index) => {
-          if (index === 0) return note;
-          return { note: motif[0].note / (note.note / motif[0].note), duration: note.duration };
+        variedMotif.forEach((note) => {
+          note.duration *= Math.random() + 0.5; // Randomize duration
         });
         break;
+      case "pitch":
+        variedMotif.forEach((note) => {
+          let intervals = [-12, -7, -5, 0, 5, 7, 12]; // Possible pitch changes
+          note.note *= Math.pow(2, intervals[Math.floor(Math.random() * intervals.length)] / 12);
+        });
+        break;
+      default:
+        break;
     }
-    return motif;
+    return variedMotif;
   }
 
-  generateMelodyWithMotif(bars, rootNotes = ["A4", "G4", "F4", "G4"]) {
-    // generateMelodyWithMotif(bars, rootNotes, barLength, motifTemplate) {
+  generateMelodyWithMotif(bars = 16, rootNotes) {
     let melody = [];
     let currentTime = 0;
-
     for (let bar = 0; bar < bars; bar++) {
       let baseFrequency = this.noteToFrequency(rootNotes[bar % rootNotes.length]);
-      let motif = this.createBasicMotif(baseFrequency, this.barLength); // Generate motif with correct timing
+      let motif = this.createBasicMotif(baseFrequency);
+      if (bar % 4 === 0) {
+        motif = this.varyMotif(motif, "pitch");
+      } else if (bar % 4 === 1) {
+        motif = this.varyMotif(motif, "rhythm");
+      }
 
-      // Apply motif to the current bar
       motif.forEach((note) => {
         melody.push({
           color: "green",
           frequency: note.note,
           startTime: currentTime,
-          duration: note.duration * this.barLength, // Adjust duration to fit within the bar
+          duration: note.duration * (this.barLength / 2),
         });
-        currentTime += note.duration * this.barLength;
+        currentTime += note.duration * (this.barLength / 2);
       });
-
-      // Fill the remaining part of the bar with rest or repeat the motif
-      currentTime = (bar + 1) * this.barLength; // Ensure each bar starts fresh, aligning the melody correctly
     }
     return melody;
   }
+
+  generateBassline(melody, bars = 16) {
+    let bassline = [];
+    melody.forEach((note) => {
+      if (note.duration > this.barLength / 4) {
+        // Only add bass for longer notes
+        bassline.push({
+          color: "red",
+          frequency: note.frequency / 2, // One octave lower
+          startTime: note.startTime + note.duration - this.barLength / 12, // Offset bass
+          duration: this.barLength / 12, // Short bass note
+        });
+      }
+    });
+    return bassline;
+  }
+
+  //
+  // createBasicMotif(baseFrequency, barLength) {
+  //   // Define the motif structure in terms of a fraction of the bar length
+  //   return [
+  //     { note: baseFrequency, duration: 2 / 3 }, // Two-thirds of a beat
+  //     { note: baseFrequency * Math.pow(2, 3 / 12), duration: 1 / 6 }, // One-sixth of a beat
+  //     { note: baseFrequency * Math.pow(2, 7 / 12), duration: 1 / 6 }, // One-sixth of a beat
+  //   ];
+  // }
+  //
+  // varyMotif(motif, variationType) {
+  //   switch (variationType) {
+  //     case "rhythm":
+  //       // Shift the timing of notes
+  //       motif[1].duration *= 0.5;
+  //       motif[2].duration *= 2;
+  //       break;
+  //     case "interval":
+  //       // Change the intervals of the notes
+  //       motif[1].note *= Math.pow(2, 1 / 12); // Minor second up
+  //       motif[2].note /= Math.pow(2, 1 / 12); // Minor second down
+  //       break;
+  //     case "inversion":
+  //       // Invert the motif intervals
+  //       motif = motif.map((note, index) => {
+  //         if (index === 0) return note;
+  //         return { note: motif[0].note / (note.note / motif[0].note), duration: note.duration };
+  //       });
+  //       break;
+  //   }
+  //   return motif;
+  // }
+  //
+  // generateMelodyWithMotif(bars, rootNotes = ["A4", "G4", "F4", "G4"]) {
+  //   // generateMelodyWithMotif(bars, rootNotes, barLength, motifTemplate) {
+  //   let melody = [];
+  //   let currentTime = 0;
+  //
+  //   for (let bar = 0; bar < bars; bar++) {
+  //     let baseFrequency = this.noteToFrequency(rootNotes[bar % rootNotes.length]);
+  //     let motif = this.createBasicMotif(baseFrequency, this.barLength); // Generate motif with correct timing
+  //
+  //     // Apply motif to the current bar
+  //     motif.forEach((note) => {
+  //       melody.push({
+  //         color: "green",
+  //         frequency: note.note,
+  //         startTime: currentTime,
+  //         duration: note.duration * this.barLength, // Adjust duration to fit within the bar
+  //       });
+  //       currentTime += note.duration * this.barLength;
+  //     });
+  //
+  //     // Fill the remaining part of the bar with rest or repeat the motif
+  //     currentTime = (bar + 1) * this.barLength; // Ensure each bar starts fresh, aligning the melody correctly
+  //   }
+  //   return melody;
+  // }
 
   generateHardstyleTripletMelodyAndBassline(bars = 4, rootNotes = ["D#6", "A#5", "F#5", "F5"]) {
     const melody = [];
