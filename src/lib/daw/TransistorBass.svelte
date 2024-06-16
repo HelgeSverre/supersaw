@@ -3,10 +3,9 @@
   import { audioManager } from "../../core/audio.js";
   import Encoder from "../ui/Encoder.svelte";
   import LED from "../ui/LED.svelte";
-  import { frequencyToMidiNote, noteLabel } from "../../core/midi.js";
-  import { WaveSawtooth, WaveSquare, WaveTriangle } from "phosphor-svelte";
+  import { frequencyToMidiNote, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
+  import { Metronome, Sliders, SmileySticker, WaveSawtooth, WaveSquare, WaveTriangle } from "phosphor-svelte";
   import classNames from "classnames";
-  import { Ticker } from "../../core/misc/ticker";
 
   let audioContext;
   let currentStep = 0;
@@ -28,14 +27,98 @@
   let tempo = 90; // BPM
   let tuning = 0; // Detune amount
   let envMod = 0.5; // Envelope modulation depth
-  let decay = 0.1; // Decay time
+  let decay = 0.2; // Decay time
   let accentIntensity = 0.5; // Intensity of the accent
 
   let oscillator, filter, envelope, gainNode;
 
+  let selectedPattern;
+  let elapsedPlayTime = 0;
+  const patterns = [
+    {
+      name: "Glide test",
+      tempo: 80,
+      steps: [
+        { frequency: midiNoteToFrequency(60), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(60), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(60), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(65), accent: false, glide: true },
+      ],
+    },
+    {
+      name: "Scale test",
+      tempo: 100,
+      steps: [
+        { frequency: midiNoteToFrequency(60 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(61 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(62 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(63 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(64 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(65 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(66 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(67 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(68 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(69 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(70 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(71 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(72 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(73 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(74 - 12), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(75 - 12), accent: false, glide: false },
+      ],
+    },
+    {
+      name: "Phuture - Acid Tracks",
+      tempo: 114,
+      steps: [
+        { frequency: midiNoteToFrequency(47), accent: true, glide: true }, // B up, Accent + Slide
+        { frequency: midiNoteToFrequency(47), accent: false, glide: false }, // B up
+        { frequency: midiNoteToFrequency(36), accent: true, glide: false }, // C lo, Accent
+        { frequency: midiNoteToFrequency(48), accent: true, glide: false }, // C hi, Accent
+        { frequency: midiNoteToFrequency(36), accent: false, glide: false }, // C lo
+        { frequency: midiNoteToFrequency(51), accent: true, glide: true }, // D# up, Accent + Slide
+        { frequency: midiNoteToFrequency(51), accent: false, glide: false }, // D#
+        { frequency: midiNoteToFrequency(48), accent: true, glide: false }, // C hi, Accent
+      ],
+    },
+    {
+      name: "Josh Wink - Higher State of Consciousness",
+      steps: [
+        { frequency: midiNoteToFrequency(60), accent: true, glide: false },
+        { frequency: midiNoteToFrequency(60), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(62), accent: true, glide: false },
+        { frequency: midiNoteToFrequency(64), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(65), accent: true, glide: true },
+        { frequency: midiNoteToFrequency(67), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(69), accent: true, glide: true },
+        { frequency: midiNoteToFrequency(71), accent: false, glide: false },
+      ],
+    },
+    {
+      name: "Hardfloor - Acperience 1",
+      steps: [
+        { frequency: midiNoteToFrequency(50), accent: true, glide: false },
+        { frequency: midiNoteToFrequency(52), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(50), accent: false, glide: true },
+        { frequency: midiNoteToFrequency(48), accent: true, glide: false },
+        { frequency: midiNoteToFrequency(50), accent: false, glide: true },
+        { frequency: midiNoteToFrequency(52), accent: false, glide: false },
+        { frequency: midiNoteToFrequency(53), accent: true, glide: false },
+        { frequency: midiNoteToFrequency(55), accent: false, glide: true },
+      ],
+    },
+  ];
+
+  function selectPresetPattern(index) {
+    pattern = patterns[index]?.steps ?? [];
+    tempo = patterns[index]?.tempo ?? tempo;
+  }
+
   onMount(() => {
     audioContext = audioManager.audioContext;
     initAudioNodes();
+
+    selectPresetPattern(1);
   });
 
   function initAudioNodes() {
@@ -62,22 +145,24 @@
     gainNode.connect(audioManager.mixer);
   }
 
+  let prevFrequency;
+
   function playNote() {
+    elapsedPlayTime += 60 / tempo / 4;
+
     let index = currentStep % pattern.length;
     const step = pattern[index];
-    const nextFrequency = step.frequency;
-    // const nextFrequency = step.frequency * Math.pow(2, tuning / 1200);
+    const nextFrequency = step.frequency * Math.pow(2, tuning / 1200);
 
-    console.log(nextFrequency, step.frequency * Math.pow(2, tuning / 1200));
-
-    if (index === 0) {
-      let ticker = new Ticker(audioManager.audioContext);
-      ticker.play();
-    }
+    // Duration of a quarter note in seconds
+    let noteDuration = 60 / tempo / 4;
 
     if (step.glide && currentStep > 0) {
-      // oscillator.frequency.exponentialRampToValueAtTime(nextFrequency, audioContext.currentTime + 60 / tempo / 4);
-      oscillator.frequency.linearRampToValueAtTime(nextFrequency, audioContext.currentTime + 60 / tempo / 4);
+      // Use a fraction of the note duration for the glide effect.
+      let glideDuration = noteDuration * 0.75; // Glide over half the duration of a note
+      let glideEndTime = audioContext.currentTime + glideDuration;
+      oscillator.frequency.linearRampToValueAtTime(nextFrequency, glideEndTime);
+      console.log("Glide from", prevFrequency, "to", nextFrequency, "over", glideDuration, "seconds");
     } else {
       oscillator.frequency.setValueAtTime(nextFrequency, audioContext.currentTime);
     }
@@ -89,7 +174,7 @@
 
     // Modulate the filter's cutoff based on the envelope modulator
     let baseCutoff = cutoff;
-    let modulatedCutoff = baseCutoff + envMod * 5000; // `2000` is an arbitrary scale factor for demonstration
+    let modulatedCutoff = baseCutoff + envMod * 2000; // `2000` is an arbitrary scale factor for demonstration
     filter.frequency.setValueAtTime(baseCutoff, audioContext.currentTime);
     filter.frequency.linearRampToValueAtTime(modulatedCutoff, audioContext.currentTime + decay);
 
@@ -100,6 +185,7 @@
       filter.Q.setValueAtTime(resonance, audioContext.currentTime);
     }
 
+    prevFrequency = nextFrequency;
     currentStep++;
   }
 
@@ -109,6 +195,7 @@
 
   function playPattern() {
     if (!isPlaying) {
+      elapsedPlayTime = 0;
       isPlaying = true;
       intervalId = setInterval(playNote, 60000 / tempo / 4);
     }
@@ -144,7 +231,7 @@
   $: if (oscillator) {
     const step = pattern[currentStep % pattern.length];
     oscillator.type = waveform;
-    oscillator.frequency.setValueAtTime(step.frequency * Math.pow(2, tuning / 1200), audioContext.currentTime);
+    // oscillator.frequency.setValueAtTime(step.frequency * Math.pow(2, tuning / 1200), audioContext.currentTime);
   }
 
   $: if (filter) {
@@ -161,10 +248,41 @@
 
 <main class="my-6 flex max-w-4xl flex-col gap-3">
   <div class="tb303 relative w-full max-w-4xl rounded-lg border-2 border-gray-300 p-1 text-black shadow-xl">
+    <div class="flex flex-row items-center justify-between gap-3 px-3 py-2">
+      <div class="flex flex-row items-center justify-center gap-1">
+        <SmileySticker size="24" weight="duotone" color="gray" />
+        <span class="font-mono text-xs leading-tight tracking-tighter text-gray-500">Roland TR-303 Emulation</span>
+      </div>
+
+      <div class="flex flex-row items-center justify-center gap-1">
+        <Metronome size="24" weight="duotone" color="gray" />
+        <span class="font-mono text-xs leading-tight tracking-tighter text-gray-500">
+          {currentStep} -- {patternIndex + 1} / {pattern.length}
+          --
+          {tempo} BPM --
+          {60 / tempo / 4} s /{elapsedPlayTime} s
+        </span>
+      </div>
+
+      <div class="flex flex-row items-center gap-3">
+        <Sliders size="20" weight="duotone" color="gray" />
+        <select
+          bind:value={selectedPattern}
+          on:change={() => selectPresetPattern(selectedPattern)}
+          class="inline-block max-w-44 rounded border border-gray-300 bg-gray-200 p-1 text-xs"
+        >
+          <option value="">Select a pattern</option>
+          {#each patterns as { name }, index}
+            <option value={index}>{name}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
+
     <div class="flex flex-col gap-6 rounded-lg border border-gray-200 p-3">
-      <div class=" flex flex-row items-center justify-between gap-3 border-b-2 border-gray-300 pb-4">
+      <div class=" flex flex-row items-center justify-between gap-3 border-b border-gray-300 pb-4">
         <div>
-          <img src="/assets/roland.svg" alt="TB-303" class="h-6 text-black opacity-70" />
+          <img src="/assets/roland.svg" alt="TB-303" class="brand-logo h-6 text-black opacity-70" />
         </div>
 
         <div class="flex flex-row items-end gap-8 border-x-2 border-gray-300 px-8">
@@ -216,7 +334,7 @@
           </div>
         </div>
         <div class="flex flex-col items-start justify-between gap-3">
-          <div class="whitespace-nowrap text-2xl font-semibold leading-none tracking-tight text-black opacity-70">
+          <div class="whitespace-nowrap text-2xl font-light leading-none tracking-tight text-black opacity-70">
             Bass Line
           </div>
           <div class="flex w-full flex-row justify-between">
@@ -248,7 +366,7 @@
         </div>
       </div>
 
-      <div class="mx-auto flex w-full max-w-3xl flex-row items-center justify-center gap-12">
+      <div class="mx-auto flex w-full flex-row items-center justify-center gap-12">
         <div class="flex-1">
           <div class="grid grid-cols-7 gap-3 rounded-lg bg-gray-200 p-4">
             <div class="flex flex-col gap-1 text-xs leading-none">
@@ -289,7 +407,7 @@
         </div>
       </div>
 
-      <div class="flex flex-row items-end gap-6 rounded-lg border border-gray-200 p-4">
+      <div class="flex w-full flex-row items-end gap-6 rounded-lg border border-gray-300 p-4">
         <div class="flex flex-col gap-3">
           <div class="flex flex-col items-center justify-center gap-1 text-center">
             <label class="text-xs uppercase text-light-soft" for="tempo">Tempo </label>
@@ -318,21 +436,25 @@
             </div>
           </div>
         </div>
-        <div class="grid grid-cols-8 gap-x-2 gap-y-3 p-4">
+
+        <div class="grid grid-cols-8 gap-x-2 gap-y-3 pl-4">
           {#each pattern as note, index (note + index)}
             <div class="flex flex-col items-center justify-between gap-2 rounded-lg bg-black/5 px-1.5 py-2">
               <div>
                 <LED size="14" on={patternIndex === index} />
               </div>
               <span class="text-xs">{noteLabel(frequencyToMidiNote(note.frequency))}</span>
-              <div
+
+              <button
+                on:click={() => (note.on = !note.on)}
                 class={classNames("block w-full rounded p-1 text-center text-xs text-gray-700", {
-                  "bg-accent-neon": patternIndex === index,
-                  "bg-gray-300": patternIndex !== index,
+                  "bg-accent-neon": note.on,
+                  "bg-gray-300": !note.on,
                 })}
               >
                 <span>{index + 1}</span>
-              </div>
+              </button>
+
               <input
                 type="number"
                 class="block w-full appearance-none rounded border border-gray-300 bg-gray-100 p-1 text-center font-mono text-sm text-light-soft"
@@ -378,6 +500,24 @@
   .tb303 {
     background-color: #f9fcff;
     background-image: linear-gradient(147deg, #f9fcff 0%, #dee4ea 74%);
+  }
+
+  .behringer .metal {
+    background-color: black !important;
+    background: black !important;
+    color: white !important;
+  }
+
+  .behringer {
+    background-color: #fcb529;
+    border-color: transparent !important;
+    background-image: linear-gradient(147deg, #fcb529 0%, #fbb328 74%);
+  }
+
+  .behringer * {
+    border-color: black !important;
+    color: black;
+    /*background: transparent;*/
   }
 
   .metal {

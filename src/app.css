@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .debug {
+    @apply *:ring-2 *:ring-purple-600;
+  }
+
+  .debug-2 * {
+    @apply *:ring-2 *:ring-purple-600;
+  }
+
+  .xray * {
+    @apply *:bg-black/5 *:ring-1 *:ring-black/50;
+  }
+}
+
 @layer base {
   :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
