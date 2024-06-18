@@ -24,7 +24,7 @@
     analyser.fftSize = 2048; // Larger fftSize for more detailed analysis
     analyser.smoothingTimeConstant = 0.3; // Smoothing can be adjusted as needed
 
-    let wip = audioManager.getChannel(channel);
+    let wip = channel === "master" ? audioManager.getMasterChannel() : audioManager.getChannel(channel);
 
     if (!wip?.id) {
       console.log(wip);
@@ -62,7 +62,7 @@
   $: audioManager.setChannelPan(channel, pan);
 </script>
 
-<div class="flex max-w-20 flex-col border-b border-red-400 bg-[#2D2D30]">
+<div class="flex max-w-20 flex-col bg-[#2D2D30]">
   <div class="flex flex-1 flex-col items-center justify-stretch">
     <!-- Name -->
     <div class=" flex h-12 w-full flex-col items-center justify-start border-b border-black bg-black/10 p-1">
