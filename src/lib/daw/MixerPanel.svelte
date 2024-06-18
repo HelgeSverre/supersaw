@@ -18,7 +18,6 @@
 
   const openHeight = 350;
   const closedHeight = 0;
-  const masterChannel = audioManager.getMasterChannel();
 
   const mixerHeight = tweened($isMixerOpen ? openHeight : closedHeight, {
     duration: 100,
