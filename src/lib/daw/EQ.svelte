@@ -7,26 +7,21 @@
   let svgElement;
 
   let lowGain = 0;
-  let lowFreq = 320;
-  let lowQ = 1;
-
   let midGain = 0;
-  let midFreq = 1000;
-  let midQ = 1;
-
   let highGain = 0;
-  let highFreq = 3200;
-  let highQ = 1;
+
+  let lowFreq = 0;
+  let midFreq = 0;
+  let highFreq = 0;
+
+  let lowQ = 0;
+  let midQ = 0;
+  let highQ = 0;
 
   let audioContext;
   let audioSource;
-  let lowFilter, midFilter, highFilter;
-  let centerY;
-
-  let control1X;
-  let control2X;
-  let control1Y;
-  let control2Y;
+  let lowFilter, highFilter;
+  let centerY = 200;
 
   let pathData = "";
 
@@ -34,24 +29,16 @@
     audioContext = audioManager.audioContext;
     audioSource = audioContext.createMediaElementSource(audioElement);
 
-    // Create BiquadFilterNodes for low, mid, and high frequencies
+    // Create BiquadFilterNodes for low and high frequencies
     lowFilter = audioContext.createBiquadFilter();
     lowFilter.type = "lowshelf";
-    lowFilter.frequency.setValueAtTime(320, audioContext.currentTime);
-
-    midFilter = audioContext.createBiquadFilter();
-    midFilter.type = "peaking";
-    midFilter.frequency.setValueAtTime(1000, audioContext.currentTime);
-    midFilter.Q.setValueAtTime(1, audioContext.currentTime);
 
     highFilter = audioContext.createBiquadFilter();
     highFilter.type = "highshelf";
-    highFilter.frequency.setValueAtTime(3200, audioContext.currentTime);
 
     // Connect the filters in series
     audioSource.connect(lowFilter);
-    lowFilter.connect(midFilter);
-    midFilter.connect(highFilter);
+    lowFilter.connect(highFilter);
     highFilter.connect(audioManager.mixer);
 
     updateFilters();
@@ -61,34 +48,32 @@
     const now = audioContext.currentTime;
 
     lowFilter.gain.setValueAtTime(lowGain, now);
-    lowFilter.frequency.setValueAtTime(lowFreq, now);
-    lowFilter.Q.setValueAtTime(lowQ, now);
-
-    midFilter.gain.setValueAtTime(midGain, now);
-    midFilter.frequency.setValueAtTime(midFreq, now);
-    midFilter.Q.setValueAtTime(midQ, now);
-
     highFilter.gain.setValueAtTime(highGain, now);
-    highFilter.frequency.setValueAtTime(highFreq, now);
-    highFilter.Q.setValueAtTime(highQ, now);
 
     updatePaths();
   }
 
-  let pathDataLow = "";
-  let pathDataHigh = "";
+  let lowStartY;
+  let highEndY;
+  let midY;
+  let control1Y;
+  let control2Y;
 
   function updatePaths() {
-    // Constants to define the SVG drawing space
-    const centerY = 200; // Midline of the EQ
+    // Map gain values to the SVG canvas height, from 0 to 400
+    lowStartY = mapGainToY(lowGain, -30, 30, 400, 0);
+    highEndY = mapGainToY(highGain, -30, 30, 400, 0);
+    midY = mapGainToY(midGain, -30, 30, 400, 0);
 
-    // Updating the Low Shelf Curve
-    let lowControlPointY = centerY - lowGain * 50; // Dynamic control point
-    pathDataLow = `M 50,${centerY} L 200,${centerY - lowGain * 100} C 300,${lowControlPointY} 400,${centerY - lowGain * 100} 500,${centerY}`;
+    control1Y = (lowStartY + midY) / 2;
+    control2Y = (highEndY + midY) / 2;
 
-    // Updating the High Shelf Curve
-    let highControlPointY = centerY - highGain * 50; // Dynamic control point
-    pathDataHigh = `M 500,${centerY} C 600,${highControlPointY} 700,${centerY - highGain * 100} 850,${centerY - highGain * 100} L 1000,${centerY}`;
+    pathData = `M 0,${lowStartY}
+                C 250,${control1Y} 750,${control2Y} 1000,${highEndY}`;
+  }
+
+  function mapGainToY(gain, gainMin, gainMax, yMin, yMax) {
+    return ((gain - gainMin) / (gainMax - gainMin)) * (yMax - yMin) + yMin;
   }
 </script>
 
@@ -98,7 +83,7 @@
   </audio>
 
   <div class="h-24 rounded-md border border-dark-400 bg-dark-900">
-    <svg bind:this={svgElement} viewBox="0 0 1000 400" class="h-full w-full">
+    <svg bind:this={svgElement} viewBox="0 0 1000 400" class="h-full w-full" preserveAspectRatio="none">
       {#each [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as i}
         <line x1={i * 100} y1="0" x2={i * 100} y2="400" stroke="#222" stroke-width="1" />
       {/each}
@@ -107,8 +92,16 @@
         <line x1="0" y1={i * 50} x2="1000" y2={i * 50} stroke="#444" stroke-width="1" />
       {/each}
 
-      <path d={pathDataLow} fill="none" stroke="blue" stroke-width="2" />
-      <path d={pathDataHigh} fill="none" stroke="red" stroke-width="2" />
+      <!-- Endpoints -->
+      <circle cx="0" cy={lowStartY} r="5" fill="#FF6347" />
+      <circle cx="500" cy={midY} r="5" fill="#FF6347" />
+      <circle cx="1000" cy={highEndY} r="5" fill="#FF6347" />
+
+      <!-- Control points -->
+      <circle cx="250" cy={control1Y} r="5" fill="yellow" />
+      <circle cx="750" cy={control2Y} r="5" fill="yellow" />
+
+      <path d={pathData} fill="none" stroke="#FF6347" stroke-width="2" />
     </svg>
   </div>
 
