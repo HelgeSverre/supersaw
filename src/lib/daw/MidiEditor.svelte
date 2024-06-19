@@ -27,8 +27,8 @@
   import { Biohazard, CassetteTape, Keyboard } from "phosphor-svelte";
   import { TimeConverter } from "../../core/time";
   import { MusicGenerator } from "../../utils/hardstyleGenerator.js";
+  import { GeneratorHardstyle } from "../../utils/generators/wip.js";
   import classNames from "classnames";
-  import { HardstyleGenerator } from "../../utils/generators/hardstyle.js";
 
   const dispatch = createEventDispatcher();
 
@@ -539,9 +539,14 @@
       "G4",
     ];
 
-    let trackGenerator = new HardstyleGenerator("A#", "harmonicMinor");
-    let melody = trackGenerator.generateMelody(bars, "random");
-    let bassline = trackGenerator.generateBassline(melody);
+    let wip = new GeneratorHardstyle();
+    let { melody, bassline, tonics } = wip.generate(bars);
+
+    console.log(tonics);
+
+    // let trackGenerator = new HardstyleGenerator();
+    // let melody = trackGenerator.generateMelody(bars);
+    // let bassline = trackGenerator.generateBassline(melody, bars);
     // let melody = generator.generateHardstyleMelodyHarmonicMinor(bars);
     // let bassline = generator.generateHardstyleBassline(melody, bars);
     // let kicks = generator.generateHardstyleKick(bars);
@@ -589,6 +594,7 @@
     scrollToFirstNote(200);
 
     console.log(melody);
+    console.log(bassline);
   }
 
   $: beatWidth = $pixelsPerBeat;
