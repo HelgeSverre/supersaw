@@ -4,19 +4,26 @@ export class GeneratorHardstyle {
     this.beatDuration = (60 / this.bpm) * 1000; // Duration of one beat in milliseconds
     this.barLength = 4 * this.beatDuration; // Duration of one bar in milliseconds
     this.notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
-    this.scaleType = "harmonicMinor";
+    this.motifs = [
+      [0, 2, 1, 2], // Simple up and down movement
+      [1, 1, 2, 0], // Syncopated jump
+      [2, 1, 1, 0], // Descending with a leading tone
+      [0, 2, 3, 2], // Common hardstyle rhythmic pattern
+    ];
   }
 
-  getScaleIntervals(scaleType = "harmonicMinor") {
-    const scales = {
-      harmonicMinor: [0, 2, 3, 5, 7, 8, 11],
-    };
-    return scales[scaleType];
+  createStructuredMotifPreset(scaleNotes) {
+    // Select a predefined motif
+    const motifPattern = this.motifs[Math.floor(Math.random() * this.motifs.length)];
+    return motifPattern.map((index) => {
+      const safeIndex = index % scaleNotes.length; // Ensures we do not go out of bounds
+      return scaleNotes[safeIndex]; // Safely access the scale note
+    });
   }
 
-  getScaleNotes(root, scaleType = "harmonicMinor") {
+  getScaleNotes(root) {
     const rootIndex = this.notes.indexOf(root);
-    const intervals = this.getScaleIntervals(scaleType);
+    const intervals = [0, 2, 3, 5, 7, 8, 11];
     return intervals.map((interval) => this.notes[(rootIndex + interval) % 12]);
   }
 
@@ -49,49 +56,34 @@ export class GeneratorHardstyle {
   // createStructuredMotif(scaleNotes) {
   //   const motif = [];
   //
-  //   // Define a simple pattern for the motif
-  //   const pattern = [1, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19, 20, 22, 23, 24];
+  //   // Generate a random pattern for the motif
+  //   const pattern = [];
+  //   for (let i = 0; i < 16; i++) {
+  //     pattern.push(Math.floor(Math.random() * scaleNotes.length));
+  //   }
   //
-  //   for (let i = 0; i < 8; i++) {
+  //   for (let i = 0; i < 16; i++) {
   //     const index = pattern[i];
-  //     const note = scaleNotes[index % scaleNotes.length];
+  //     const note = scaleNotes[index];
   //     motif.push(note);
   //   }
   //
   //   return motif;
   // }
 
-  createStructuredMotif(scaleNotes) {
-    const motif = [];
-
-    // Generate a random pattern for the motif
-    const pattern = [];
-    for (let i = 0; i < 16; i++) {
-      pattern.push(Math.floor(Math.random() * scaleNotes.length));
-    }
-
-    for (let i = 0; i < 16; i++) {
-      const index = pattern[i];
-      const note = scaleNotes[index];
-      motif.push(note);
-    }
-
-    return motif;
-  }
-
   generateMelody(bars = 4, tonics) {
     const melody = [];
 
     for (let bar = 0; bar < bars; bar++) {
       const tonic = tonics[bar];
-      const scaleNotes = this.getScaleNotes(tonic, this.scaleType);
-      const motif = this.createStructuredMotif(scaleNotes);
+      const scaleNotes = this.getScaleNotes(tonic);
+      const motif = this.createStructuredMotifPreset(scaleNotes);
 
       for (let beat = 0; beat < 4; beat++) {
         const startTime = bar * this.barLength + beat * this.beatDuration;
-        const duration = this.beatDuration * 0.25;
-        const noteIndex = beat * 4 + Math.floor(Math.random() * 4);
-        const note = motif[noteIndex];
+        const duration = this.beatDuration * 0.25; // Maintain note length
+        const noteIndex = beat % motif.length; // Ensure we use only valid indices
+        const note = motif[noteIndex]; // Access the note from the motif
 
         if (note) {
           melody.push({
@@ -100,6 +92,8 @@ export class GeneratorHardstyle {
             startTime: startTime,
             duration: duration,
           });
+        } else {
+          debugger;
         }
       }
     }
