@@ -28,6 +28,7 @@
   import { TimeConverter } from "../../core/time";
   import { MusicGenerator } from "../../utils/hardstyleGenerator.js";
   import classNames from "classnames";
+  import { HardstyleGenerator } from "../../utils/generators/hardstyle.js";
 
   const dispatch = createEventDispatcher();
 
@@ -514,7 +515,7 @@
     notesForDisplay = [];
 
     // Middle C
-    const generator = new MusicGenerator(midiNoteToFrequency(60), $bpm);
+    const generator = new MusicGenerator(midiNoteToFrequency(57), $bpm);
     let bars = 8;
 
     // Start at begining
@@ -538,8 +539,11 @@
       "G4",
     ];
 
-    let melody = generator.generateHardstyleMelodyHarmonicMinor(bars);
-    let bassline = generator.generateHardstyleBassline(melody, bars);
+    let trackGenerator = new HardstyleGenerator("A#", "harmonicMinor");
+    let melody = trackGenerator.generateMelody(bars, "random");
+    let bassline = trackGenerator.generateBassline(melody);
+    // let melody = generator.generateHardstyleMelodyHarmonicMinor(bars);
+    // let bassline = generator.generateHardstyleBassline(melody, bars);
     // let kicks = generator.generateHardstyleKick(bars);
 
     let melodyNotes = melody.map((note, index) => {

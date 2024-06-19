@@ -439,14 +439,7 @@ export class MusicGenerator {
           length = realDuration / this.beatDuration;
         }
 
-        if (Math.random() < restProbability) {
-          // melody.push({
-          //   color: "transparent",
-          //   frequency: 0,
-          //   startTime: currentTime,
-          //   duration: realDuration,
-          // });
-        } else {
+        if (Math.random() >= restProbability) {
           const frequency = this.baseFrequency * Math.pow(2, interval / 12);
           melody.push({
             color: "skyblue",
@@ -466,8 +459,8 @@ export class MusicGenerator {
   generateHardstyleMelodyHarmonicMinor(bars = 4) {
     const melody = [];
     const noteLengths = [0.5, 1]; // Longer notes for sustained energy
-    const noteIntervals = [0, 2, 3, 5, 7, 8, 11]; // Harmonic minor scale intervals
-    const restProbability = 0.2; // Slightly higher rest probability for dramatic effect
+    const noteIntervals = [0, 2, 3, 5, 7, 8, 10]; // Harmonic minor scale intervals
+    const restProbability = 0.3; // Slightly higher rest probability for dramatic effect
 
     let currentTime = 0;
     for (let bar = 0; bar < bars; bar++) {
@@ -482,14 +475,7 @@ export class MusicGenerator {
           length = realDuration / this.beatDuration;
         }
 
-        if (Math.random() < restProbability) {
-          melody.push({
-            color: "transparent",
-            frequency: 0,
-            startTime: currentTime,
-            duration: realDuration,
-          });
-        } else {
+        if (Math.random() > restProbability) {
           const frequency = this.baseFrequency * Math.pow(2, interval / 12);
           melody.push({
             color: "blue",
