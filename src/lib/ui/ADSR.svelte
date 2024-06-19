@@ -48,7 +48,8 @@
           decay = Math.max(0, Math.min(1, (x - attackX) / maxDecayWidth));
           break;
         case "sustain":
-          sustain = Math.max(0, Math.min(1, (x - decayX) / maxSustainWidth));
+          decay = Math.max(0, Math.min(1, (x - attackX) / maxDecayWidth));
+          sustain = Math.max(0, Math.min(1, (height - y) / height));
           break;
         case "release":
           release = Math.max(0, Math.min(1, (x - sustainX) / maxReleaseWidth));
@@ -87,96 +88,57 @@
       <div style="left: {progress}%;" class="absolute inset-y-0 z-50 w-[1px] bg-red-500"></div>
     {/if}
 
-    <svg bind:this={svg} overflow="visible" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
-      <!-- Border -->
-      <path
-        d="M 0 {height} L 0 0 L {width} 0 L {width} {height} Z"
-        fill="rgba(0,0,0,0.5)"
-        stroke="rgba(255,255,255,0.25)"
-        stroke-width="1"
-      />
+    <div class="rounded-md border border-dark-400 bg-black p-3">
+      <svg bind:this={svg} overflow="visible" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
+        <!-- Envelope Curve -->
+        <path
+          d={`M 0,${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${releaseX} ${height}`}
+          fill="rgba(0,0,0,0.0)"
+          class="stroke-current text-accent-neon/50"
+          stroke-width="2"
+          stroke-linejoin="round"
+        />
 
-      <!-- Grid lines marking each stage -->
-      <line
-        x1={attackX}
-        y1="0"
-        x2={attackX}
-        y2={height}
-        stroke="rgba(255,255,255,0.2)"
-        stroke-width="2"
-        stroke-dasharray="4"
-      />
+        <!-- Attack Control Point -->
+        <circle
+          aria-hidden="true"
+          cx={attackX}
+          cy="0"
+          r="4"
+          class="cursor-pointer fill-accent-neon"
+          on:mousedown={() => startDrag("attack")}
+        />
 
-      <line
-        x1={decayX}
-        y1="0"
-        x2={decayX}
-        y2={height}
-        stroke="rgba(255,255,255,0.2)"
-        stroke-width="2"
-        stroke-dasharray="4"
-      />
-      <line
-        x1={sustainX}
-        y1="0"
-        x2={sustainX}
-        y2={height}
-        stroke="rgba(255,255,255,0.2)"
-        stroke-width="2"
-        stroke-dasharray="4"
-      />
+        <!-- Decay Control Point -->
+        <circle
+          aria-hidden="true"
+          cx={decayX}
+          cy={sustainY}
+          r="4"
+          class="cursor-pointer fill-accent-neon"
+          on:mousedown={() => startDrag("decay")}
+        />
 
-      <!-- Envelope Curve -->
-      <path
-        d={`M 0,${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${releaseX} ${height} Z`}
-        fill="rgba(255, 255, 255, 0.25)"
-        stroke="silver"
-        stroke-width="2"
-      />
+        <!-- Sustain Control Point -->
+        <circle
+          aria-hidden="true"
+          cx={sustainX}
+          cy={sustainY}
+          r="4"
+          class="cursor-pointer fill-accent-neon"
+          on:mousedown={() => startDrag("sustain")}
+        />
 
-      <!-- Attack Control Point -->
-      <circle
-        aria-hidden="true"
-        cx={attackX}
-        cy="0"
-        r="4"
-        fill="white"
-        class="cursor-pointer"
-        on:mousedown={() => startDrag("attack")}
-      />
-
-      <!-- Decay Control Point -->
-      <circle
-        aria-hidden="true"
-        cx={decayX}
-        cy={sustainY}
-        r="4"
-        fill="white"
-        class="cursor-pointer"
-        on:mousedown={() => startDrag("decay")}
-      />
-
-      <!-- Sustain Control Point -->
-      <circle
-        aria-hidden="true"
-        cx={sustainX}
-        cy={sustainY}
-        r="4"
-        fill="white"
-        class="cursor-pointer"
-        on:mousedown={() => startDrag("sustain")}
-      />
-
-      <!-- Release Control Point -->
-      <circle
-        aria-hidden="true"
-        cx={releaseX}
-        cy={height}
-        r="4"
-        fill="white"
-        class="cursor-pointer"
-        on:mousedown={() => startDrag("release")}
-      />
-    </svg>
+        <!-- Release Control Point -->
+        <circle
+          aria-hidden="true"
+          cx={releaseX}
+          cy={height}
+          r="4"
+          class="cursor-pointer fill-accent-neon"
+          on:mousedown={() => startDrag("release")}
+        />
+      </svg>
+    </div>
   </div>
 </div>
