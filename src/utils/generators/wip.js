@@ -11,6 +11,8 @@ export class GeneratorHardstyle {
       [2, 1, 1, 0], // Descending with a leading tone
       [0, 2, 3, 2], // Common hardstyle rhythmic pattern
     ];
+
+    this.notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
   }
 
   createStructuredMotifPreset(scaleNotes) {
@@ -36,10 +38,8 @@ export class GeneratorHardstyle {
       blues: [0, 3, 5, 6, 7, 10],
     };
 
-    const notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
-
     // Find the index of the root note in the notes array
-    const rootIndex = notes.indexOf(root);
+    const rootIndex = this.notes.indexOf(root);
 
     // Get the interval pattern for the specified scale type
     const intervals = scales[this.scaleType];
@@ -47,7 +47,7 @@ export class GeneratorHardstyle {
     // Generate the scale notes by applying the intervals to the root note
     return intervals.map((interval) => {
       const noteIndex = (rootIndex + interval) % 12;
-      return notes[noteIndex];
+      return this.notes[noteIndex];
     });
   }
 
@@ -79,6 +79,7 @@ export class GeneratorHardstyle {
 
   generateMelody(bars = 4, tonics) {
     const melody = [];
+    const tripletDuration = this.beatDuration * 0.2; // One third of a beat for triplet notes
 
     for (let bar = 0; bar < bars; bar++) {
       const tonic = tonics[bar];
@@ -87,23 +88,41 @@ export class GeneratorHardstyle {
 
       for (let beat = 0; beat < 4; beat++) {
         const startTime = bar * this.barLength + beat * this.beatDuration;
-        const duration = this.beatDuration * 0.25; // Maintain note length
-        const noteIndex = beat % motif.length; // Ensure we use only valid indices
-        const note = motif[noteIndex]; // Access the note from the motif
+        const duration = this.beatDuration * 0.7; // Standard note duration before triplet
 
-        if (note) {
+        // Generate notes for most of the beat
+        melody.push({
+          color: "yellow",
+          frequency: this.noteToFrequency(motif[beat % motif.length]),
+          startTime: startTime,
+          duration: duration,
+        });
+
+        if (beat === 3) {
+          // const nextChordTonic = tonics[(bar + 1) % tonics.length];
+          // const nextScaleNotes = this.getScaleNotes(nextChordTonic);
+          // const tripletNote = nextScaleNotes[0]; // Example: picking the tonic of the next chord
+
+          const nextTonic = tonics[(bar + 1) % tonics.length];
+          const leadingTone = this.getLeadingTone(nextTonic);
+
           melody.push({
-            color: "yellow",
-            frequency: this.noteToFrequency(note),
-            startTime: startTime,
-            duration: duration,
+            color: "white", // Different color to highlight the triplet note
+            frequency: this.noteToFrequency(leadingTone),
+
+            startTime: startTime + duration,
+            duration: tripletDuration,
           });
-        } else {
-          debugger;
         }
       }
     }
     return melody;
+  }
+
+  getLeadingTone(nextTonic) {
+    const nextTonicIndex = this.notes.indexOf(nextTonic);
+    const leadingToneIndex = (nextTonicIndex - 1 + this.notes.length) % this.notes.length; // Ensure circular indexing
+    return this.notes[leadingToneIndex];
   }
 
   generateBassline(bars = 4) {
@@ -112,13 +131,16 @@ export class GeneratorHardstyle {
     const scaleNotes = this.getScaleNotes(this.root, scaleType); // Get scale notes from the root
 
     // Generate tonics from scale notes, choosing notes that typically make strong bass tones.
-    const tonics = [];
+    let tonics = [];
     for (let bar = 0; bar < bars; bar++) {
       // Randomly pick a tonic from the scale notes, biased towards more 'bassy' notes by selecting lower intervals more often
       const tonicIndex = Math.floor(Math.random() * (scaleNotes.length / 2)); // This limits the range to the lower half of the scale
       const tonic = scaleNotes[tonicIndex];
       tonics.push(tonic);
     }
+
+    // hardcode
+    tonics = ["G", "G", "C", "C", "E", "E", "D", "E"];
 
     // Generate the bassline using the selected tonics
     for (let bar = 0; bar < bars; bar++) {

@@ -539,9 +539,10 @@
       "G4",
     ];
 
-    let wip = new GeneratorHardstyle();
+    let wip = new GeneratorHardstyle(150, "harmonicMinor", "F#");
     let { melody, bassline, tonics } = wip.generate(bars);
 
+    // melody=[]
     console.log(tonics);
 
     // let trackGenerator = new HardstyleGenerator();
