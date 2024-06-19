@@ -98,44 +98,46 @@
           stroke-width="2"
           stroke-linejoin="round"
         />
-
-        <!-- Attack Control Point -->
-        <circle
+        <rect
           aria-hidden="true"
-          cx={attackX}
-          cy="0"
-          r="4"
-          class="cursor-pointer fill-accent-neon"
+          x={attackX - 4}
+          y="-4"
+          width="8"
+          height="8"
+          class="cursor-pointer stroke-current text-accent-neon active:fill-accent-neon"
           on:mousedown={() => startDrag("attack")}
         />
 
         <!-- Decay Control Point -->
-        <circle
+        <rect
           aria-hidden="true"
-          cx={decayX}
-          cy={sustainY}
-          r="4"
-          class="cursor-pointer fill-accent-neon"
+          x={decayX - 4}
+          y={sustainY - 4}
+          width="8"
+          height="8"
+          class="cursor-pointer stroke-current text-accent-neon active:fill-accent-neon"
           on:mousedown={() => startDrag("decay")}
         />
 
         <!-- Sustain Control Point -->
-        <circle
+        <rect
           aria-hidden="true"
-          cx={sustainX}
-          cy={sustainY}
-          r="4"
-          class="cursor-pointer fill-accent-neon"
+          x={sustainX - 4}
+          y={sustainY - 4}
+          width="8"
+          height="8"
+          class="cursor-pointer stroke-current text-accent-neon active:fill-accent-neon"
           on:mousedown={() => startDrag("sustain")}
         />
 
         <!-- Release Control Point -->
-        <circle
+        <rect
           aria-hidden="true"
-          cx={releaseX}
-          cy={height}
-          r="4"
-          class="cursor-pointer fill-accent-neon"
+          x={releaseX - 4}
+          y={height - 4}
+          width="8"
+          height="8"
+          class="cursor-pointer stroke-current text-accent-neon active:fill-accent-neon"
           on:mousedown={() => startDrag("release")}
         />
       </svg>
