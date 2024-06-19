@@ -1,9 +1,10 @@
 export class GeneratorHardstyle {
-  constructor(bpm = 150) {
+  constructor(bpm = 150, scale = "harmonicMinor", root = "F#") {
     this.bpm = bpm;
     this.beatDuration = (60 / this.bpm) * 1000; // Duration of one beat in milliseconds
     this.barLength = 4 * this.beatDuration; // Duration of one bar in milliseconds
-    this.notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+    this.root = root;
+    this.scaleType = scale;
     this.motifs = [
       [0, 2, 1, 2], // Simple up and down movement
       [1, 1, 2, 0], // Syncopated jump
@@ -13,7 +14,6 @@ export class GeneratorHardstyle {
   }
 
   createStructuredMotifPreset(scaleNotes) {
-    // Select a predefined motif
     const motifPattern = this.motifs[Math.floor(Math.random() * this.motifs.length)];
     return motifPattern.map((index) => {
       const safeIndex = index % scaleNotes.length; // Ensures we do not go out of bounds
@@ -22,9 +22,33 @@ export class GeneratorHardstyle {
   }
 
   getScaleNotes(root) {
-    const rootIndex = this.notes.indexOf(root);
-    const intervals = [0, 2, 3, 5, 7, 8, 11];
-    return intervals.map((interval) => this.notes[(rootIndex + interval) % 12]);
+    const scales = {
+      harmonicMinor: [0, 2, 3, 5, 7, 8, 11],
+      major: [0, 2, 4, 5, 7, 9, 11],
+      minor: [0, 2, 3, 5, 7, 8, 10],
+      dorian: [0, 2, 3, 5, 7, 9, 10],
+      phrygian: [0, 1, 3, 5, 7, 8, 10],
+      lydian: [0, 2, 4, 6, 7, 9, 11],
+      mixolydian: [0, 2, 4, 5, 7, 9, 10],
+      locrian: [0, 1, 3, 5, 6, 8, 10],
+      pentatonicMinor: [0, 3, 5, 7, 10],
+      pentatonicMajor: [0, 2, 4, 7, 9],
+      blues: [0, 3, 5, 6, 7, 10],
+    };
+
+    const notes = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+
+    // Find the index of the root note in the notes array
+    const rootIndex = notes.indexOf(root);
+
+    // Get the interval pattern for the specified scale type
+    const intervals = scales[this.scaleType];
+
+    // Generate the scale notes by applying the intervals to the root note
+    return intervals.map((interval) => {
+      const noteIndex = (rootIndex + interval) % 12;
+      return notes[noteIndex];
+    });
   }
 
   noteToFrequency(note) {
@@ -52,24 +76,6 @@ export class GeneratorHardstyle {
     const melody = this.generateMelody(bars, tonics);
     return { melody, bassline, tonics };
   }
-
-  // createStructuredMotif(scaleNotes) {
-  //   const motif = [];
-  //
-  //   // Generate a random pattern for the motif
-  //   const pattern = [];
-  //   for (let i = 0; i < 16; i++) {
-  //     pattern.push(Math.floor(Math.random() * scaleNotes.length));
-  //   }
-  //
-  //   for (let i = 0; i < 16; i++) {
-  //     const index = pattern[i];
-  //     const note = scaleNotes[index];
-  //     motif.push(note);
-  //   }
-  //
-  //   return motif;
-  // }
 
   generateMelody(bars = 4, tonics) {
     const melody = [];
