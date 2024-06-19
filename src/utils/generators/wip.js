@@ -108,6 +108,49 @@ export class GeneratorHardstyle {
 
   generateBassline(bars = 4) {
     const bassline = [];
+    const scaleType = this.scaleType; // Assuming the scaleType is set for the whole class
+    const scaleNotes = this.getScaleNotes(this.root, scaleType); // Get scale notes from the root
+
+    // Generate tonics from scale notes, choosing notes that typically make strong bass tones.
+    const tonics = [];
+    for (let bar = 0; bar < bars; bar++) {
+      // Randomly pick a tonic from the scale notes, biased towards more 'bassy' notes by selecting lower intervals more often
+      const tonicIndex = Math.floor(Math.random() * (scaleNotes.length / 2)); // This limits the range to the lower half of the scale
+      const tonic = scaleNotes[tonicIndex];
+      tonics.push(tonic);
+    }
+
+    // Generate the bassline using the selected tonics
+    for (let bar = 0; bar < bars; bar++) {
+      const tonic = tonics[bar];
+      const baseNoteFrequency = this.noteToFrequency(tonic);
+
+      for (let beat = 0; beat < 4; beat++) {
+        const startTime = bar * this.barLength + beat * this.beatDuration;
+        const highDuration = this.beatDuration * 0.7;
+        const lowDuration = this.beatDuration * 0.2;
+
+        bassline.push({
+          color: "red",
+          frequency: baseNoteFrequency, // High part of the bass
+          duration: highDuration,
+          startTime: startTime,
+        });
+
+        bassline.push({
+          color: "blue",
+          frequency: baseNoteFrequency / 2, // One octave down
+          duration: lowDuration,
+          startTime: startTime + highDuration,
+        });
+      }
+    }
+
+    return { bassline, tonics };
+  }
+
+  generateBasslineOld(bars = 4) {
+    const bassline = [];
     const tonics = ["G", "G", "C", "C", "E", "E", "D", "E"];
 
     for (let bar = 0; bar < bars; bar++) {
