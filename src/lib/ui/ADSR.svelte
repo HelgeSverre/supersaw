@@ -12,15 +12,17 @@
   export let width = 350;
   export let height = 150;
 
-  $: maxAttackWidth = width * 0.25;
-  $: maxDecayWidth = width * 0.25;
-  $: maxReleaseWidth = width * 0.25;
+  $: maxAttackWidth = width * 0.3; // Increased to 0.3
+  $: maxDecayWidth = width * 0.3; // Increased to 0.3
+  $: maxSustainWidth = width * 0.2; // Added for Sustain
+  $: maxReleaseWidth = width * 0.2; // Added for Release
 
   $: attackX = attack * maxAttackWidth;
-  $: decayX = attackX + decay * (width - maxAttackWidth - maxDecayWidth - maxReleaseWidth);
-  $: sustainY = height - sustain * height;
-  $: sustainX = width - release * maxReleaseWidth;
+  $: decayX = attackX + decay * maxDecayWidth;
+  $: sustainX = decayX + sustain;
+  $: releaseX = sustainX + release * (maxAttackWidth + maxDecayWidth - maxReleaseWidth);
 
+  $: sustainY = height - sustain * height;
   let svg;
   let draggingPoint = null;
 
@@ -43,13 +45,13 @@
           attack = Math.max(0, Math.min(1, x / maxAttackWidth));
           break;
         case "decay":
-          decay = Math.max(0, Math.min(1, (x - attackX) / (width - maxAttackWidth - maxReleaseWidth)));
+          decay = Math.max(0, Math.min(1, (x - attackX) / maxDecayWidth));
           break;
         case "sustain":
-          sustain = Math.max(0, Math.min(1, 1 - y / height));
+          sustain = Math.max(0, Math.min(1, (x - decayX) / maxSustainWidth));
           break;
         case "release":
-          release = Math.max(0, Math.min(1, (width - x) / maxReleaseWidth));
+          release = Math.max(0, Math.min(1, (x - sustainX) / maxReleaseWidth));
           break;
       }
     }
@@ -126,7 +128,7 @@
 
       <!-- Envelope Curve -->
       <path
-        d={`M 0,${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${width} ${height} Z`}
+        d={`M 0,${height} L ${attackX} 0 L ${decayX} ${sustainY} H ${sustainX} L ${releaseX} ${height} Z`}
         fill="rgba(255, 255, 255, 0.25)"
         stroke="silver"
         stroke-width="2"
@@ -168,7 +170,7 @@
       <!-- Release Control Point -->
       <circle
         aria-hidden="true"
-        cx={width}
+        cx={releaseX}
         cy={height}
         r="4"
         fill="white"
