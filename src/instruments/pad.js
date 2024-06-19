@@ -5,21 +5,24 @@ export class Pad {
     this.output = this.audioContext.createGain();
     this.output.connect(this.mixer);
 
-    // Osc -> Reverb -> Compressor -> Output
-    // Osc -> Output
+    this.filter = this.audioContext.createBiquadFilter();
+    this.filter.type = "lowpass";
+    this.filter.frequency.setValueAtTime(4600, this.audioContext.currentTime);
+    this.filter.Q.setValueAtTime(2, this.audioContext.currentTime);
+    this.filter.connect(this.output);
 
     this.compressor = this.createCompressor();
-    this.compressor.connect(this.output);
+    this.compressor.connect(this.filter);
 
     this.reverb = this.audioContext.createConvolver();
+    this.reverb.buffer = this.createReverbImpulse();
     this.reverb.connect(this.compressor);
-    this.createReverbImpulse();
 
     this.adsr = {
-      attack: 0.8,
-      decay: 0.1,
-      sustain: 1,
-      release: 2.0,
+      attack: 0.9,
+      decay: 0.51,
+      sustain: 0.6,
+      release: 1.8,
     };
 
     this.notes = new Map();
@@ -27,18 +30,18 @@ export class Pad {
 
   createCompressor() {
     const compressor = this.audioContext.createDynamicsCompressor();
-    compressor.threshold.setValueAtTime(-10, this.audioContext.currentTime);
-    compressor.knee.setValueAtTime(40, this.audioContext.currentTime);
-    compressor.ratio.setValueAtTime(10, this.audioContext.currentTime);
+    compressor.threshold.setValueAtTime(-12, this.audioContext.currentTime);
+    compressor.knee.setValueAtTime(12, this.audioContext.currentTime);
+    compressor.ratio.setValueAtTime(4, this.audioContext.currentTime);
     compressor.attack.setValueAtTime(0, this.audioContext.currentTime);
-    compressor.release.setValueAtTime(0.25, this.audioContext.currentTime);
+    compressor.release.setValueAtTime(0.5, this.audioContext.currentTime);
 
     return compressor;
   }
 
   createReverbImpulse() {
     const sampleRate = this.audioContext.sampleRate;
-    const length = sampleRate * 3.5;
+    const length = sampleRate * 1.8;
     const impulse = this.audioContext.createBuffer(2, length, sampleRate);
     const impulseL = impulse.getChannelData(0);
     const impulseR = impulse.getChannelData(1);
@@ -48,11 +51,11 @@ export class Pad {
       impulseR[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
     }
 
-    this.reverb.buffer = impulse;
+    return impulse;
   }
 
   createOscillators(frequency, time) {
-    const detuneAmounts = [-12, -6, 0, 6, 12]; // Slight detuning for richness
+    const detuneAmounts = [-13, -6, -3, 0, 2, 6, 12]; // Slight detuning for richness
     const oscillators = [];
 
     detuneAmounts.forEach((detune) => {
@@ -69,8 +72,8 @@ export class Pad {
 
   applyEnvelope(envelope, startTime, release) {
     envelope.gain.setValueAtTime(0.0001, startTime);
-    envelope.gain.linearRampToValueAtTime(1 / Math.sqrt(5), startTime + this.adsr.attack);
-    envelope.gain.exponentialRampToValueAtTime(1 / Math.sqrt(5), startTime + this.adsr.attack + this.adsr.decay);
+    envelope.gain.linearRampToValueAtTime(1 / Math.sqrt(7), startTime + this.adsr.attack);
+    envelope.gain.exponentialRampToValueAtTime(1 / Math.sqrt(7), startTime + this.adsr.attack + this.adsr.decay);
 
     if (release) {
       envelope.gain.linearRampToValueAtTime(0, startTime + this.adsr.attack + this.adsr.decay + this.adsr.release);

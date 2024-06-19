@@ -14,8 +14,10 @@
     stopPlayback,
     switchView,
     toggleLooping,
+    zoomIn,
+    zoomOut
   } from "../../core/store.js";
-  import { Drum, Pause, Play, Plus, Repeat2, Square, Trash } from "lucide-svelte";
+  import { Drum, Pause, Play, Plus, Repeat2, Square, Trash, ZoomIn, ZoomOut } from "lucide-svelte";
   import { formatTime, formatTimeDuration } from "../../core/utils.js";
   import { Lightbulb, Waveform } from "phosphor-svelte";
   import SegmentGroup from "../ui/SegmentGroup.svelte";
@@ -78,6 +80,11 @@
           <IconButton icon={Waveform} onClick={() => createAudioTrack()} />
           <IconButton icon={Trash} onClick={clearTracks} />
           <IconButton icon={Lightbulb} onClick={toggleTheme} />
+        </SegmentGroup>
+
+        <SegmentGroup>
+          <IconButton icon={ZoomIn} onClick={() => zoomIn()} />
+          <IconButton icon={ZoomOut} onClick={() => zoomOut()} />
         </SegmentGroup>
       </div>
       <SegmentGroup>

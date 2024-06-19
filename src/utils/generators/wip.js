@@ -91,23 +91,21 @@ export class GeneratorHardstyle {
         const duration = this.beatDuration * 0.7; // Standard note duration before triplet
 
         // Generate notes for most of the beat
-        melody.push({
-          color: "yellow",
-          frequency: this.noteToFrequency(motif[beat % motif.length]),
-          startTime: startTime,
-          duration: duration,
-        });
+        if (beat === 0 || Math.random() > 0.4) {
+          melody.push({
+            color: "yellow",
+            frequency: this.noteToFrequency(motif[beat % motif.length]),
+            startTime: startTime,
+            duration: duration,
+          });
+        }
 
-        if (beat === 3) {
-          // const nextChordTonic = tonics[(bar + 1) % tonics.length];
-          // const nextScaleNotes = this.getScaleNotes(nextChordTonic);
-          // const tripletNote = nextScaleNotes[0]; // Example: picking the tonic of the next chord
-
+        if (beat === 3 && Math.random() > 0.8) {
           const nextTonic = tonics[(bar + 1) % tonics.length];
           const leadingTone = this.getLeadingTone(nextTonic);
 
           melody.push({
-            color: "white", // Different color to highlight the triplet note
+            color: "orange", // Different color to highlight the triplet note
             frequency: this.noteToFrequency(leadingTone),
 
             startTime: startTime + duration,

@@ -37,11 +37,11 @@ export class Supersaw implements Instrument {
     this.audioContext = audioContext;
     this.mixer = mixer;
     this.notes = new Map();
-    this.adsr = { attack: 0.01, decay: 0.08, sustain: 0.2, release: 1.0 };
+    this.adsr = { attack: 0.001, decay: 0.05, sustain: 0.3, release: 1.5 };
     this.numOscillators = 8;
-    this.detuneAmount = 20;
-    this.reverbAmount = 0.2;
-    this.reverbTime = 2;
+    this.detuneAmount = 10;
+    this.reverbAmount = 0.6;
+    this.reverbTime = 1.4;
     this.distortionAmount = 4;
     this.lowPassFrequency = 22050;
 
@@ -52,13 +52,17 @@ export class Supersaw implements Instrument {
     this.reverb = new Reverb(this.audioContext, this.reverbTime);
 
     this.effectChain = new ParallelChain(audioContext, [
-      new EffectChain(this.audioContext, [this.dryCompressor, this.dryDistortion, this.cutoffFilter]),
       new EffectChain(this.audioContext, [
-        this.cutoffFilter,
+        this.dryCompressor,
+        this.dryDistortion,
+        // this.cutoffFilter
+      ]),
+      new EffectChain(this.audioContext, [
+        // this.cutoffFilter,
         this.reverb,
         this.reverbControl,
-        new Filter(this.audioContext, "highpass", 500),
-        new Filter(this.audioContext, "lowpass", 7000),
+        new Filter(this.audioContext, "highpass", 600),
+        new Filter(this.audioContext, "lowpass", 8000),
       ]),
     ]);
 

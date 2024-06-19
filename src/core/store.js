@@ -238,8 +238,8 @@ const scheduleAllClips = (currentTime, filterByTrackId = null) => {
 
           // MIDI Clips: Schedule notes that are supposed to start after the current time
           if (track.instrument !== "midi_out" && clip.type === "midi" && clip.midiData) {
-            // const instrument = audioManager.getInstrument(track.instrument);
-            const instrument = new Supersaw(audioManager.audioContext, track.channel.gainNode);
+            const instrument = audioManager.getInstrument(track.instrument);
+            // const instrument = new Supersaw(audioManager.audioContext, track.channel.gainNode);
 
             extractNoteEvents(clip.midiData).forEach((midiEvent) => {
               const eventStart = clip.startTime + midiEvent.start / 1000;

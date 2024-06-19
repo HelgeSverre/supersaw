@@ -24,11 +24,13 @@
     midiNoteToFrequency,
     noteLabel,
   } from "../../core/midi.js";
-  import { Biohazard, CassetteTape, Keyboard } from "phosphor-svelte";
+  import { Biohazard, CassetteTape, Heartbeat, Keyboard, PianoKeys } from "phosphor-svelte";
   import { TimeConverter } from "../../core/time";
   import { MusicGenerator } from "../../utils/hardstyleGenerator.js";
   import { GeneratorHardstyle } from "../../utils/generators/wip.js";
   import classNames from "classnames";
+  import { TranceGenerator } from "../../utils/generators/trance.js";
+  import { generateChordProgressionWithIntervals } from "../../utils/generators/chords.js";
 
   const dispatch = createEventDispatcher();
 
@@ -197,7 +199,7 @@
         uuid: crypto.randomUUID(),
         start: startTime,
         label: noteLabel(note),
-        duration: 100,
+        duration: lastDuration ?? 200,
         note: note,
         velocity: 100,
       },
@@ -235,6 +237,20 @@
     "Whole Tone": [0, 2, 4, 6, 8, 10],
   };
 
+  let selectedProgression = "I - V - vi - IV";
+  const progressions = [
+    "I - V - vi - IV",
+    "I - IV - V - I",
+    "ii - V - I",
+    "I - vi - IV - V",
+    "vi - IV - I - V",
+    "I - V - IV",
+    "IV - V - I",
+    "I - IV - vi - V",
+    "I - vi - ii - V",
+    "ii - vi - IV - V",
+  ];
+
   function isNoteInScale(noteNumber, scaleName) {
     let rootNote = 60; // Middle C as the root note
     let scaleNotes = scales[scaleName].map((interval) => (rootNote + interval) % 12);
@@ -253,6 +269,8 @@
   let snapThreshold = 5;
   let snapResolution = 1 / 16;
   let snaps = [
+    { label: "4/4 Beat", value: 1 / 4 }, // Full beat, 1/4 of a bar
+    { label: "2/4 Beat", value: 1 / 8 }, // Half of a beat, 1/8 of a bar
     { label: "1/4 beat", value: 1 / 16 }, // Quarter of a beat, 1/16 of a bar
     { label: "1/8 beat", value: 1 / 32 }, // Eighth of a beat, 1/32 of a bar
     { label: "1/16 beat", value: 1 / 64 }, // Sixteenth of a beat, 1/64 of a bar
@@ -457,6 +475,8 @@
     document.addEventListener("mouseup", handleMouseUp);
   }
 
+  let lastDuration = 1;
+
   let resizeStartX, resizeStartWidth;
 
   function handleResizeMouseDown(event, noteId) {
@@ -477,12 +497,13 @@
   function handleResizeMouseMove(event) {
     const deltaX = event.clientX - resizeStartX;
     const newWidth = resizeStartWidth + deltaX;
-    const noteAreaRect = noteArea.getBoundingClientRect();
 
     if (isResizing) {
       updateNoteById(resizedNote, (note) => {
         // Convert the width in pixels to time (milliseconds)
         let newDurationMs = $pixelsToTime(newWidth) * 1000;
+
+        lastDuration = newDurationMs;
 
         // Snap the new duration to the nearest grid point if snapping is enabled
         if (snapToGrid && event.shiftKey === false) {
@@ -598,6 +619,68 @@
     console.log(bassline);
   }
 
+  function generateTrance() {
+    notesForDisplay = [];
+
+    let bars = 16;
+
+    // Start at begining
+    seekToTime(0);
+
+    // Loop the pattern
+    enableLooping();
+    setLoopRegion(0, 0);
+    expandLoopRegion(bars * 4);
+
+    let generator = new TranceGenerator(138);
+    let melody = generator.generate(bars);
+
+    let melodyNotes = melody.map((note, index) => {
+      return {
+        uuid: crypto.randomUUID(),
+        start: note.startTime,
+        color: note.color,
+        note: frequencyToMidiNote(note.frequency),
+        label: noteLabel(frequencyToMidiNote(note.frequency)),
+        duration: note.duration,
+        velocity: 100,
+      };
+    });
+
+    console.log(melody);
+    notesForDisplay = [...melodyNotes];
+
+    // scrollToFirstNote(200);
+  }
+
+  function generateChords() {
+    const scaleIntervals = scales[selectedScale];
+    const chords = generateChordProgressionWithIntervals("C", scaleIntervals, selectedProgression);
+
+    let notes = chords
+      .map((chordNotes, index) => {
+        let beatDuration = (60 / $bpm) * 1000;
+        let barLength = 4 * beatDuration;
+
+        return chordNotes.map((note) => {
+          return {
+            uuid: crypto.randomUUID(),
+            start: index * barLength,
+            color: "yellow",
+            note: frequencyToMidiNote(note.frequency),
+            label: noteLabel(frequencyToMidiNote(note.frequency)),
+            duration: barLength,
+            velocity: 100,
+          };
+        });
+      })
+      .flat();
+
+    console.log(notes);
+
+    notesForDisplay = notes;
+  }
+
   $: beatWidth = $pixelsPerBeat;
   $: playHeadPosition = $timeToPixels($playbackState.currentTime);
 </script>
@@ -640,14 +723,28 @@
           {#if $selectedClip}
             <CassetteTape class="text-accent-yellow/80" />
             <span class="whitespace-nowrap text-sm text-light">{$selectedClip?.name}</span>
-            <span class="whitespace-nowrap text-sm text-light-soft">{$selectedClip?.duration.toFixed(2)}s</span>
+            <span class="whitespace-nowrap text-sm text-light-soft">{$selectedClip?.duration?.toFixed(2)}s</span>
           {:else}
             <span class="whitespace-nowrap text-sm text-light-soft">No clip selected</span>
           {/if}
         </div>
         <div class="ml-auto flex flex-row items-center gap-2">
           <button
-            title="Snap to grid"
+            on:click={generateChords}
+            class="inline-flex h-full flex-row items-center gap-1 rounded-sm bg-dark-900 py-1 pl-1.5 pr-2 text-xs tracking-tight"
+          >
+            <PianoKeys class="text-accent-yellow/80" size="16" />
+            <span class="font-medium text-accent-yellow">Chords</span>
+          </button>
+          <button
+            on:click={generateTrance}
+            class="inline-flex h-full flex-row items-center gap-1 rounded-sm bg-dark-900 py-1 pl-1.5 pr-2 text-xs tracking-tight"
+          >
+            <Heartbeat class="text-accent-yellow/80" size="16" />
+            <span class="font-medium text-accent-yellow">Trance</span>
+          </button>
+
+          <button
             on:click={generateHardstyle}
             class="inline-flex h-full flex-row items-center gap-1 rounded-sm bg-dark-900 py-1 pl-1.5 pr-2 text-xs tracking-tight"
           >
@@ -672,6 +769,7 @@
               {/each}
             </select>
           </div>
+
           <div class="flex flex-row items-center gap-1 rounded-sm bg-dark-400 px-1.5">
             <span class="py-0.5 text-xs text-accent-yellow"> Scale </span>
             <select
@@ -680,6 +778,18 @@
             >
               {#each Object.keys(scales) as scale}
                 <option value={scale}>{scale}</option>
+              {/each}
+            </select>
+          </div>
+
+          <div class="flex flex-row items-center gap-1 rounded-sm bg-dark-400 px-1.5">
+            <span class="py-0.5 text-xs text-accent-yellow"> Progression </span>
+            <select
+              bind:value={selectedProgression}
+              class="bg-dark-400 py-0.5 pr-1 font-mono text-sm tracking-tight text-light"
+            >
+              {#each progressions as progression}
+                <option value={progression}>{progression.replaceAll(" - ", "-")}</option>
               {/each}
             </select>
           </div>
