@@ -12,6 +12,7 @@
     playbackState,
     startPlayback,
     stopPlayback,
+    switchView,
     toggleLooping,
   } from "../../core/store.js";
   import { Drum, Pause, Play, Plus, Repeat2, Square, Trash } from "lucide-svelte";
@@ -23,6 +24,7 @@
   import Spectrogram from "./analyzers/Spectrogram.svelte";
   import IconButton from "../ui/IconButton.svelte";
   import TextButton from "../ui/TextButton.svelte";
+  import Select from "../ui/Input/Select.svelte";
 
   function toggleTheme() {
     if (document.documentElement.classList.contains("theme-dark")) {
@@ -78,6 +80,22 @@
           <IconButton icon={Lightbulb} onClick={toggleTheme} />
         </SegmentGroup>
       </div>
+      <SegmentGroup>
+        <Select
+          value={$currentView}
+          on:change={(option) => switchView(option.detail)}
+          options={[
+            { value: "timeline", label: "Timeline (Shift + 1)" },
+            { value: "midi", label: "Midi Editor (Shift + 2)" },
+            { value: "playground", label: "Playground (Shift + 3)" },
+            { value: "blofeld", label: "Blofeld (Shift + 4)" },
+            { value: "blank", label: "Blank (Shift + 5)" },
+            { value: "piano", label: "Piano (Shift + 6)" },
+            { value: "kick", label: "Kick Generator (Shift + 7)" },
+            { value: "tb303", label: "TR-303 (Shift + 8)" },
+          ]}
+        />
+      </SegmentGroup>
     </div>
   </div>
 </section>

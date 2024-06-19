@@ -68,13 +68,13 @@
   $: width = $timeToPixels(clip.duration);
 
   $: clipClasses = classNames("audio-clip absolute ring-inset inset-y-2 overflow-hidden rounded ring-1", {
-    "bg-accent-purple/20": "loading" === loadingState && clip.id === $selectedClip.id,
+    "bg-accent-purple/20": "loading" === loadingState && clip.id === $selectedClip?.id,
     "ring-accent-purple bg-accent-purple/10": "loading" === loadingState,
 
-    "bg-accent-red/20": "error" === loadingState && clip.id === $selectedClip.id,
+    "bg-accent-red/20": "error" === loadingState && clip.id === $selectedClip?.id,
     "ring-accent-red bg-accent-red/10": "error" === loadingState,
 
-    "bg-accent-yellow/30": "loaded" === loadingState && clip.id === $selectedClip.id,
+    "bg-accent-yellow/30": "loaded" === loadingState && clip.id === $selectedClip?.id,
     "ring-accent-yellow bg-accent-yellow/20": "loaded" === loadingState,
     // "audio-clip absolute inset-y-2 overflow-hidden rounded border border-gray-200"
   });
