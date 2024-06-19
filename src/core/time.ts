@@ -62,3 +62,44 @@ export class TimeConverter {
     return 60000000 / this.bpm;
   }
 }
+
+export class Durations {
+  public static readonly WHOLE = 1;
+  public static readonly HALF = 1 / 2;
+  public static readonly QUARTER = 1 / 4;
+  public static readonly EIGHTH = 1 / 8;
+  public static readonly SIXTEENTH = 1 / 16;
+  public static readonly THIRTY_SECOND = 1 / 32;
+  public static readonly SIXTY_FOURTH = 1 / 64;
+  public static readonly HUNDRED_TWENTY_EIGHTH = 1 / 128;
+  public static readonly TWO_HUNDRED_FIFTY_SIXTH = 1 / 256;
+  private bpm: number;
+
+  constructor(bpm: number) {
+    this.bpm = bpm;
+  }
+
+  msToBeats(milliseconds: Milliseconds): Beats {
+    return milliseconds / (60000 / this.bpm);
+  }
+
+  public getWhole(): Milliseconds {
+    return this.bpm / 4;
+  }
+
+  public getHalf(): Milliseconds {
+    return this.bpm / 8;
+  }
+
+  public getQuarter(): Milliseconds {
+    return this.bpm / 16;
+  }
+
+  public getEighth(): Milliseconds {
+    return this.bpm / 32;
+  }
+
+  public getSixteenth(): Milliseconds {
+    return this.bpm / 64;
+  }
+}
