@@ -1,9 +1,9 @@
 <script>
   import { onMount } from "svelte";
-  import { audioManager } from "../../core/audio.js";
-  import Encoder from "../ui/Encoder.svelte";
-  import LED from "../ui/LED.svelte";
-  import { frequencyToMidiNote, midiNoteToFrequency, noteLabel } from "../../core/midi.js";
+  import { audioManager } from "../../../core/audio.js";
+  import Encoder from "../../ui/Encoder.svelte";
+  import LED from "../../ui/LED.svelte";
+  import { frequencyToMidiNote, midiNoteToFrequency, noteLabel } from "../../../core/midi.js";
   import { Sliders, SmileySticker, WaveSawtooth, WaveSquare, WaveTriangle } from "phosphor-svelte";
   import classNames from "classnames";
 

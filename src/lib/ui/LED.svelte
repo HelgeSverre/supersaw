@@ -1,9 +1,10 @@
 <script>
   export let size = 12;
-  export let color = "#ff0000"; // Default LED color
+  export let color = "#ff0000";
+  export let offColor = "#777777";
   export let on = false;
 
-  $: displayColor = on ? color : "#777777";
+  $: displayColor = on ? color : offColor;
 </script>
 
 <svg class="led" viewBox="0 0 100 100" style="--size: {size}px; --color: {displayColor}">
