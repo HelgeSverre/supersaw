@@ -25,7 +25,8 @@
   import { Track } from "./core/track.js";
   import Piano from "./lib/daw/Piano.svelte";
   import Kick from "./lib/daw/instruments/Kick.svelte";
-  import TransistorBass from "./lib/daw/TransistorBass.svelte";
+  import TransistorBass from "./lib/daw/instruments/TransistorBass.svelte";
+  import Tenori from "./lib/daw/instruments/Tenori.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -94,7 +95,8 @@
       53: "blank",      // Shift + 5
       54: "piano",      // Shift + 6
       55: "kick",       // Shift + 7
-      56: "tb303"       // Shift + 8
+      56: "tb303",       // Shift + 8
+      57: "tenori"       // Shift + 9
     };
 
     if (event.shiftKey && keyToViewMap[keyCode]) {
@@ -176,6 +178,10 @@
         {:else if $currentView === "tb303"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <TransistorBass />
+          </section>
+        {:else if $currentView === "tenori"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <Tenori />
           </section>
         {:else}
           <section class="flex h-full flex-1 grow items-center justify-center">
