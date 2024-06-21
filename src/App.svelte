@@ -27,6 +27,8 @@
   import Kick from "./lib/daw/instruments/Kick.svelte";
   import TransistorBass from "./lib/daw/instruments/TransistorBass.svelte";
   import Tenori from "./lib/daw/instruments/Tenori.svelte";
+  import Synthesia from "./lib/daw/Synthesia.svelte";
+  import Pannable from "./lib/Pannable.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -88,6 +90,7 @@
 
     // prettier-ignore
     const keyToViewMap = {
+      48: "synthesia",       // Shift + 0
       49: "timeline",   // Shift + 1
       50: "midi",       // Shift + 2
       51: "playground", // Shift + 3
@@ -153,6 +156,10 @@
           <section class="flex size-full flex-1">
             <Timeline />
           </section>
+        {:else if $currentView === "synthesia"}
+          <section class="relative h-full overflow-hidden">
+            <Synthesia />
+          </section>
         {:else if $currentView === "midi"}
           <section class="relative h-full overflow-hidden">
             <MidiEditor />
@@ -172,8 +179,12 @@
             <Kick />
           </section>
         {:else if $currentView === "blank"}
-          <section class="flex h-full flex-1 grow items-center justify-center">
+          <section class="flex h-full flex-col gap-12 flex-1 grow items-center justify-center">
             <div class="text-center text-sm text-dark-100">"Silence is a source of great strength." — Lao Tzu</div>
+
+            <div>
+              <Pannable />
+            </div>
           </section>
         {:else if $currentView === "tb303"}
           <section class="flex h-full flex-1 grow items-center justify-center">
