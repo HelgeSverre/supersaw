@@ -17,6 +17,78 @@
 }
 
 @layer base {
+  .mango {
+    --wip-sky: #00c1ff;
+    --wip-fire: #f0972d;
+    --wip-amber: #ff5733;
+    --wip-flame: #ffbd33;
+
+    --wip-900: #16222a;
+    --wip-800: #1e2f37;
+    --wip-700: #233a43;
+    --wip-600: #264b5c;
+    --wip-500: #273238;
+    --wip-400: #4b575d;
+    --wip-300: #727e85;
+    --wip-200: #9ba8af;
+    --wip-100: #c6d4db;
+    --wip-50: #f0fbff;
+  }
+
+  .mandarin {
+    --wip-sky: #00c1ff;
+    --wip-mango: #f0972d;
+
+    --wip-950: #0e1c21; /* Darkest shade of wip-600 */
+    --wip-900: #16222a; /* Darkest shade for deep backgrounds or inactive elements */
+    --wip-800: #1e2f37; /* Slightly lighter for side panels */
+    --wip-700: #233a43; /* For less prominent UI elements */
+    --wip-600: #264b5c; /* For headers and footers */
+    --wip-500: #273238; /* Default text color */
+    --wip-400: #4b575d; /* Secondary text or less prominent borders */
+    --wip-300: #727e85; /* Borders, separators */
+    --wip-200: #9ba8af; /* Disabled elements, background shades */
+    --wip-100: #c6d4db; /* Light backgrounds */
+    --wip-50: #f0fbff; /* Lightest backgrounds */
+
+    --wip-accent-1: #ff5733; /* Accent color 1 for active elements */
+    --wip-accent-2: #ffbd33; /* Accent color 2 for highlights */
+
+    /* Additional Suggested Colors */
+    --wip-success: #28a745; /* Success state */
+    --wip-warning: #ffc107; /* Warning state */
+    --wip-error: #dc3545; /* Error state */
+    --wip-muted: #6c757d; /* Muted elements */
+    --wip-active-track: #007bff; /* Active track highlight */
+    --wip-muted-track: #6c757d; /* Muted track highlight */
+  }
+
+  .mandarin-tw {
+    --wip-sky: 0 193 255;
+    --wip-mango: 240 151 45;
+
+    --wip-900: 22 34 42;
+    --wip-800: 30 47 55;
+    --wip-700: 35 58 67;
+    --wip-600: 38 75 92;
+    --wip-500: 39 50 56;
+    --wip-400: 75 87 93;
+    --wip-300: 114 126 133;
+    --wip-200: 155 168 175;
+    --wip-100: 198 212 219;
+    --wip-50: 240 251 255;
+
+    --wip-accent-1: 255 87 51;
+    --wip-accent-2: 255 189 51;
+
+    --wip-success: 40 167 69;
+    --wip-warning: 255 193 7;
+    --wip-error: 220 53 69;
+    --wip-muted: 108 117 125;
+    --wip-active-track: 0 123 255;
+    --wip-muted-track: 108 117 125;
+  }
+
   :root {
     font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
     line-height: 1.5;

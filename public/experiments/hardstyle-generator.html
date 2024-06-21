@@ -1,246 +1,224 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>Piano Roll Visualization</title>
-  <style>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Piano Roll Visualization</title>
+    <style>
       .notes {
-          position: relative;
-          width: 8000px; /* Adjust based on sequence length */
-          height: calc(
-                  5 * 12 * 10px
-          ); /* 3 octaves * 12 notes each * 5px height per note */
-          background: repeating-linear-gradient(
-                  to bottom,
-                  #eee 0px,
-                  #eee 5px,
-                  #fff 5px,
-                  #fff 10px
-          );
-          border: 1px solid #ccc;
+        position: relative;
+        width: 8000px; /* Adjust based on sequence length */
+        height: calc(5 * 12 * 10px); /* 3 octaves * 12 notes each * 5px height per note */
+        background: repeating-linear-gradient(to bottom, #eee 0px, #eee 5px, #fff 5px, #fff 10px);
+        border: 1px solid #ccc;
       }
 
       .note {
-          user-select: none;
-          position: absolute;
-          font-size: 12px;
+        user-select: none;
+        position: absolute;
+        font-size: 12px;
       }
-  </style>
-</head>
-<body>
-<div class="notes" id="piano"></div>
-<script>
-  const BPM = 150;
-  const BEAT_DURATION = 60 / BPM; // Duration of one beat in seconds
-  const BAR_LENGTH = 4 * BEAT_DURATION; // Duration of a bar in seconds
-  const BARS = 4; // Total number of bars
+    </style>
+  </head>
+  <body>
+    <div class="notes" id="piano"></div>
+    <script>
+      const BPM = 150;
+      const BEAT_DURATION = 60 / BPM; // Duration of one beat in seconds
+      const BAR_LENGTH = 4 * BEAT_DURATION; // Duration of a bar in seconds
+      const BARS = 4; // Total number of bars
 
-  function randomChoice(array) {
-    return array[Math.floor(Math.random() * array.length)];
-  }
-
-  function generateHardstyleMelodyWithPhrasing(baseFrequency, bars = 4) {
-    const melody = [];
-    const phraseLengths = [0.25, 0.25, 0.75]; // Short and long notes
-    let currentTime = 0; // Start time for the melody
-
-    for (let bar = 0; bar < bars; bar++) {
-      // Start the melodic phrase on the last quarter of the bar
-      currentTime = (bar + 1) * BAR_LENGTH - BEAT_DURATION; // Last beat of the bar
-
-      // Generate a phrase with alternating note lengths
-      for (let i = 0; i < 3; i++) {
-        // Adjust based on how many notes per phrase you want
-        const length = randomChoice(phraseLengths); // Alternate between short and long note
-        const interval = randomChoice([0, 3, 5, 7, 10]); // Example intervals, adjust as needed
-        const frequency = baseFrequency * Math.pow(2, interval / 12);
-
-        // Add the note to the melody
-        melody.push({
-          color: "yellow",
-          frequency,
-          startTime: currentTime,
-          duration: length,
-        });
-
-        // Advance time for the next note
-        currentTime += length;
+      function randomChoice(array) {
+        return array[Math.floor(Math.random() * array.length)];
       }
 
-      // Add a rest after the phrase before starting the next bar
-      currentTime = (bar + 1) * BAR_LENGTH; // Move to the start of the next bar
-    }
+      function generateHardstyleMelodyWithPhrasing(baseFrequency, bars = 4) {
+        const melody = [];
+        const phraseLengths = [0.25, 0.25, 0.75]; // Short and long notes
+        let currentTime = 0; // Start time for the melody
 
-    return melody;
-  }
+        for (let bar = 0; bar < bars; bar++) {
+          // Start the melodic phrase on the last quarter of the bar
+          currentTime = (bar + 1) * BAR_LENGTH - BEAT_DURATION; // Last beat of the bar
 
-  function generateHardstyleMelody(baseFrequency, bars = 4) {
-    const melody = [];
-    const noteLengths = [0.15, 0.25, 0.5]; // Existing note lengths
-    // const noteIntervals = [0, 3, 5, 7, 10]; // Minor pentatonic scale for simplicity
+          // Generate a phrase with alternating note lengths
+          for (let i = 0; i < 3; i++) {
+            // Adjust based on how many notes per phrase you want
+            const length = randomChoice(phraseLengths); // Alternate between short and long note
+            const interval = randomChoice([0, 3, 5, 7, 10]); // Example intervals, adjust as needed
+            const frequency = baseFrequency * Math.pow(2, interval / 12);
 
-    const noteIntervals = [0, 2, 4, 5, 7, 9, 11]; // Aoelian scale for more variety
+            // Add the note to the melody
+            melody.push({
+              color: "yellow",
+              frequency,
+              startTime: currentTime,
+              duration: length,
+            });
 
-    const restProbability = 0.1; // Probability of a note being a rest (20% in this example)
-    let previousInterval = 0; // Start with the root note
-    let currentTime = 0;
+            // Advance time for the next note
+            currentTime += length;
+          }
 
-    for (let bar = 0; bar < bars; bar++) {
-      for (let beat = 0; beat < 4; beat++) {
-        let length = randomChoice(noteLengths);
-        let interval = randomChoice(noteIntervals);
-
-        // Ensure the jump is no more than 6 semitones from the previous note
-        while (Math.abs(interval - previousInterval) > 6) {
-          interval = randomChoice(noteIntervals);
+          // Add a rest after the phrase before starting the next bar
+          currentTime = (bar + 1) * BAR_LENGTH; // Move to the start of the next bar
         }
 
-        // Decide whether this note is a rest
-        if (Math.random() < restProbability) {
-          // It's a rest; do not add a frequency or color
-          melody.push({
-            color: "black", // Make rest invisible
-            frequency: 0, // Representing a rest (no frequency)
-            startTime: currentTime,
-            duration: length,
-          });
-        } else {
-          // It's a note; proceed as usual
-          const frequency = baseFrequency * Math.pow(2, interval / 12); // Adjust for the current interval
-          melody.push({
-            color: "green", // Color representing a played note
-            frequency,
-            startTime: currentTime,
-            duration: length,
-          });
+        return melody;
+      }
+
+      function generateHardstyleMelody(baseFrequency, bars = 4) {
+        const melody = [];
+        const noteLengths = [0.15, 0.25, 0.5]; // Existing note lengths
+        // const noteIntervals = [0, 3, 5, 7, 10]; // Minor pentatonic scale for simplicity
+
+        const noteIntervals = [0, 2, 4, 5, 7, 9, 11]; // Aoelian scale for more variety
+
+        const restProbability = 0.1; // Probability of a note being a rest (20% in this example)
+        let previousInterval = 0; // Start with the root note
+        let currentTime = 0;
+
+        for (let bar = 0; bar < bars; bar++) {
+          for (let beat = 0; beat < 4; beat++) {
+            let length = randomChoice(noteLengths);
+            let interval = randomChoice(noteIntervals);
+
+            // Ensure the jump is no more than 6 semitones from the previous note
+            while (Math.abs(interval - previousInterval) > 6) {
+              interval = randomChoice(noteIntervals);
+            }
+
+            // Decide whether this note is a rest
+            if (Math.random() < restProbability) {
+              // It's a rest; do not add a frequency or color
+              melody.push({
+                color: "black", // Make rest invisible
+                frequency: 0, // Representing a rest (no frequency)
+                startTime: currentTime,
+                duration: length,
+              });
+            } else {
+              // It's a note; proceed as usual
+              const frequency = baseFrequency * Math.pow(2, interval / 12); // Adjust for the current interval
+              melody.push({
+                color: "green", // Color representing a played note
+                frequency,
+                startTime: currentTime,
+                duration: length,
+              });
+            }
+
+            // Update the currentTime for the next note
+            currentTime += length;
+            previousInterval = interval; // Update the interval for the next iteration
+          }
         }
-
-        // Update the currentTime for the next note
-        currentTime += length;
-        previousInterval = interval; // Update the interval for the next iteration
+        return melody;
       }
-    }
-    return melody;
-  }
 
-  function generateHardstyleBassline(melody, bars = BARS) {
-    let bassline = [];
-    // Assuming each bar has 4 beats based on common time signature
-    for (let i = 0; i < bars; i++) {
-      // Use the first note of each bar, or the last note if it's a rest
-      const baseNoteFrequency =
-        melody[i * 4]?.frequency || bassline[bassline.length - 1]?.frequency || 130.81; // Default to A3
-      for (let beat = 0; beat < 4; beat++) {
-        // Hardstyle typically follows a 4/4 beat
-        const startTime = i * BAR_LENGTH + beat * BEAT_DURATION;
-        // High pitch note (3/4 length of the beat)
-        bassline.push({
-          color: "red",
-          frequency: baseNoteFrequency, // Matching the melody's starting note of the bar, but can be adjusted
-          duration: BEAT_DURATION * 0.75,
-          startTime: startTime,
-        });
-        // Low pitch note (1/4 length of the beat, following the high note)
-        bassline.push({
-          color: "blue",
-          frequency: baseNoteFrequency / 2, // One octave lower
-          duration: BEAT_DURATION * 0.25,
-          startTime: startTime + BEAT_DURATION * 0.75,
+      function generateHardstyleBassline(melody, bars = BARS) {
+        let bassline = [];
+        // Assuming each bar has 4 beats based on common time signature
+        for (let i = 0; i < bars; i++) {
+          // Use the first note of each bar, or the last note if it's a rest
+          const baseNoteFrequency = melody[i * 4]?.frequency || bassline[bassline.length - 1]?.frequency || 130.81; // Default to A3
+          for (let beat = 0; beat < 4; beat++) {
+            // Hardstyle typically follows a 4/4 beat
+            const startTime = i * BAR_LENGTH + beat * BEAT_DURATION;
+            // High pitch note (3/4 length of the beat)
+            bassline.push({
+              color: "red",
+              frequency: baseNoteFrequency, // Matching the melody's starting note of the bar, but can be adjusted
+              duration: BEAT_DURATION * 0.75,
+              startTime: startTime,
+            });
+            // Low pitch note (1/4 length of the beat, following the high note)
+            bassline.push({
+              color: "blue",
+              frequency: baseNoteFrequency / 2, // One octave lower
+              duration: BEAT_DURATION * 0.25,
+              startTime: startTime + BEAT_DURATION * 0.75,
+            });
+          }
+        }
+        return bassline;
+      }
+
+      function visualizeSequence(sequence, containerId, off = 1) {
+        const container = document.getElementById(containerId);
+        const noteHeight = 5; // Height per note in pixels
+
+        sequence.forEach((note) => {
+          const noteDiv = document.createElement("div");
+          noteDiv.className = "note";
+          noteDiv.style.backgroundColor = note.color;
+          const notePosition = (Math.log2(note.frequency) * 12) / off;
+          noteDiv.style.left = `${note.startTime * 200}px`; // Adjust scale as needed
+          noteDiv.style.width = `${note.duration * 200 - 10}px`; // Adjust scale as needed
+          noteDiv.style.bottom = `${notePosition * noteHeight}px`; // Calculate the vertical position
+          noteDiv.style.height = `${noteHeight}px`; // Height of the note block
+
+          noteDiv.textContent = note.frequency.toFixed(2);
+          container.appendChild(noteDiv);
         });
       }
-    }
-    return bassline;
-  }
 
-  function visualizeSequence(sequence, containerId, off  = 1) {
-    const container = document.getElementById(containerId);
-    const noteHeight = 5; // Height per note in pixels
+      document.addEventListener("mousedown", () => {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    sequence.forEach((note) => {
-      const noteDiv = document.createElement("div");
-      noteDiv.className = "note";
-      noteDiv.style.backgroundColor = note.color;
-      const notePosition = Math.log2(note.frequency) * 12 / off;
-      noteDiv.style.left = `${note.startTime * 200}px`; // Adjust scale as needed
-      noteDiv.style.width = `${note.duration * 200 - 10}px`; // Adjust scale as needed
-      noteDiv.style.bottom = `${notePosition * noteHeight}px`; // Calculate the vertical position
-      noteDiv.style.height = `${noteHeight}px`; // Height of the note block
+        const baseFrequency = 130.81; // C2
+        const barsToGenerate = 4 * 4;
 
-      noteDiv.textContent = note.frequency.toFixed(2);
-      container.appendChild(noteDiv);
-    });
-  }
+        const musical = generateHardstyleMelodyWithPhrasing(baseFrequency, barsToGenerate); // Generate 4 bars of melody
+        const melody = generateHardstyleMelody(130.81, barsToGenerate); // Generate 4 bars of melody
+        const bassline = generateHardstyleBassline(musical, barsToGenerate); // Generate bassline matching the melody bars
 
-  document.addEventListener("mousedown", () => {
-    const audioCtx = new (window.AudioContext ||
-      window.webkitAudioContext)();
+        // Visualize the sequences
+        const containerId = "piano";
+        const container = document.getElementById(containerId);
+        container.innerHTML = ""; // Clear existing content
 
-    const baseFrequency = 130.81; // C2
-    const barsToGenerate = 4 * 4;
+        visualizeSequence(bassline, containerId, 2);
+        visualizeSequence(melody, containerId);
+        // visualizeSequence(musical, containerId );
 
-    const musical = generateHardstyleMelodyWithPhrasing(
-      baseFrequency,
-      barsToGenerate,
-    ); // Generate 4 bars of melody
-    const melody = generateHardstyleMelody(130.81, barsToGenerate); // Generate 4 bars of melody
-    const bassline = generateHardstyleBassline(musical, barsToGenerate); // Generate bassline matching the melody bars
-
-    // Visualize the sequences
-    const containerId = "piano";
-    const container = document.getElementById(containerId);
-    container.innerHTML = ""; // Clear existing content
-
-    visualizeSequence(bassline, containerId, 2);
-    visualizeSequence(melody, containerId);
-    // visualizeSequence(musical, containerId );
-
-    // Play the sequences
-    playSequences(audioCtx, [
-      // musical,
-      melody,
-      bassline,
-    ]);
-  });
-
-  function playSequences(audioCtx, sequences) {
-    sequences.forEach((sequence) => {
-      sequence.forEach((note) => {
-        if (note.frequency === 0) return; // Skip rest notes (no frequency)
-
-        playNote(audioCtx, note.frequency, note.startTime, note.duration);
+        // Play the sequences
+        playSequences(audioCtx, [
+          // musical,
+          melody,
+          bassline,
+        ]);
       });
-    });
-  }
 
-  function playNote(audioCtx, freq, startTime, duration) {
-    const oscillator = audioCtx.createOscillator();
-    oscillator.type = "sawtooth";
-    oscillator.frequency.value = freq;
+      function playSequences(audioCtx, sequences) {
+        sequences.forEach((sequence) => {
+          sequence.forEach((note) => {
+            if (note.frequency === 0) return; // Skip rest notes (no frequency)
 
-    // TODO: detune
+            playNote(audioCtx, note.frequency, note.startTime, note.duration);
+          });
+        });
+      }
 
-    const gainNode = audioCtx.createGain();
-    gainNode.gain.setValueAtTime(0, audioCtx.currentTime + startTime);
-    gainNode.gain.linearRampToValueAtTime(
-      1,
-      audioCtx.currentTime + startTime + 0.01,
-    );
-    gainNode.gain.setValueAtTime(
-      1,
-      audioCtx.currentTime + startTime + duration - 0.1,
-    );
-    gainNode.gain.linearRampToValueAtTime(
-      0,
-      audioCtx.currentTime + startTime + duration,
-    );
+      function playNote(audioCtx, freq, startTime, duration) {
+        const oscillator = audioCtx.createOscillator();
+        oscillator.type = "sawtooth";
+        oscillator.frequency.value = freq;
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.start(audioCtx.currentTime + startTime);
-    oscillator.stop(audioCtx.currentTime + startTime + duration);
-  }
-</script>
-</body>
+        // TODO: detune
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime + startTime);
+        gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + startTime + 0.01);
+        gainNode.gain.setValueAtTime(1, audioCtx.currentTime + startTime + duration - 0.1);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + startTime + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start(audioCtx.currentTime + startTime);
+        oscillator.stop(audioCtx.currentTime + startTime + duration);
+      }
+    </script>
+  </body>
 </html>
