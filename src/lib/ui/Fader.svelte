@@ -17,7 +17,7 @@
     step={step}
     value={volume}
     on:input={onInput}
-    class="vertical-slider cursor-pointer appearance-none rounded-full bg-gray-300"
+    class="vertical-slider cursor-pointer appearance-none rounded-full bg-black"
   />
 </div>
 
@@ -25,8 +25,9 @@
   .vertical-slider {
     writing-mode: vertical-lr;
     direction: rtl;
-    width: 8px;
+    width: 20px;
     height: 100px;
+    border-radius: 0;
   }
 
   .vertical-slider::-webkit-slider-runnable-track {
@@ -36,9 +37,9 @@
   .vertical-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
+    width: 20px;
+    height: 6px;
+    border-radius: 0;
     background: rgb(var(--accent-blue));
     cursor: pointer;
   }

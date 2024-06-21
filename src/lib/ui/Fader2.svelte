@@ -44,7 +44,7 @@
   $: scaledHeight = ((value - min) / (max - min)) * 100;
 </script>
 
-<div class="inline-block h-full w-8 bg-[#4D4D4D] p-0.5">
+<div class="inline-block h-full w-8 bg-black p-0.5">
   <div
     class="relative h-full w-full cursor-pointer bg-white/10"
     aria-hidden="true"
