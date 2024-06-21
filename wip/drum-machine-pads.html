@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grid Light Effect</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: linear-gradient(45deg, #c20266, #6d01d1);
+        margin: 0;
+      }
+
+      .machine {
+        background: linear-gradient(0deg, #212226, #212226);
+        padding: 60px 70px;
+        border-radius: 12px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(5, 100px);
+        grid-template-rows: repeat(5, 80px);
+        gap: 10px;
+      }
+
+      .grid button {
+        outline: none;
+        border: none;
+        display: block;
+        border-radius: 5px;
+        box-shadow:
+          0 0 4px black,
+          inset 0 0 6px rgb(255, 56, 156, 0.2);
+        background: radial-gradient(circle, rgb(255, 255, 255), rgb(255, 56, 156, 0.2) 90px),
+          linear-gradient(12deg, rgb(250, 189, 219, 0.1), white, rgb(250, 189, 219, 0.6)), white;
+      }
+
+      .grid button.active {
+        box-shadow:
+          0 0 4px #ff69b4,
+          inset 0 0 100px rgb(255, 56, 156, 0.2),
+          inset 20px 0 100px rgb(255, 250, 246, 0.2);
+        background: radial-gradient(circle, rgb(255, 255, 255, 0.5), #ff69b4),
+          linear-gradient(12deg, rgb(250, 189, 219, 0.4), white, rgb(250, 189, 219, 0.3)), #ff69b4;
+      }
+
+      .grid button {
+        filter: brightness(1) saturate(1) sepia(0) hue-rotate(0deg);
+        transition: 100ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      .grid button {
+        position: relative;
+        padding: 4px;
+        z-index: 100;
+      }
+
+      .grid button.special {
+        padding: 4px;
+        background: linear-gradient(0deg, #212226, #212226);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          filter: brightness(0.99);
+        }
+        50% {
+          filter: brightness(1.02);
+        }
+      }
+
+      /*.grid button {*/
+      /*  animation: pulse 667ms infinite;*/
+      /*}*/
+
+      /*.grid button:nth-child(2n + 2) {*/
+      /*  animation-delay: 200ms;*/
+      /*}*/
+
+      /*.grid button:nth-child(3n + 3) {*/
+      /*  animation-delay: 92ms;*/
+      /*}*/
+
+      .grid button:before {
+        z-index: -100;
+        content: "";
+        position: absolute;
+        inset: 1px;
+        display: block;
+        width: 97%;
+        height: 96%;
+        border-radius: 6px;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.2));
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        border-right: 1px solid rgba(255, 255, 255, 0.4);
+        transition: all 200ms;
+      }
+
+      .grid button:active:after {
+        transition: all 100ms;
+        padding-top: 1px;
+        width: 97%;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .grid button:active {
+        overflow: hidden;
+        filter: brightness(1.05) saturate(0.9) sepia(0.1) hue-rotate(-10deg)
+          drop-shadow(0 0 20px rgb(255, 255, 255, 0.2));
+        transition: 100ms;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        gap: 100px;
+        background: linear-gradient(45deg, #c20266, #6d01d1);
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="machine">
+      <div class="grid">
+        <button class="active"></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button class="active"></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button class="active"></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button></button>
+        <button class="active"></button>
+      </div>
+    </div>
+
+    <img
+      src="https://images.unsplash.com/photo-1643989996350-01addb8c8228?q=80&w=3540&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      width="800"
+      alt=""
+    />
+  </body>
+</html>
