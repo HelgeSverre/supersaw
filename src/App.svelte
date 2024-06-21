@@ -28,7 +28,6 @@
   import TransistorBass from "./lib/daw/instruments/TransistorBass.svelte";
   import Tenori from "./lib/daw/instruments/Tenori.svelte";
   import Synthesia from "./lib/daw/Synthesia.svelte";
-  import Pannable from "./lib/Pannable.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -179,12 +178,8 @@
             <Kick />
           </section>
         {:else if $currentView === "blank"}
-          <section class="flex h-full flex-col gap-12 flex-1 grow items-center justify-center">
+          <section class="flex h-full flex-1 grow flex-col items-center justify-center gap-12">
             <div class="text-center text-sm text-dark-100">"Silence is a source of great strength." — Lao Tzu</div>
-
-            <div>
-              <Pannable />
-            </div>
           </section>
         {:else if $currentView === "tb303"}
           <section class="flex h-full flex-1 grow items-center justify-center">
