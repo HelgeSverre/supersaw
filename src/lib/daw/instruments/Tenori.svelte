@@ -176,6 +176,10 @@
     </SegmentGroup>
   </div>
 
+  <div class="flex items-center justify-center bg-black p-20">
+    <button id="glass" class="h-96 w-96 rounded-full text-xs">12</button>
+  </div>
+
   <!-- Grid -->
   <div class="tenori-edge flex items-center justify-center" style="--size: {size}">
     <div class="tenori-frame">
@@ -191,7 +195,9 @@
                   class:pop={cell && cellIndex === currentStep && isPlaying}
                   on:click={() => toggleCell(rowIndex, cellIndex)}
                 >
-                  <span class="inline-block text-center text-xs text-white/50">{size - rowIndex}</span>
+                  <span class="inline-block text-center text-xs text-white/50">
+                    {rowIndex + 1}
+                  </span>
                 </button>
               </div>
             {/each}
@@ -203,6 +209,13 @@
 </main>
 
 <style>
+  #glass {
+    color: black;
+    background: linear-gradient(90deg, #e2e4ec, #cfd4dd);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
   .tenori-frame {
     overflow: hidden;
     background: #0c0b0e;
@@ -243,9 +256,6 @@
     border-radius: 50%;
     border: 2px solid rgba(255, 255, 255, 0.05);
     box-shadow: 1px 2px 3px rgba(102, 102, 255, 0.05);
-    transition:
-      background-color 0.3s,
-      transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
   .cell:active {
@@ -254,7 +264,6 @@
   }
 
   .cell:focus-visible {
-    outline: 1px solid white;
   }
 
   .cell:hover {
@@ -262,82 +271,20 @@
   }
 
   .cell.active {
-    background-color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(90deg, #e2e4ec, #cfd4dd);
+    box-shadow: 1px 2px 3px rgba(255, 255, 255, 0.1);
   }
 
   .cell:active {
+    color: black;
     background-color: rgba(255, 255, 255, 0.3);
   }
 
+  .cell.active span,
   .cell.playing span {
-    color: rgb(0, 0, 0, 0.5);
+    color: black;
   }
 
   .cell.playing {
-    background-color: rgba(255, 255, 255, 0.7);
-    /*animation:*/
-    /*  fadeout 0.5s ease-out 0.2s both,*/
-    /*  playing-glow 0.5s ease-out 0.2s both;*/
-  }
-
-  .cell.pop {
-    animation:
-      fadeout 0.5s ease-out 0.2s both,
-      playing-glow 0.5s ease-out 0.2s both;
-  }
-
-  @keyframes fadeout {
-    from {
-      background-color: rgba(255, 255, 255, 1);
-    }
-    to {
-      background-color: rgba(255, 255, 255, 0.5);
-    }
-  }
-
-  @keyframes scalePop {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.2);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-
-  @keyframes playing-glow {
-    0% {
-      box-shadow:
-        0 0 5px rgba(255, 255, 255, 0.5),
-        0 0 25px rgba(255, 255, 255, 0.2),
-        0 0 50px rgba(255, 255, 255, 0.2),
-        0 0 200px rgba(255, 255, 255, 0.1);
-    }
-    100% {
-      box-shadow:
-        0 0 5px rgba(255, 255, 255, 0.5),
-        0 0 25px rgba(255, 255, 255, 0),
-        0 0 50px rgba(255, 255, 255, 0),
-        0 0 200px rgba(255, 255, 255, 0);
-    }
-  }
-
-  @keyframes pop-glow {
-    0% {
-      box-shadow:
-        0 0 5px rgba(255, 255, 255, 0.5),
-        0 0 25px rgba(255, 255, 255, 0.2),
-        0 0 50px rgba(255, 255, 255, 0.2),
-        0 0 200px rgba(255, 255, 255, 0.1);
-    }
-    100% {
-      box-shadow:
-        0 0 5px rgba(255, 255, 255, 0.5),
-        0 0 25px rgba(255, 255, 255, 0),
-        0 0 50px rgba(255, 255, 255, 0),
-        0 0 200px rgba(255, 255, 255, 0);
-    }
   }
 </style>
