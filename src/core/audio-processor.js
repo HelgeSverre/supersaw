@@ -1,6 +1,5 @@
 import FFT from "fft.js";
 
-const EPSILON = 1e-10;
 
 export class AudioProcessor {
   constructor(context) {
