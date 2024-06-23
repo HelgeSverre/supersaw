@@ -227,9 +227,9 @@
       </div>
 
       <div>
-        <label for="method" class="mb-1 block text-xs text-accent-yellow">Window Func</label>
+        <label for="windowType" class="mb-1 block text-xs text-accent-yellow">Window Func</label>
         <select
-          id="method"
+          id="windowType"
           bind:value={windowType}
           class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
         >
