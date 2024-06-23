@@ -6,13 +6,13 @@
   import TextButton from "../ui/TextButton.svelte";
   import SegmentGroup from "../ui/SegmentGroup.svelte";
 
-  let processing;
+  let processing = false;
   let originalBuffer;
   let processedBuffer;
   let context;
   let audioProcessor;
 
-  let method = "phaseVocoder";
+  let method = "granular";
   let windowType = "hann";
 
   // Granular synthesis
@@ -40,7 +40,6 @@
     audioProcessor = new AudioProcessor(context);
 
     loadAudioUrl("/samples/freesound/hardstyle-kick-249.wav");
-    // loadAudioUrl("/samples/roland-tr-808/SD/SD1010.WAV");
   });
 
   async function loadAudioUrl(url) {
@@ -71,26 +70,28 @@
     processing = true;
 
     if (method === "granular") {
-      processedBuffer = await audioProcessor.granularSynthesis(originalBuffer, {
+      processedBuffer = audioProcessor.granularSynthesis(originalBuffer, {
         grainSize: windowSize,
         overlap,
         stretchFactor,
         windowType,
       });
     } else if (method === "phaseVocoder") {
-      processedBuffer = await audioProcessor.phaseVocoder(originalBuffer, {
+      processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
         windowSize: windowSize,
         hopSize: hopSize,
         stretchFactor: stretchFactor,
         windowType: windowType,
       });
     } else if (method === "spectral") {
-      processedBuffer = await audioProcessor.spectralProcessing(originalBuffer, {
+      processedBuffer = audioProcessor.spectralProcessing(originalBuffer, {
         windowSize,
         hopSize,
         stretchFactor,
         windowType,
       });
+    } else if (method === "tdhs") {
+      processedBuffer = audioProcessor.timeDomainHarmonicScaling(originalBuffer, stretchFactor);
     } else {
       alert("invalid synthesis method");
       return;
@@ -159,7 +160,7 @@
   }
 </script>
 
-<div class="flex max-w-4xl flex-col gap-4 rounded border border-dark-600 bg-dark-800 p-4">
+<div class="flex w-full max-w-4xl flex-col gap-4 rounded border border-dark-600 bg-dark-800 p-4">
   <div>
     <label for="windowSize" class="mb-1 block text-xs text-accent-yellow">Load Audio File</label>
     <input
@@ -249,6 +250,8 @@
         <option value="granular">Granular</option>
         <option value="phaseVocoder">Phase Vocoder</option>
         <option value="spectral">Spectral</option>
+        <option value="tdhs">Time-Domain Harmonic Scaling</option>
+        <option value="waveletTransform">Wavelet Transform</option>
       </select>
     </div>
   </SegmentGroup>

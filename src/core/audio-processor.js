@@ -142,6 +142,63 @@ export class AudioProcessor {
     return signal.slice(0, data.length);
   }
 
+  // TODO: This doesnt work very well.
+  timeDomainHarmonicScaling(audioBuffer, stretchFactor) {
+    console.log("[AudioProcessor] timeDomainHarmonicScaling starting");
+
+    const sampleRate = audioBuffer.sampleRate;
+    const channels = audioBuffer.numberOfChannels;
+    const outputLength = Math.floor(audioBuffer.length * stretchFactor);
+    const outputBuffer = this.context.createBuffer(channels, outputLength, sampleRate);
+
+    for (let channel = 0; channel < channels; channel++) {
+      const inputData = audioBuffer.getChannelData(channel);
+      const outputData = outputBuffer.getChannelData(channel);
+
+      // Initialize parameters for TDHS
+      const windowSize = 2048; // Example window size
+      const hopSize = windowSize / 4;
+      const numFrames = Math.ceil(inputData.length / hopSize);
+
+      for (let i = 0; i < numFrames; i++) {
+        const start = i * hopSize;
+        const end = start + windowSize;
+
+        const windowedInput = new Float32Array(windowSize);
+        windowedInput.set(inputData.subarray(start, Math.min(end, inputData.length)));
+
+        // Apply window function
+        const hann = this.getWindowFunction("hann", windowedInput.length);
+        for (let j = 0; j < windowedInput.length; j++) {
+          windowedInput[j] *= hann[j];
+        }
+
+        const spectrum = this.fft(windowedInput);
+        const magnitude = spectrum.map((c) => Math.sqrt(c[0] ** 2 + c[1] ** 2));
+        const phase = spectrum.map((c) => Math.atan2(c[1], c[0]));
+
+        const scaledMagnitude = magnitude.map((m) => m * stretchFactor);
+        const scaledPhase = phase.map((p) => p * stretchFactor);
+
+        const outputSpectrum = scaledMagnitude.map((m, j) => [
+          m * Math.cos(scaledPhase[j]),
+          m * Math.sin(scaledPhase[j]),
+        ]);
+
+        const outputWindow = this.ifft(outputSpectrum);
+
+        const stretchedIndex = Math.floor(i * hopSize * stretchFactor);
+        for (let j = 0; j < outputWindow.length && stretchedIndex + j < outputData.length; j++) {
+          outputData[stretchedIndex + j] += outputWindow[j];
+        }
+      }
+    }
+
+    console.log("[AudioProcessor] timeDomainHarmonicScaling finished");
+
+    return outputBuffer;
+  }
+
   phaseVocoder(audioBuffer, { windowSize = 2048, hopSize = 512, stretchFactor = 1.0, windowType = "hann" }) {
     console.log("[AudioProcessor] phaseVocoder starting");
 
@@ -217,45 +274,100 @@ export class AudioProcessor {
 
   spectralProcessing(audioBuffer, { windowSize = 2048, hopSize = 512, stretchFactor = 1.0, windowType = "hann" }) {
     console.log("[AudioProcessor] spectralProcessing starting");
-
     const sampleRate = audioBuffer.sampleRate;
     const channels = audioBuffer.numberOfChannels;
-    const numFrames = Math.ceil(audioBuffer.length / hopSize);
-    const outputLength = Math.floor(audioBuffer.length * stretchFactor);
+    const inputLength = audioBuffer.length;
+    const outputLength = Math.floor(inputLength * stretchFactor);
     const outputBuffer = this.context.createBuffer(channels, outputLength, sampleRate);
+
+    const fftSize = this.nextPowerOfTwo(windowSize);
+    const window = this.getWindowFunction(windowType, fftSize);
+
+    const epsilon = 1e-10; // Small value to avoid division by zero
 
     for (let channel = 0; channel < channels; channel++) {
       const inputData = audioBuffer.getChannelData(channel);
       const outputData = outputBuffer.getChannelData(channel);
 
-      for (let i = 0; i < numFrames; i++) {
-        const start = i * hopSize;
-        const end = Math.min(start + windowSize, inputData.length);
-        const windowedInput = new Float32Array(this.nextPowerOfTwo(end - start));
-        windowedInput.set(inputData.slice(start, end));
+      let prevPhase = new Float32Array(fftSize / 2 + 1);
+      let prevMagnitude = new Float32Array(fftSize / 2 + 1);
 
-        const window = this.getWindowFunction(windowType, windowedInput.length);
-        for (let j = 0; j < windowedInput.length; j++) {
-          windowedInput[j] *= window[j];
+      const numInputFrames = Math.floor((inputLength - fftSize) / hopSize) + 1;
+      const numOutputFrames = Math.floor((outputLength - fftSize) / (hopSize * stretchFactor)) + 1;
+
+      for (let i = 0; i < numOutputFrames; i++) {
+        const inputIndex = Math.floor(i / stretchFactor) * hopSize;
+        const outputIndex = Math.floor(i * hopSize * stretchFactor);
+
+        if (inputIndex + fftSize > inputLength) break;
+
+        const windowedInput = new Float32Array(fftSize);
+        for (let j = 0; j < fftSize; j++) {
+          windowedInput[j] = inputData[inputIndex + j] * window[j];
         }
 
         const spectrum = this.fft(windowedInput);
-        const magnitude = spectrum.map((c) => Math.sqrt(c[0] ** 2 + c[1] ** 2));
-        const phase = spectrum.map((c) => Math.atan2(c[1], c[0]));
+        const magnitude = new Float32Array(fftSize / 2 + 1);
+        const phase = new Float32Array(fftSize / 2 + 1);
 
-        const stretchedIndex = Math.floor(i * hopSize * stretchFactor);
-        const outputSpectrum = magnitude.map((m, j) => [m * Math.cos(phase[j]), m * Math.sin(phase[j])]);
+        for (let j = 0; j <= fftSize / 2; j++) {
+          const real = spectrum[j][0];
+          const imag = spectrum[j][1];
+          magnitude[j] = Math.sqrt(real * real + imag * imag + epsilon);
+          phase[j] = Math.atan2(imag, real);
+        }
+
+        const deltaPhase = new Float32Array(fftSize / 2 + 1);
+        const newPhase = new Float32Array(fftSize / 2 + 1);
+
+        for (let j = 0; j <= fftSize / 2; j++) {
+          const expectedPhase = prevPhase[j] + (2 * Math.PI * hopSize * j) / fftSize;
+          deltaPhase[j] = this.principalArgument(phase[j] - expectedPhase);
+          newPhase[j] = prevPhase[j] + deltaPhase[j] * stretchFactor;
+        }
+
+        const outputSpectrum = new Array(fftSize);
+        for (let j = 0; j <= fftSize / 2; j++) {
+          const mag = magnitude[j] * (1 - stretchFactor) + prevMagnitude[j] * stretchFactor;
+          outputSpectrum[j] = [mag * Math.cos(newPhase[j]), mag * Math.sin(newPhase[j])];
+        }
+
+        // Mirror the spectrum for the IFFT
+        for (let j = fftSize / 2 + 1; j < fftSize; j++) {
+          outputSpectrum[j] = [outputSpectrum[fftSize - j][0], -outputSpectrum[fftSize - j][1]];
+        }
+
+        // Check for NaN values before IFFT
+        if (outputSpectrum.some((c) => isNaN(c[0]) || isNaN(c[1]))) {
+          console.warn("NaN detected in outputSpectrum at frame", i, ". Using zero-filled array.");
+          outputSpectrum.fill([0, 0]);
+        }
 
         const outputWindow = this.ifft(outputSpectrum);
 
-        for (let j = 0; j < outputWindow.length && stretchedIndex + j < outputData.length; j++) {
-          outputData[stretchedIndex + j] += outputWindow[j];
+        // Overlap-add
+        for (let j = 0; j < fftSize && outputIndex + j < outputLength; j++) {
+          outputData[outputIndex + j] += outputWindow[j] * window[j];
+        }
+
+        prevPhase = newPhase;
+        prevMagnitude = magnitude;
+      }
+
+      // Normalize output
+      const maxAmplitude = Math.max(...outputData.map(Math.abs));
+      if (maxAmplitude > epsilon) {
+        for (let i = 0; i < outputLength; i++) {
+          outputData[i] /= maxAmplitude;
         }
       }
     }
 
     console.log("[AudioProcessor] spectralProcessing finished");
-
     return outputBuffer;
+  }
+
+  principalArgument(phase) {
+    return phase - 2 * Math.PI * Math.floor((phase + Math.PI) / (2 * Math.PI));
   }
 }
