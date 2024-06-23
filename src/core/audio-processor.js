@@ -126,7 +126,7 @@ export class AudioProcessor {
     }
 
     // noinspection JSCheckFunctionSignatures
-    const signal = fft.toComplexArray(fftSize); // <--- added this
+    const signal = fft.toComplexArray(fftSize);
 
     if (complexArray.some(isNaN)) {
       throw new Error("NaN detected in complexArray before IFFT");
