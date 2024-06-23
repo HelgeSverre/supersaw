@@ -188,7 +188,7 @@ class AudioManager {
   };
 
   createChannel(channelId) {
-    console.log("creating channel with id", channelId);
+    console.log("[AudioManager] Creating channel:", channelId);
 
     const gainNode = this.audioContext.createGain();
     const panNode = this.audioContext.createStereoPanner();

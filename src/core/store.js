@@ -36,7 +36,6 @@ import { loadFromLocalStorage, saveToLocalStorage } from "./local.ts";
 import { extractNoteEvents, midiNoteToFrequency } from "./midi.js";
 import { Synth } from "../instruments/synth.js";
 import { MidiOut } from "../instruments/midiOut.ts";
-import { Supersaw } from "../instruments/supersaw.ts";
 
 export const PIXELS_PER_BEAT = 10;
 export const ZOOM_FACTOR = 0.05;
@@ -75,9 +74,6 @@ function initializeTracks() {
 
     return track;
   });
-
-  console.log("initializeTracks", trackObjects);
-  tracks.set(trackObjects);
 }
 
 initializeTracks();
