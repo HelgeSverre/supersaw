@@ -70,19 +70,25 @@
     processing = true;
 
     if (method === "granular") {
-      processedBuffer = await audioProcessor.granularSynthesis(originalBuffer, { windowSize, overlap, stretchFactor });
+      processedBuffer = await audioProcessor.granularSynthesis(originalBuffer, {
+        windowSize,
+        overlap,
+        stretchFactor,
+        windowType,
+      });
     } else if (method === "phaseVocoder") {
       processedBuffer = await audioProcessor.phaseVocoder(originalBuffer, {
         windowSize: windowSize,
         hopSize: hopSize,
         stretchFactor: stretchFactor,
-        windowType: "hann",
+        windowType: windowType,
       });
     } else if (method === "spectral") {
       processedBuffer = await audioProcessor.spectralProcessing(originalBuffer, {
         windowSize,
         hopSize,
         stretchFactor,
+        windowType,
       });
     } else {
       alert("invalid synthesis method");
@@ -178,19 +184,16 @@
     </div>
     <div>
       <label for="windowSize" class="mb-1 block text-xs text-accent-yellow">Window/Grain Size</label>
-      {#if method === "granular"}
-        <input type="number" id="windowSize" bind:value={windowSize} class="rounded bg-dark-400 p-2 text-white" />
-      {:else}
-        <select
-          id="windowSize"
-          bind:value={windowSize}
-          class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-        >
-          {#each [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192] as size}
-            <option value={size}>{size}</option>
-          {/each}
-        </select>
-      {/if}
+
+      <select
+        id="windowSize"
+        bind:value={windowSize}
+        class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+      >
+        {#each [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192] as size}
+          <option value={size}>{size}</option>
+        {/each}
+      </select>
     </div>
     <div>
       <label for="overlap" class="mb-1 block text-xs text-accent-yellow">Overlap</label>
