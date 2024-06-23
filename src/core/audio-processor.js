@@ -26,6 +26,8 @@ export class AudioProcessor {
   }
 
   granularSynthesis(audioBuffer, { grainSize = 256, overlap = 0.5, stretchFactor = 1.0 }) {
+    console.log("[AudioProcessor] granularSynthesis starting");
+
     const sampleRate = audioBuffer.sampleRate;
     const channels = audioBuffer.numberOfChannels;
     const outputLength = Math.floor(audioBuffer.length * stretchFactor);
@@ -53,6 +55,8 @@ export class AudioProcessor {
         outputIndex = Math.floor(grainIndex * grainSize * (1 - overlap) * stretchFactor);
       }
     }
+
+    console.log("[AudioProcessor] granularSynthesis finished");
 
     return outputBuffer;
   }
@@ -91,31 +95,25 @@ export class AudioProcessor {
       complexArray[i * 2 + 1] = data[i][1];
     }
 
-    // const signal = new Float32Array(fftSize); <--- removed this
+    // noinspection JSCheckFunctionSignatures
     const signal = fft.toComplexArray(fftSize); // <--- added this
 
-    // Add this check before the inverse transform
     if (complexArray.some(isNaN)) {
-      console.error("NaN detected in complexArray before IFFT");
-      // Handle the error, e.g., by returning a zero-filled array
-      return new Float32Array(data.length);
+      throw new Error("NaN detected in complexArray before IFFT");
     }
 
     fft.inverseTransform(signal, complexArray);
 
     // Add this check after the inverse transform
     if (signal.some(isNaN)) {
-      console.error("NaN detected in signal after IFFT");
-      // Handle the error, e.g., by returning a zero-filled array
-      return new Float32Array(data.length);
+      throw new Error("NaN detected in signal after IFFT");
     }
 
     return signal.slice(0, data.length);
   }
 
   phaseVocoder(audioBuffer, { windowSize = 2048, hopSize = 512, stretchFactor = 1.0, windowType = "hann" }) {
-    console.log("Starting phase vocoder with params:", { windowSize, hopSize, stretchFactor, windowType });
-    console.log("Input buffer length:", audioBuffer.length);
+    console.log("[AudioProcessor] phaseVocoder starting");
 
     const sampleRate = audioBuffer.sampleRate;
     const channels = audioBuffer.numberOfChannels;
@@ -142,12 +140,6 @@ export class AudioProcessor {
 
     for (let channel = 0; channel < channels; channel++) {
       const inputData = audioBuffer.getChannelData(channel);
-      console.log("Channel data stats:", {
-        min: Math.min(...inputData),
-        max: Math.max(...inputData),
-        hasNaN: inputData.some(isNaN),
-      });
-
       const paddedInput = zeroPadBuffer(inputData, windowSize * 4);
       const outputData = outputBuffer.getChannelData(channel);
 
@@ -163,11 +155,6 @@ export class AudioProcessor {
         }
 
         const spectrum = this.fft(windowedInput);
-        console.log(`Frame ${i} spectrum stats:`, {
-          min: Math.min(...spectrum.flat()),
-          max: Math.max(...spectrum.flat()),
-          hasNaN: spectrum.flat().some(isNaN),
-        });
 
         const magnitude = spectrum.map((c) => {
           const mag = Math.sqrt(c[0] ** 2 + c[1] ** 2);
@@ -181,7 +168,6 @@ export class AudioProcessor {
           return mag;
         });
         const phase = spectrum.map((c) => Math.atan2(c[1], c[0]));
-
         const unwrappedPhase = unwrapPhase(phase.map((p) => (isFinite(p) ? p : 0)));
 
         const deltaPhase = unwrappedPhase.map((p, j) => {
@@ -201,45 +187,29 @@ export class AudioProcessor {
           const real = m * Math.cos(phaseCumulative[j]);
           const imag = m * Math.sin(phaseCumulative[j]);
           if (isNaN(real) || isNaN(imag)) {
-            console.error(`NaN detected in outputSpectrum at index ${j}`);
-            console.log(`magnitude: ${m}, phaseCumulative: ${phaseCumulative[j]}`);
+            console.error(`NaN detected in outputSpectrum at index ${j}`, { m, phaseCumulative: phaseCumulative[j] });
             // Return a default value or handle the error
             return [0, 0];
           }
+
           return [real, imag];
         });
 
-        console.log(`Frame ${i} output spectrum stats:`, {
-          min: Math.min(...outputSpectrum.flat()),
-          max: Math.max(...outputSpectrum.flat()),
-          hasNaN: outputSpectrum.flat().some(isNaN),
-        });
-
         const outputWindow = this.ifft(outputSpectrum);
-
-        console.log(`Frame ${i} output window stats:`, {
-          min: Math.min(...outputWindow),
-          max: Math.max(...outputWindow),
-          hasNaN: outputWindow.some(isNaN),
-        });
 
         for (let j = 0; j < outputWindow.length && stretchedIndex + j < outputData.length; j++) {
           outputData[stretchedIndex + j] += outputWindow[j];
         }
       }
-
-      console.log("Output data stats:", {
-        min: Math.min(...outputData),
-        max: Math.max(...outputData),
-        hasNaN: outputData.some(isNaN),
-      });
     }
 
-    console.log("Finished phase vocoder");
+    console.log("[AudioProcessor] phaseVocoder finished");
     return outputBuffer;
   }
 
   async spectralProcessing(audioBuffer, { windowSize = 2048, hopSize = 512, stretchFactor = 1.0 }) {
+    console.log("[AudioProcessor] spectralProcessing starting");
+
     const sampleRate = audioBuffer.sampleRate;
     const channels = audioBuffer.numberOfChannels;
     const numFrames = Math.ceil(audioBuffer.length / hopSize);
@@ -265,14 +235,9 @@ export class AudioProcessor {
         const spectrum = this.fft(windowedInput);
         const magnitude = spectrum.map((c) => Math.sqrt(c[0] ** 2 + c[1] ** 2));
         const phase = spectrum.map((c) => Math.atan2(c[1], c[0]));
-        // console.table(windowedInput);
-        // console.log(magnitude, phase);
-        // debugger;
 
         const stretchedIndex = Math.floor(i * hopSize * stretchFactor);
         const outputSpectrum = magnitude.map((m, j) => [m * Math.cos(phase[j]), m * Math.sin(phase[j])]);
-        // console.table(outputSpectrum);
-        // debugger;
 
         outputSpectrum.forEach((complexNumber, index) => {
           const [real, imag] = complexNumber;
@@ -289,6 +254,8 @@ export class AudioProcessor {
         }
       }
     }
+
+    console.log("[AudioProcessor] spectralProcessing finished");
 
     return outputBuffer;
   }
