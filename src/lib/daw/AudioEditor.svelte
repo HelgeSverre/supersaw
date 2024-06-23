@@ -251,7 +251,6 @@
         <option value="phaseVocoder">Phase Vocoder</option>
         <option value="spectral">Spectral</option>
         <option value="tdhs">Time-Domain Harmonic Scaling</option>
-        <option value="waveletTransform">Wavelet Transform</option>
       </select>
     </div>
   </SegmentGroup>
