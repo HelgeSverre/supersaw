@@ -100,6 +100,7 @@
             { value: "piano", label: "Piano (Shift + 6)" },
             { value: "kick", label: "Kick Generator (Shift + 7)" },
             { value: "tb303", label: "TR-303 (Shift + 8)" },
+            { value: "audio-editor", label: "Audio Editor" },
           ]}
         />
       </SegmentGroup>

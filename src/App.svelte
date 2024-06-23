@@ -28,6 +28,7 @@
   import TransistorBass from "./lib/daw/instruments/TransistorBass.svelte";
   import Tenori from "./lib/daw/instruments/Tenori.svelte";
   import Synthesia from "./lib/daw/Synthesia.svelte";
+  import AudioEditor from "./lib/daw/AudioEditor.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -89,7 +90,7 @@
 
     // prettier-ignore
     const keyToViewMap = {
-      48: "synthesia",       // Shift + 0
+      48: "synthesia",  // Shift + 0
       49: "timeline",   // Shift + 1
       50: "midi",       // Shift + 2
       51: "playground", // Shift + 3
@@ -97,8 +98,8 @@
       53: "blank",      // Shift + 5
       54: "piano",      // Shift + 6
       55: "kick",       // Shift + 7
-      56: "tb303",       // Shift + 8
-      57: "tenori"       // Shift + 9
+      56: "tb303",      // Shift + 8
+      57: "tenori"      // Shift + 9
     };
 
     if (event.shiftKey && keyToViewMap[keyCode]) {
@@ -188,6 +189,10 @@
         {:else if $currentView === "tenori"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <Tenori />
+          </section>
+        {:else if $currentView === "audio-editor"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <AudioEditor />
           </section>
         {:else}
           <section class="flex h-full flex-1 grow items-center justify-center">
