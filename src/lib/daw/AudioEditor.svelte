@@ -39,7 +39,8 @@
     context = audioManager.audioContext;
     audioProcessor = new AudioProcessor(context);
 
-    loadAudioUrl("/samples/roland-tr-808/SD/SD1010.WAV");
+    loadAudioUrl("/samples/freesound/hardstyle-kick-249.wav");
+    // loadAudioUrl("/samples/roland-tr-808/SD/SD1010.WAV");
   });
 
   async function loadAudioUrl(url) {
@@ -71,7 +72,7 @@
 
     if (method === "granular") {
       processedBuffer = await audioProcessor.granularSynthesis(originalBuffer, {
-        windowSize,
+        grainSize: windowSize,
         overlap,
         stretchFactor,
         windowType,
@@ -195,18 +196,21 @@
         {/each}
       </select>
     </div>
-    <div>
-      <label for="overlap" class="mb-1 block text-xs text-accent-yellow">Overlap</label>
-      <input
-        type="number"
-        id="overlap"
-        bind:value={overlap}
-        step="0.1"
-        min="0"
-        max="0.9"
-        class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-      />
-    </div>
+
+    {#if method === "granular"}
+      <div>
+        <label for="overlap" class="mb-1 block text-xs text-accent-yellow">Overlap</label>
+        <input
+          type="number"
+          id="overlap"
+          bind:value={overlap}
+          step="0.1"
+          min="0"
+          max="1"
+          class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+        />
+      </div>
+    {/if}
 
     {#if method === "phaseVocoder" || method === "spectral"}
       <div>
