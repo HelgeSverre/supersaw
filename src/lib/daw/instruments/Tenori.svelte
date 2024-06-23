@@ -5,6 +5,11 @@
   import SegmentGroup from "../../ui/SegmentGroup.svelte";
   import { audioManager } from "../../../core/audio.js";
   import { midiNoteToFrequency } from "../../../core/midi.js";
+  import { Gain } from "../../../core/effects/gain";
+  import { Reverb } from "../../../core/effects/reverb";
+  import { ParallelChain } from "../../../core/effects/parallelChain";
+  import { EffectChain } from "../../../core/effects/effectChain";
+  import { Filter } from "../../../core/effects/filter";
 
   export let size = 16;
 
@@ -110,16 +115,25 @@
       }
     });
 
+    const effectChain = new ParallelChain(audioManager.audioContext, [
+      new EffectChain(audioManager.audioContext, [
+        new Reverb(audioManager.audioContext, 5),
+        new Filter(audioManager.audioContext, "lowpass", 2000),
+      ]),
+    ]);
+
+
     const freq = midiNoteToFrequency(invertedRowIndex + 60);
-    const duration = 0.5;
+    const duration = 0.9;
     const channel = audioManager.createChannel("tenori");
     const now = audioManager.audioContext.currentTime;
     const osc = audioManager.audioContext.createOscillator();
 
+    effectChain.connect(channel.gainNode);
     osc.frequency.value = freq;
-    osc.type = "sine";
+    osc.type = "triangle";
 
-    osc.connect(channel.gainNode);
+    osc.connect(effectChain.getInputNode());
 
     const gainValue = 1 / Math.max(1, activeNotes); // Ensure gainValue is never 0 and does not exceed 1
 
@@ -176,10 +190,6 @@
     </SegmentGroup>
   </div>
 
-  <div class="flex items-center justify-center bg-black p-20">
-    <button id="glass" class="h-96 w-96 rounded-full text-xs">12</button>
-  </div>
-
   <!-- Grid -->
   <div class="tenori-edge flex items-center justify-center" style="--size: {size}">
     <div class="tenori-frame">
@@ -209,13 +219,6 @@
 </main>
 
 <style>
-  #glass {
-    color: black;
-    background: linear-gradient(90deg, #e2e4ec, #cfd4dd);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-
   .tenori-frame {
     overflow: hidden;
     background: #0c0b0e;
@@ -236,10 +239,6 @@
     gap: 6px;
   }
 
-  /*.tenori-cell:nth-child(4n + 1) {*/
-  /*    background-color: rgb(255, 255, 255, 0.05);*/
-  /*}*/
-
   .tenori-cell {
     display: flex;
     align-items: center;
@@ -253,9 +252,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 1px 2px 3px rgba(102, 102, 255, 0.05);
+    border-radius: 10%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   .cell:active {
@@ -264,15 +262,16 @@
   }
 
   .cell:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
   }
 
   .cell:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: transparent;
   }
 
   .cell.active {
-    background: linear-gradient(90deg, #e2e4ec, #cfd4dd);
-    box-shadow: 1px 2px 3px rgba(255, 255, 255, 0.1);
+    background-color: #f0972d;
   }
 
   .cell:active {
@@ -285,6 +284,35 @@
     color: black;
   }
 
+  .cell.playing span {
+    color: rgb(0, 193, 255);
+  }
+
+  .cell {
+    transition: border-color 400ms ease-out;
+  }
+
+  .cell.playing.active span {
+    color: black;
+  }
+
+  .cell.active {
+    transition: all 100ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: scale(1);
+  }
+
+  .cell.playing.active {
+    transform: scale(1.5);
+    transition: transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background-color: rgb(240, 151, 45);
+    border-color: rgb(240, 151, 45, 0.3);
+    box-shadow: 0 0 0 0 rgb(240, 151, 45, 0.3);
+  }
+
   .cell.playing {
+    transition: all 100ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background-color: rgb(0, 193, 255, 0.1);
+    border-color: rgb(0, 193, 255, 0.3);
+    box-shadow: 0 0 0 0 rgba(0, 193, 255, 0.3);
   }
 </style>
