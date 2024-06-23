@@ -11,10 +11,17 @@
   let processedBuffer;
   let context;
   let audioProcessor;
+
+  let method = "phaseVocoder";
+  let windowType = "hann";
+
+  // Granular synthesis
   let grainSize = 256;
   let overlap = 0.5;
   let stretchFactor = 0.5;
-  let method = "granular";
+
+  // Phase vocoder
+  let hopSize = 64;
 
   let canvasOriginal;
   let originalDuration;
@@ -61,7 +68,27 @@
 
   async function processAudio() {
     processing = true;
-    processedBuffer = await audioProcessor.processAudio(originalBuffer, method, { grainSize, overlap, stretchFactor });
+
+    if (method === "granular") {
+      processedBuffer = await audioProcessor.granularSynthesis(originalBuffer, { grainSize, overlap, stretchFactor });
+    } else if (method === "phaseVocoder") {
+      processedBuffer = await audioProcessor.phaseVocoder(originalBuffer, {
+        windowSize: 256,
+        hopSize: 64,
+        stretchFactor: stretchFactor,
+        windowType: "hann",
+      });
+    } else if (method === "spectral") {
+      processedBuffer = await audioProcessor.spectralProcessing(originalBuffer, {
+        grainSize,
+        hopSize,
+        stretchFactor,
+      });
+    } else {
+      alert("invalid synthesis method");
+      return;
+    }
+
     originalDuration = originalBuffer.duration;
     processedDuration = processedBuffer.duration;
     drawWaveform(processedBuffer, canvasProcessed);
@@ -125,18 +152,32 @@
   }
 </script>
 
-<div class="flex flex-col gap-4 rounded border border-dark-600 bg-dark-800 p-4">
-  <input
-    type="file"
-    id="audioFile"
-    accept="audio/*"
-    on:change={loadAudio}
-    class="w-full rounded bg-dark-400 p-2 text-light"
-  />
+<div class="flex max-w-4xl flex-col gap-4 rounded border border-dark-600 bg-dark-800 p-4">
+  <div>
+    <label for="grainSize" class="mb-1 block text-xs text-accent-yellow">Load Audio File</label>
+    <input
+      type="file"
+      id="audioFile"
+      accept="audio/*"
+      on:change={loadAudio}
+      class="w-full cursor-pointer rounded text-light-soft file:mr-4 file:rounded file:border-0 file:bg-dark-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-light hover:file:cursor-pointer hover:file:bg-dark-200"
+    />
+  </div>
 
   <SegmentGroup additionalClasses="items-end">
     <div>
-      <label for="grainSize" class="mb-1 block text-xs text-accent-yellow">Grain Size</label>
+      <label for="stretchFactor" class="mb-1 block text-xs text-accent-yellow">Stretch Factor</label>
+      <input
+        type="number"
+        id="stretchFactor"
+        bind:value={stretchFactor}
+        step="0.1"
+        min="0.1"
+        class="h-10 w-28 rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+      />
+    </div>
+    <div>
+      <label for="grainSize" class="mb-1 block text-xs text-accent-yellow">Grain/Window Size</label>
       <input type="number" id="grainSize" bind:value={grainSize} class="rounded bg-dark-400 p-2 text-white" />
     </div>
     <div>
@@ -151,19 +192,36 @@
         class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
       />
     </div>
+
+    {#if method === "phaseVocoder" || method === "spectral"}
+      <div>
+        <label for="hopSize" class="mb-1 block text-xs text-accent-yellow">Hop Size </label>
+        <select
+          id="hopSize"
+          bind:value={hopSize}
+          class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+        >
+          {#each [64, 128, 256, 512, 1024] as size}
+            <option value={size}>{size}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div>
+        <label for="method" class="mb-1 block text-xs text-accent-yellow">Window Func</label>
+        <select
+          id="method"
+          bind:value={windowType}
+          class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+        >
+          <option value="hann">Hann Window</option>
+          <option value="hamming">Hamming Window</option>
+          <option value="blackman">Blackman Window</option>
+        </select>
+      </div>
+    {/if}
     <div>
-      <label for="stretchFactor" class="mb-1 block text-xs text-accent-yellow">Stretch Factor</label>
-      <input
-        type="number"
-        id="stretchFactor"
-        bind:value={stretchFactor}
-        step="0.1"
-        min="0.1"
-        class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-      />
-    </div>
-    <div>
-      <label for="method" class="mb-1 block text-xs text-accent-yellow">Method</label>
+      <label for="method" class="mb-1 block text-xs text-accent-yellow">Synthesis Method</label>
       <select
         id="method"
         bind:value={method}
@@ -181,12 +239,8 @@
       <Waveform size="24" class="-mx-1 text-accent-yellow" />
     </TextButton>
 
-    <TextButton on:click={() => playAudio(originalBuffer)} class="ml-2 rounded bg-green-500 px-4 py-2 text-white">
-      Original
-    </TextButton>
-    <TextButton on:click={() => playAudio(processedBuffer)} class="ml-2 rounded bg-red-500 px-4 py-2 text-white">
-      Processed
-    </TextButton>
+    <TextButton on:click={() => playAudio(originalBuffer)}>Original</TextButton>
+    <TextButton on:click={() => playAudio(processedBuffer)}>Processed</TextButton>
   </SegmentGroup>
 
   <div class="flex flex-col gap-1">
