@@ -1,4 +1,4 @@
-import type { Effect } from "./chain";
+import type { Effect } from "./effectChain";
 
 export class Filter implements Effect {
   private audioContext: AudioContext;
