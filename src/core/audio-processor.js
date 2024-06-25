@@ -156,7 +156,10 @@ export class AudioProcessor {
   }
 
   // TODO: This doesnt work very well.
-  timeDomainHarmonicScaling(audioBuffer, stretchFactor) {
+  timeDomainHarmonicScaling(
+    audioBuffer,
+    { windowSize = 2048, hopSize = 512, stretchFactor = 1.0, windowType = "hann" },
+  ) {
     console.log("[AudioProcessor] timeDomainHarmonicScaling starting");
 
     const sampleRate = audioBuffer.sampleRate;
@@ -168,9 +171,6 @@ export class AudioProcessor {
       const inputData = audioBuffer.getChannelData(channel);
       const outputData = outputBuffer.getChannelData(channel);
 
-      // Initialize parameters for TDHS
-      const windowSize = 2048; // Example window size
-      const hopSize = windowSize / 4;
       const numFrames = Math.ceil(inputData.length / hopSize);
 
       for (let i = 0; i < numFrames; i++) {
@@ -181,7 +181,7 @@ export class AudioProcessor {
         windowedInput.set(inputData.subarray(start, Math.min(end, inputData.length)));
 
         // Apply window function
-        const hann = this.getWindowFunction("hann", windowedInput.length);
+        const hann = this.getWindowFunction(windowType, windowedInput.length);
         for (let j = 0; j < windowedInput.length; j++) {
           windowedInput[j] *= hann[j];
         }
