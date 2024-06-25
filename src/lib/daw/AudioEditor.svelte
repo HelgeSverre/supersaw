@@ -167,7 +167,7 @@
   // ------------------------------------------------------
 
   let method = "transients";
-  let stretchFactor = 0.8;
+  let stretchFactor = 0.5;
   let canvasOriginal;
   let originalDuration;
 
@@ -195,8 +195,6 @@
 
     originalDuration = originalBuffer.duration;
     processedDuration = processedBuffer.duration;
-
-    drawWaveforms();
   }
 
   async function loadAudio(event) {
@@ -208,8 +206,6 @@
 
       originalDuration = originalBuffer.duration;
       processedDuration = processedBuffer.duration;
-
-      drawWaveforms();
     }
   }
 
@@ -289,8 +285,6 @@
 
       originalDuration = originalBuffer.duration;
       processedDuration = processedBuffer.duration;
-
-      drawWaveforms();
     } catch (error) {
       console.error("Error processing audio:", error);
       alert(`Error processing audio: ${error.message}`);
@@ -335,33 +329,51 @@
     }
   }
 
-  function drawWaveforms() {
-    drawWaveform(originalBuffer, canvasOriginal);
-    drawWaveform(processedBuffer, canvasProcessed);
+  let maxDuration = 0;
+
+  let originalPath = "";
+  let processedPath = "";
+
+  $: if (originalBuffer && processedBuffer) {
+    updateMaxDuration();
+    originalPath = generateWaveformPath(originalBuffer, 1000, 128);
+    processedPath = generateWaveformPath(processedBuffer, 1000, 128);
   }
 
-  function drawWaveform(buffer, canvas) {
-    const canvasContext = canvas.getContext("2d");
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const width = (canvas.width = canvas.clientWidth * devicePixelRatio);
-    const height = (canvas.height = canvas.clientHeight * devicePixelRatio);
+  function updateMaxDuration() {
+    maxDuration = Math.max(originalBuffer?.duration || 0, processedBuffer?.duration || 0);
+    originalDuration = originalBuffer?.duration || 0;
+    processedDuration = processedBuffer?.duration || 0;
+  }
+
+  function generateWaveformPath(buffer, width, height) {
+    if (!buffer) return "";
 
     const data = buffer.getChannelData(0);
-    const step = Math.ceil(data.length / width);
-    const amp = height / devicePixelRatio / 2;
+    const duration = buffer.duration;
+    const pixelsPerSecond = width / maxDuration;
+    const totalWidth = Math.ceil(duration * pixelsPerSecond);
 
-    canvasContext.scale(devicePixelRatio, devicePixelRatio);
-    canvasContext.clearRect(0, 0, width, height);
-    canvasContext.lineWidth = 1;
-    canvasContext.strokeStyle = "#61dafb";
-    canvasContext.beginPath();
-    for (let i = 0; i < width; i++) {
-      const min = Math.min(...data.subarray(i * step, (i + 1) * step));
-      const max = Math.max(...data.subarray(i * step, (i + 1) * step));
-      canvasContext.moveTo(i, (1 + min) * amp);
-      canvasContext.lineTo(i, (1 + max) * amp);
+    const samplesPerPixel = Math.max(1, Math.floor(data.length / totalWidth));
+    const amp = height / 2;
+
+    let path = "";
+    for (let x = 0; x < totalWidth; x++) {
+      const start = x * samplesPerPixel;
+      const end = start + samplesPerPixel;
+      let min = 1;
+      let max = -1;
+
+      for (let i = start; i < end; i++) {
+        const sample = data[i];
+        if (sample < min) min = sample;
+        if (sample > max) max = sample;
+      }
+
+      path += `M${x},${(1 + min) * amp} L${x},${(1 + max) * amp}`;
     }
-    canvasContext.stroke();
+
+    return path;
   }
 
   function switchMethod(newMethod) {
@@ -375,66 +387,19 @@
   }
 </script>
 
-<div class="flex w-full max-w-4xl flex-col gap-4 rounded border border-dark-600 bg-dark-800 p-4">
-  <div>
-    <label for="audioFile" class=" block text-xs text-accent-yellow">Load Audio File</label>
-    <input
-      type="file"
-      id="audioFile"
-      accept="audio/*"
-      on:change={loadAudio}
-      class="h-10 w-full cursor-pointer rounded text-light-soft file:mr-4 file:rounded file:border-0 file:bg-dark-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-light hover:file:cursor-pointer hover:file:bg-dark-200"
-    />
-  </div>
-  <div>
-    <pre class="rounded border border-dark-400 bg-dark-600 p-2 text-xs text-white">{JSON.stringify(
-        params,
-        null,
-        2,
-      )}</pre>
-  </div>
-
-  <SegmentGroup>
-    {#if synthesisParams[method]}
-      {#each synthesisParams[method] as param}
-        <div>
-          <label for={param.name} class="mb-1 block text-xs text-accent-yellow">{param.label}</label>
-          {#if param.type === "select"}
-            <select
-              id={param.name}
-              bind:value={params[param.name]}
-              class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-            >
-              {#each param.options as option}
-                <option value={option}>{option}</option>
-              {/each}
-            </select>
-          {:else if param.type === "number"}
-            <input
-              type="number"
-              id={param.name}
-              bind:value={params[param.name]}
-              step={param.step}
-              min={param.min}
-              max={param.max}
-              class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-            />
-          {/if}
-        </div>
-      {/each}
-    {/if}
-  </SegmentGroup>
-
+<div class="flex w-full max-w-4xl flex-col gap-3 rounded border border-dark-600 bg-dark-800 p-4">
   <div class="flex flex-row items-end justify-between">
-    <SegmentGroup>
-      <TextButton on:click={processAudio}>
-        <Waveform size="24" class="-mx-1 text-accent-yellow" />
-      </TextButton>
+    <div class="flex flex-col gap-1">
+      <label for="audioFile" class=" block text-xs text-accent-yellow">Controls</label>
+      <SegmentGroup>
+        <TextButton on:click={processAudio}>
+          <Waveform size="24" class="-mx-1 text-accent-yellow" />
+        </TextButton>
 
-      <TextButton on:click={() => playAudio(originalBuffer)}>Original</TextButton>
-      <TextButton on:click={() => playAudio(processedBuffer)}>Processed</TextButton>
-    </SegmentGroup>
-
+        <TextButton on:click={() => playAudio(originalBuffer)}>Original</TextButton>
+        <TextButton on:click={() => playAudio(processedBuffer)}>Processed</TextButton>
+      </SegmentGroup>
+    </div>
     <SegmentGroup>
       <div>
         <label for="method" class="mb-1 block text-xs text-accent-yellow">Synthesis Method</label>
@@ -465,14 +430,65 @@
       </div>
     </SegmentGroup>
   </div>
+  <div class="flex flex-row items-end justify-between">
+    <div>
+      <label for="audioFile" class="mb-1 block text-xs text-accent-yellow">Load Audio File</label>
+      <input
+        type="file"
+        id="audioFile"
+        accept="audio/*"
+        on:change={loadAudio}
+        class="h-10 w-full cursor-pointer rounded text-light-soft file:mr-4 file:rounded file:border-0 file:bg-dark-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-light hover:file:cursor-pointer hover:file:bg-dark-200"
+      />
+    </div>
+    <SegmentGroup>
+      {#if synthesisParams[method]}
+        {#each synthesisParams[method] as param}
+          <div>
+            <label for={param.name} class="mb-1 block text-xs text-accent-yellow">{param.label}</label>
+            {#if param.type === "select"}
+              <select
+                id={param.name}
+                bind:value={params[param.name]}
+                class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+              >
+                {#each param.options as option}
+                  <option value={option}>{option}</option>
+                {/each}
+              </select>
+            {:else if param.type === "number"}
+              <input
+                type="number"
+                id={param.name}
+                bind:value={params[param.name]}
+                step={param.step}
+                min={param.min}
+                max={param.max}
+                class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+              />
+            {/if}
+          </div>
+        {/each}
+      {/if}
+    </SegmentGroup>
+  </div>
 
   <div class="flex flex-col gap-1">
     <div class="relative rounded border border-dark-300 bg-gray-950 px-4">
       {#if originalDuration}
         <span class="absolute right-2 top-2 text-xs text-light/50">{originalDuration?.toFixed(3)}s</span>
       {/if}
-      <canvas height="1000" width="1000" bind:this={canvasOriginal} class="h-32 w-[750px]" id="waveform-original"
-      ></canvas>
+      <svg
+        width="100%"
+        height="128"
+        viewBox="0 0 1000 128"
+        preserveAspectRatio="none"
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-32 w-full py-2"
+      >
+        <path d={originalPath} stroke="#61dafb" stroke-width="1" fill="none" vector-effect="non-scaling-stroke" />
+      </svg>
+
       <div class="absolute inset-0 bottom-0 flex w-full items-center justify-start">
         <div
           class="absolute h-full border-r border-accent-neon bg-accent-neon/5"
@@ -485,8 +501,17 @@
       {#if processedDuration}
         <span class="absolute right-2 top-2 text-xs text-light/50">{processedDuration?.toFixed(3)}s</span>
       {/if}
-      <canvas height="1000" width="1000" bind:this={canvasProcessed} class="h-32 w-[750px]" id="waveform-processed"
-      ></canvas>
+
+      <svg
+        width="100%"
+        height="128"
+        viewBox="0 0 1000 128"
+        preserveAspectRatio="none"
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-32 w-full py-2"
+      >
+        <path d={processedPath} stroke="#61dafb" stroke-width="1" vector-effect="non-scaling-stroke" />
+      </svg>
       <div class="absolute inset-0 bottom-0 flex w-full items-center justify-start">
         <div
           class="absolute h-full border-r border-accent-neon bg-accent-neon/5"
