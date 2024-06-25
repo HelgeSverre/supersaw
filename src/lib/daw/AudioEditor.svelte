@@ -5,6 +5,7 @@
   import { Spinner, Waveform } from "phosphor-svelte";
   import TextButton from "../ui/TextButton.svelte";
   import SegmentGroup from "../ui/SegmentGroup.svelte";
+  import { WaveformSimilarityOverlapAdd } from "../../core/time-stretching/WaveformSimilarityOverlapAdd";
 
   let processing = false;
   let originalBuffer;
@@ -12,7 +13,7 @@
   let context;
   let audioProcessor;
 
-  let method = "granular";
+  let method = "wsola";
   let windowType = "hann";
 
   // Granular synthesis
@@ -40,6 +41,7 @@
     audioProcessor = new AudioProcessor(context);
 
     loadAudioUrl("/samples/freesound/hardstyle-kick-249.wav");
+    // loadAudioUrl("/samples/freesound/vibes.wav");
   });
 
   async function loadAudioUrl(url) {
@@ -74,24 +76,28 @@
         grainSize: windowSize,
         overlap,
         stretchFactor,
-        windowType,
+        windowType
       });
     } else if (method === "phaseVocoder") {
       processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
         windowSize: windowSize,
         hopSize: hopSize,
         stretchFactor: stretchFactor,
-        windowType: windowType,
+        windowType: windowType
       });
     } else if (method === "spectral") {
       processedBuffer = audioProcessor.spectralProcessing(originalBuffer, {
         windowSize,
         hopSize,
         stretchFactor,
-        windowType,
+        windowType
       });
     } else if (method === "tdhs") {
       processedBuffer = audioProcessor.timeDomainHarmonicScaling(originalBuffer, stretchFactor);
+    } else if (method === "wsola") {
+      const wip = new WaveformSimilarityOverlapAdd(audioManager.audioContext, stretchFactor);
+      processedBuffer = wip.process(originalBuffer);
+      console.log(processedBuffer);
     } else {
       alert("invalid synthesis method");
       return;
@@ -251,6 +257,7 @@
         <option value="phaseVocoder">Phase Vocoder</option>
         <option value="spectral">Spectral</option>
         <option value="tdhs">Time-Domain Harmonic Scaling</option>
+        <option value="wsola">Waveform Similarity Overlap-Add</option>
       </select>
     </div>
   </SegmentGroup>
@@ -302,7 +309,7 @@
 </div>
 
 <style>
-  canvas {
-    image-rendering: high-quality;
-  }
+    canvas {
+        image-rendering: high-quality;
+    }
 </style>
