@@ -84,42 +84,6 @@ export class AudioProcessor {
     }
   }
 
-  granularSynthesis(audioBuffer, { grainSize = 256, overlap = 0.5, stretchFactor = 1.0, windowType = "hann" }) {
-    console.log("[AudioProcessor] granularSynthesis starting");
-
-    const sampleRate = audioBuffer.sampleRate;
-    const channels = audioBuffer.numberOfChannels;
-    const outputLength = Math.floor(audioBuffer.length * stretchFactor);
-    const outputBuffer = this.context.createBuffer(channels, outputLength, sampleRate);
-
-    for (let channel = 0; channel < channels; channel++) {
-      const inputData = audioBuffer.getChannelData(channel);
-      const outputData = outputBuffer.getChannelData(channel);
-      const window = this.getWindowFunction(windowType, grainSize);
-
-      let grainIndex = 0;
-      let outputIndex = 0;
-
-      while (outputIndex + grainSize < outputLength && grainIndex * grainSize * (1 - overlap) < inputData.length) {
-        const start = Math.floor(grainIndex * grainSize * (1 - overlap));
-        const end = Math.min(start + grainSize, inputData.length);
-        const grain = inputData.subarray(start, end);
-        const grainLength = grain.length;
-
-        for (let i = 0; i < grainLength; i++) {
-          outputData[outputIndex + i] += grain[i] * window[i];
-        }
-
-        grainIndex++;
-        outputIndex = Math.floor(grainIndex * grainSize * (1 - overlap) * stretchFactor);
-      }
-    }
-
-    console.log("[AudioProcessor] granularSynthesis finished");
-
-    return outputBuffer;
-  }
-
   nextPowerOfTwo(value) {
     return Math.pow(2, Math.ceil(Math.log2(value)));
   }

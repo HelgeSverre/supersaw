@@ -9,6 +9,7 @@
   import { TransientPreservingStretcher } from "../../core/time-stretching/TransientPreserving";
   import { GranularTimeStretcher } from "../../core/time-stretching/Granular";
   import { SpectralTimeStretcher } from "../../core/time-stretching/Spectral";
+  import { TimeDomainHarmonicScaling } from "../../core/time-stretching/TimeDomainHarmoniScaling";
 
   let processing = false;
   let originalBuffer;
@@ -231,13 +232,13 @@
           break;
         }
         case "tdhs":
-          console.log(stretchFactor);
-          processedBuffer = audioProcessor.timeDomainHarmonicScaling(originalBuffer, {
+          const engine = new TimeDomainHarmonicScaling(audioManager.audioContext, {
             stretchFactor: stretchFactor,
             windowSize: params.windowSize,
             hopSize: params.hopSize,
             windowType: params.windowType,
           });
+          processedBuffer = engine.process(originalBuffer);
           break;
         case "phaseVocoder":
           processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
