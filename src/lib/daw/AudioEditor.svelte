@@ -13,7 +13,10 @@
   let originalBuffer;
   let processedBuffer;
   let context;
-  let audioProcessor;
+
+  const windowSizes = [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
+  const hopSizes = [4, 8, 16, 32, 64, 128, 256, 512, 1024];
+  const windowFuncs = ["hann", "hamming", "blackman"];
 
   // Configure the mapping
   const synthesisParams = {
@@ -22,7 +25,7 @@
         default: 256,
         name: "grainSize",
         type: "select",
-        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+        options: windowSizes,
         label: "Grain Size",
       },
       {
@@ -49,21 +52,21 @@
         default: 256,
         name: "windowSize",
         type: "select",
-        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+        options: windowSizes,
         label: "Window Size",
       },
       {
         default: 64,
         name: "hopSize",
         type: "select",
-        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024],
+        options: hopSizes,
         label: "Hop Size",
       },
       {
         default: "hann",
         name: "windowType",
         type: "select",
-        options: ["hann", "hamming", "blackman"],
+        options: windowFuncs,
         label: "Window Func",
       },
     ],
@@ -87,26 +90,27 @@
         label: "Overlap (ms)",
       },
     ],
+
     phaseVocoder: [
       {
         default: 256,
         name: "windowSize",
         type: "select",
-        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+        options: windowSizes,
         label: "Window Size",
       },
       {
         default: 64,
         name: "hopSize",
         type: "select",
-        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024],
+        options: hopSizes,
         label: "Hop Size",
       },
       {
         default: "hann",
         name: "windowType",
         type: "select",
-        options: ["hann", "hamming", "blackman"],
+        options: windowFuncs,
         label: "Window Func",
       },
     ],
@@ -115,25 +119,47 @@
         default: 256,
         name: "windowSize",
         type: "select",
-        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+        options: windowSizes,
         label: "Window Size",
       },
       {
         default: 64,
         name: "hopSize",
         type: "select",
-        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024],
+        options: hopSizes,
         label: "Hop Size",
       },
       {
         default: "hann",
         name: "windowType",
         type: "select",
-        options: ["hann", "hamming", "blackman"],
+        options: windowFuncs,
         label: "Window Func",
       },
     ],
-    tdhs: [], // Time-Domain Harmonic Scaling doesn't have additional parameters in your current implementation
+    tdhs: [
+      {
+        default: 256,
+        name: "windowSize",
+        type: "select",
+        options: windowSizes,
+        label: "Window Size",
+      },
+      {
+        default: 64,
+        name: "hopSize",
+        type: "select",
+        options: hopSizes,
+        label: "Hop Size",
+      },
+      {
+        default: "hann",
+        name: "windowType",
+        type: "select",
+        options: windowFuncs,
+        label: "Window Func",
+      },
+    ],
   };
   let params = {};
   // ------------------------------------------------------
@@ -202,6 +228,15 @@
           processedBuffer = engine.process(originalBuffer);
           break;
         }
+        case "tdhs":
+          console.log(stretchFactor);
+          processedBuffer = audioProcessor.timeDomainHarmonicScaling(originalBuffer, {
+            stretchFactor: stretchFactor,
+            windowSize: params.windowSize,
+            hopSize: params.hopSize,
+            windowType: params.windowType,
+          });
+          break;
         case "phaseVocoder":
           processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
             stretchFactor: stretchFactor,
@@ -230,7 +265,7 @@
         }
         case "transients": {
           const engine = new TransientPreservingStretcher(audioManager.audioContext, {
-            stretchFactor: stretchFactor,
+            tempo: stretchFactor,
             threshold: params.transientThreshold,
             windowSize: params.windowSize,
             hopSize: params.hopSize,
