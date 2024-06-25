@@ -1,5 +1,5 @@
 import FFT from "fft.js";
-import { WindowFunctions } from "../audio-processor";
+import { WindowFunctions } from "../window-functions";
 
 export class PhaseVocoder {
   private context: AudioContext;

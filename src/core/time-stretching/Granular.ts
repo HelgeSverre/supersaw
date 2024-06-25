@@ -1,4 +1,4 @@
-import { WindowFunctions } from "../audio-processor";
+import { WindowFunctions } from "../window-functions";
 
 export class GranularTimeStretcher {
   private context: AudioContext;

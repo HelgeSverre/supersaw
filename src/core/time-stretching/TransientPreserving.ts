@@ -1,4 +1,4 @@
-import { WindowFunctions } from "../audio-processor";
+import { WindowFunctions } from "../window-functions";
 
 export class TransientPreservingStretcher {
   private context: AudioContext;
@@ -26,16 +26,6 @@ export class TransientPreservingStretcher {
     this.threshold = config.threshold || 0.1;
     this.windowType = config.windowType || "hann";
   }
-
-  // TODO: defer to util method for window generation
-  // private createWindow(size: number): Float32Array {
-  //   const window = new Float32Array(size);
-  //   for (let i = 0; i < size; i++) {
-  //     Hann window
-  // window[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (size - 1)));
-  // }
-  // return window;
-  // }
 
   private detectTransients(buffer: Float32Array): boolean[] {
     const transients = new Array(buffer.length).fill(false);

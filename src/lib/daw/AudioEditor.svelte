@@ -1,6 +1,5 @@
 <script>
   import { onMount } from "svelte";
-  import { AudioProcessor } from "../../core/audio-processor.js";
   import { audioManager } from "../../core/audio.js";
   import { Spinner, Waveform } from "phosphor-svelte";
   import TextButton from "../ui/TextButton.svelte";
@@ -19,7 +18,7 @@
 
   const windowSizes = [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
   const hopSizes = [4, 8, 16, 32, 64, 128, 256, 512, 1024];
-  const windowFuncs = ["hann", "hamming", "blackman"];
+  const windowFuncs = ["hann", "hamming", "blackman", "helge"];
 
   // Configure the mapping
   const synthesisParams = {
@@ -218,7 +217,6 @@
     processing = true;
 
     console.log(`[START] Processing audio with method: ${method}`);
-    const audioProcessor = new AudioProcessor(audioManager.audioContext);
 
     try {
       switch (method) {
@@ -244,20 +242,14 @@
         }
         case "phaseVocoder": {
           const engine = new PhaseVocoder(audioManager.audioContext, {
-            stretchFactor: 1.5,
-            windowSize: 2048,
-            hopSize: 512,
-            windowType: "hann",
-          });
-
-          processedBuffer = engine.process(originalBuffer);
-
-          processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
             stretchFactor: stretchFactor,
             windowSize: params.windowSize,
             hopSize: params.hopSize,
             windowType: params.windowType,
           });
+
+          processedBuffer = engine.process(originalBuffer);
+
           break;
         }
         case "spectral": {

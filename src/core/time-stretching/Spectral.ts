@@ -1,5 +1,5 @@
-import { WindowFunctions } from "../audio-processor";
 import FFT from "fft.js";
+import { WindowFunctions } from "../window-functions";
 
 export class SpectralTimeStretcher {
   private context: AudioContext;
