@@ -29,6 +29,7 @@
   import Tenori from "./lib/daw/instruments/Tenori.svelte";
   import Synthesia from "./lib/daw/Synthesia.svelte";
   import AudioEditor from "./lib/daw/AudioEditor.svelte";
+  import Sampler8 from "./lib/daw/instruments/Sampler8.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -193,6 +194,10 @@
         {:else if $currentView === "audio-editor"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <AudioEditor />
+          </section>
+        {:else if $currentView === "sampler"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <Sampler8 />
           </section>
         {:else}
           <section class="flex h-full flex-1 grow items-center justify-center">
