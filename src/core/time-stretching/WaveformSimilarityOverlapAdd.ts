@@ -10,7 +10,6 @@ export class WaveformSimilarityOverlapAdd {
   private outputBuffer: Float32Array[];
   private midBuffer: Float32Array[];
   private frameLength: number;
-  private outOffset: number;
 
   constructor(context: AudioContext, tempo: number = 1.0) {
     this.context = context;

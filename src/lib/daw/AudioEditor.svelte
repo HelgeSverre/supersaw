@@ -76,21 +76,21 @@
         grainSize: windowSize,
         overlap,
         stretchFactor,
-        windowType
+        windowType,
       });
     } else if (method === "phaseVocoder") {
       processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
         windowSize: windowSize,
         hopSize: hopSize,
         stretchFactor: stretchFactor,
-        windowType: windowType
+        windowType: windowType,
       });
     } else if (method === "spectral") {
       processedBuffer = audioProcessor.spectralProcessing(originalBuffer, {
         windowSize,
         hopSize,
         stretchFactor,
-        windowType
+        windowType,
       });
     } else if (method === "tdhs") {
       processedBuffer = audioProcessor.timeDomainHarmonicScaling(originalBuffer, stretchFactor);
@@ -219,7 +219,7 @@
       </div>
     {/if}
 
-    {#if method === "phaseVocoder" || method === "spectral"}
+    {#if method === "wsola" || method === "phaseVocoder" || method === "spectral"}
       <div>
         <label for="hopSize" class="mb-1 block text-xs text-accent-yellow">Hop Size </label>
         <select
@@ -227,7 +227,7 @@
           bind:value={hopSize}
           class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
         >
-          {#each [64, 128, 256, 512, 1024] as size}
+          {#each [4, 8, 16, 32, 64, 128, 256, 512, 1024] as size}
             <option value={size}>{size}</option>
           {/each}
         </select>
@@ -309,7 +309,7 @@
 </div>
 
 <style>
-    canvas {
-        image-rendering: high-quality;
-    }
+  canvas {
+    image-rendering: high-quality;
+  }
 </style>
