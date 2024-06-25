@@ -59,7 +59,7 @@ export class SpectralTimeStretcher {
 
         const { magnitude, phase } = this.computeSpectrum(windowedInput);
 
-        const { newPhase, outputSpectrum } = this.phaseVocoder(magnitude, phase, prevPhase, prevMagnitude, epsilon);
+        const { newPhase, outputSpectrum } = this.phaseVocoder(magnitude, phase, prevPhase, prevMagnitude);
 
         const outputWindow = this.inverseFFT(outputSpectrum);
 
@@ -107,7 +107,6 @@ export class SpectralTimeStretcher {
     phase: Float32Array,
     prevPhase: Float32Array,
     prevMagnitude: Float32Array,
-    epsilon: number,
   ): { newPhase: Float32Array; outputSpectrum: Float32Array } {
     const newPhase = new Float32Array(this.windowSize / 2 + 1);
     const outputSpectrum = this.fft.createComplexArray();
