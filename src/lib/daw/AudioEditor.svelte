@@ -249,7 +249,7 @@
           break;
         case "spectral": {
           const engine = new SpectralTimeStretcher(audioManager.audioContext, {
-            tempo: stretchFactor,
+            stretchFactor: stretchFactor,
             windowSize: params.windowSize,
             hopSize: params.hopSize,
             windowType: params.windowType,
