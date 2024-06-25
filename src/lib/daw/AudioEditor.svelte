@@ -6,6 +6,8 @@
   import TextButton from "../ui/TextButton.svelte";
   import SegmentGroup from "../ui/SegmentGroup.svelte";
   import { WaveformSimilarityOverlapAdd } from "../../core/time-stretching/WaveformSimilarityOverlapAdd";
+  import { TransientPreservingStretcher } from "../../core/time-stretching/TransientPreserving";
+  import { Granular } from "../../core/time-stretching/Granular";
 
   let processing = false;
   let originalBuffer;
@@ -13,15 +15,140 @@
   let context;
   let audioProcessor;
 
-  let method = "wsola";
+  // Configure the mapping
+  const synthesisParams = {
+    granular: [
+      {
+        default: 256,
+        name: "grainSize",
+        type: "select",
+        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+        label: "Grain Size",
+      },
+      {
+        default: 0.5,
+        name: "overlap",
+        type: "number",
+        min: 0,
+        max: 1,
+        step: 0.1,
+        label: "Overlap",
+      },
+    ],
+    transients: [
+      {
+        default: 0.1,
+        name: "transientThreshold",
+        type: "number",
+        min: 0,
+        max: 1,
+        step: 0.1,
+        label: "Transient Threshold",
+      },
+      {
+        default: 256,
+        name: "windowSize",
+        type: "select",
+        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+        label: "Window Size",
+      },
+      {
+        default: 64,
+        name: "hopSize",
+        type: "select",
+        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024],
+        label: "Hop Size",
+      },
+      {
+        default: "hann",
+        name: "windowType",
+        type: "select",
+        options: ["hann", "hamming", "blackman"],
+        label: "Window Func",
+      },
+    ],
+    wsola: [
+      {
+        default: 2,
+        name: "seekWindowMs",
+        type: "number",
+        min: 0,
+        max: 100,
+        step: 0.1,
+        label: "Seek Window (ms)",
+      },
+      {
+        default: 8,
+        name: "overlapMs",
+        type: "number",
+        min: 0,
+        max: 1000,
+        step: 0.1,
+        label: "Overlap (ms)",
+      },
+    ],
+    phaseVocoder: [
+      {
+        default: 256,
+        name: "windowSize",
+        type: "select",
+        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+        label: "Window Size",
+      },
+      {
+        default: 64,
+        name: "hopSize",
+        type: "select",
+        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024],
+        label: "Hop Size",
+      },
+      {
+        default: "hann",
+        name: "windowType",
+        type: "select",
+        options: ["hann", "hamming", "blackman"],
+        label: "Window Func",
+      },
+    ],
+    spectral: [
+      {
+        default: 256,
+        name: "windowSize",
+        type: "select",
+        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192],
+        label: "Window Size",
+      },
+      {
+        default: 64,
+        name: "hopSize",
+        type: "select",
+        options: [4, 8, 16, 32, 64, 128, 256, 512, 1024],
+        label: "Hop Size",
+      },
+      {
+        default: "hann",
+        name: "windowType",
+        type: "select",
+        options: ["hann", "hamming", "blackman"],
+        label: "Window Func",
+      },
+    ],
+    tdhs: [], // Time-Domain Harmonic Scaling doesn't have additional parameters in your current implementation
+  };
+  let params = {};
+  // ------------------------------------------------------
+
+  let method = "transients";
   let windowType = "hann";
 
   // Granular synthesis
-  let windowSize = 256;
+  let grainSize = 256;
   let overlap = 0.5;
+  let transientThreshold = 0.1;
   let stretchFactor = 0.5;
-
-  // Phase vocoder
+  let windowSize = 256;
+  let overlapMs = 8;
+  let seekWindowMs = 2;
   let hopSize = 64;
 
   let canvasOriginal;
@@ -38,10 +165,11 @@
 
   onMount(() => {
     context = audioManager.audioContext;
-    audioProcessor = new AudioProcessor(context);
 
-    loadAudioUrl("/samples/freesound/hardstyle-kick-249.wav");
-    // loadAudioUrl("/samples/freesound/vibes.wav");
+    // loadAudioUrl("/samples/freesound/hardstyle-kick-249.wav");
+    loadAudioUrl("/samples/freesound/vibes.wav");
+
+    switchMethod("transients");
   });
 
   async function loadAudioUrl(url) {
@@ -68,52 +196,90 @@
     }
   }
 
-  async function processAudio() {
+  function processAudio() {
     processing = true;
 
-    if (method === "granular") {
-      processedBuffer = audioProcessor.granularSynthesis(originalBuffer, {
-        grainSize: windowSize,
-        overlap,
-        stretchFactor,
-        windowType,
-      });
-    } else if (method === "phaseVocoder") {
-      processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
-        windowSize: windowSize,
-        hopSize: hopSize,
-        stretchFactor: stretchFactor,
-        windowType: windowType,
-      });
-    } else if (method === "spectral") {
-      processedBuffer = audioProcessor.spectralProcessing(originalBuffer, {
-        windowSize,
-        hopSize,
-        stretchFactor,
-        windowType,
-      });
-    } else if (method === "tdhs") {
-      processedBuffer = audioProcessor.timeDomainHarmonicScaling(originalBuffer, stretchFactor);
-    } else if (method === "wsola") {
-      const wip = new WaveformSimilarityOverlapAdd(audioManager.audioContext, stretchFactor);
-      processedBuffer = wip.process(originalBuffer);
-      console.log(processedBuffer);
-    } else {
-      alert("invalid synthesis method");
-      return;
-    }
+    const audioProcessor = new AudioProcessor(audioManager.audioContext);
 
-    originalDuration = originalBuffer.duration;
-    processedDuration = processedBuffer.duration;
-    drawWaveform(processedBuffer, canvasProcessed);
-    processing = false;
+    try {
+      switch (method) {
+        case "granular": {
+          const engine = new Granular(audioManager.audioContext, {
+            stretchFactor: stretchFactor,
+            grainSize: params.grainSize,
+            overlap: params.overlap,
+            windowType: params.windowType,
+          });
+          processedBuffer = engine.process(originalBuffer);
+          break;
+        }
+        case "phaseVocoder":
+          processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
+            stretchFactor: stretchFactor,
+            windowSize: params.windowSize,
+            hopSize: params.hopSize,
+            windowType: params.windowType,
+          });
+          break;
+        case "spectral": {
+          processedBuffer = audioProcessor.spectralProcessing(originalBuffer, {
+            stretchFactor: stretchFactor,
+            windowSize: params.windowSize,
+            hopSize: params.hopSize,
+            windowType: params.windowType,
+          });
+          break;
+        }
+        case "wsola": {
+          const engine = new WaveformSimilarityOverlapAdd(audioManager.audioContext, {
+            tempo: stretchFactor,
+            overlapMs: params.overlapMs,
+            seekWindowMs: params.seekWindowMs,
+          });
+          processedBuffer = engine.process(originalBuffer);
+          break;
+        }
+        case "transients": {
+          const engine = new TransientPreservingStretcher(audioManager.audioContext, {
+            stretchFactor: stretchFactor,
+            threshold: params.transientThreshold,
+            windowSize: params.windowSize,
+            hopSize: params.hopSize,
+            windowType: params.windowType,
+          });
+          processedBuffer = engine.process(originalBuffer);
+          break;
+        }
+
+        default:
+          throw new Error("Invalid synthesis method");
+      }
+
+      originalDuration = originalBuffer.duration;
+      processedDuration = processedBuffer.duration;
+
+      drawWaveforms();
+    } catch (error) {
+      console.error("Error processing audio:", error);
+      alert(`Error processing audio: ${error.message}`);
+    } finally {
+      processing = false;
+    }
   }
 
+  let currentSource;
+
   function playAudio(buffer) {
-    const source = context.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioManager.mixer);
-    source.start();
+    if (currentSource) {
+      currentSource.stop();
+      currentSource.disconnect();
+      currentSource = null;
+    }
+
+    currentSource = context.createBufferSource();
+    currentSource.buffer = buffer;
+    currentSource.connect(audioManager.mixer);
+    currentSource.start();
 
     startTime = context.currentTime;
     duration = buffer.duration;
@@ -164,112 +330,113 @@
     }
     canvasContext.stroke();
   }
+
+  function updateParam(paramName, value) {
+    // Convert value to number if it's a numeric input
+    if (typeof value === "string" && !isNaN(value)) {
+      value = Number(value);
+    }
+    eval(`${paramName} = value`);
+  }
+
+  function switchMethod(newMethod) {
+    method = newMethod;
+    params = synthesisParams[method].reduce((acc, param) => {
+      acc[param.name] = param.default;
+      return acc;
+    }, {});
+  }
 </script>
 
 <div class="flex w-full max-w-4xl flex-col gap-4 rounded border border-dark-600 bg-dark-800 p-4">
   <div>
-    <label for="windowSize" class="mb-1 block text-xs text-accent-yellow">Load Audio File</label>
+    <label for="audioFile" class=" block text-xs text-accent-yellow">Load Audio File</label>
     <input
       type="file"
       id="audioFile"
       accept="audio/*"
       on:change={loadAudio}
-      class="w-full cursor-pointer rounded text-light-soft file:mr-4 file:rounded file:border-0 file:bg-dark-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-light hover:file:cursor-pointer hover:file:bg-dark-200"
+      class="h-10 w-full cursor-pointer rounded text-light-soft file:mr-4 file:rounded file:border-0 file:bg-dark-400 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-light hover:file:cursor-pointer hover:file:bg-dark-200"
     />
   </div>
-
-  <SegmentGroup additionalClasses="items-end">
-    <div>
-      <label for="stretchFactor" class="mb-1 block text-xs text-accent-yellow">Stretch Factor</label>
-      <input
-        type="number"
-        id="stretchFactor"
-        bind:value={stretchFactor}
-        step="0.1"
-        min="0.1"
-        class="h-10 w-28 rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-      />
-    </div>
-    <div>
-      <label for="windowSize" class="mb-1 block text-xs text-accent-yellow">Window/Grain Size</label>
-
-      <select
-        id="windowSize"
-        bind:value={windowSize}
-        class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-      >
-        {#each [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192] as size}
-          <option value={size}>{size}</option>
-        {/each}
-      </select>
-    </div>
-
-    {#if method === "granular"}
-      <div>
-        <label for="overlap" class="mb-1 block text-xs text-accent-yellow">Overlap</label>
-        <input
-          type="number"
-          id="overlap"
-          bind:value={overlap}
-          step="0.1"
-          min="0"
-          max="1"
-          class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-        />
-      </div>
-    {/if}
-
-    {#if method === "wsola" || method === "phaseVocoder" || method === "spectral"}
-      <div>
-        <label for="hopSize" class="mb-1 block text-xs text-accent-yellow">Hop Size </label>
-        <select
-          id="hopSize"
-          bind:value={hopSize}
-          class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-        >
-          {#each [4, 8, 16, 32, 64, 128, 256, 512, 1024] as size}
-            <option value={size}>{size}</option>
-          {/each}
-        </select>
-      </div>
-
-      <div>
-        <label for="windowType" class="mb-1 block text-xs text-accent-yellow">Window Func</label>
-        <select
-          id="windowType"
-          bind:value={windowType}
-          class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-        >
-          <option value="hann">Hann Window</option>
-          <option value="hamming">Hamming Window</option>
-          <option value="blackman">Blackman Window</option>
-        </select>
-      </div>
-    {/if}
-    <div>
-      <label for="method" class="mb-1 block text-xs text-accent-yellow">Synthesis Method</label>
-      <select
-        id="method"
-        bind:value={method}
-        class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
-      >
-        <option value="granular">Granular</option>
-        <option value="phaseVocoder">Phase Vocoder</option>
-        <option value="spectral">Spectral</option>
-        <option value="tdhs">Time-Domain Harmonic Scaling</option>
-        <option value="wsola">Waveform Similarity Overlap-Add</option>
-      </select>
-    </div>
-  </SegmentGroup>
+  <div>
+    <pre class="text-xs text-white">{JSON.stringify(method)}</pre>
+    <pre class="text-xs text-white">{JSON.stringify(params)}</pre>
+  </div>
 
   <SegmentGroup>
-    <TextButton on:click={processAudio}>
-      <Waveform size="24" class="-mx-1 text-accent-yellow" />
-    </TextButton>
-
-    <TextButton on:click={() => playAudio(originalBuffer)}>Original</TextButton>
-    <TextButton on:click={() => playAudio(processedBuffer)}>Processed</TextButton>
+    {#if synthesisParams[method]}
+      {#each synthesisParams[method] as param}
+        <div>
+          <label for={param.name} class="mb-1 block text-xs text-accent-yellow">{param.label}</label>
+          {#if param.type === "select"}
+            <select
+              id={param.name}
+              bind:value={params[param.name]}
+              on:change={(e) => updateParam(param.name, e.target.value)}
+              class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+            >
+              {#each param.options as option}
+                <option value={option}>{option}</option>
+              {/each}
+            </select>
+          {:else if param.type === "number"}
+            <input
+              type="number"
+              id={param.name}
+              bind:value={params[param.name]}
+              on:input={(e) => updateParam(param.name, e.target.value)}
+              step={param.step}
+              min={param.min}
+              max={param.max}
+              class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+            />
+          {/if}
+        </div>
+      {/each}
+    {/if}
   </SegmentGroup>
+
+  <div class="flex flex-row items-end justify-between">
+    <SegmentGroup>
+      <TextButton on:click={processAudio}>
+        <Waveform size="24" class="-mx-1 text-accent-yellow" />
+      </TextButton>
+
+      <TextButton on:click={() => playAudio(originalBuffer)}>Original</TextButton>
+      <TextButton on:click={() => playAudio(processedBuffer)}>Processed</TextButton>
+    </SegmentGroup>
+
+    <SegmentGroup>
+      <div>
+        <label for="method" class="mb-1 block text-xs text-accent-yellow">Synthesis Method</label>
+        <select
+          id="method"
+          bind:value={method}
+          on:change={(e) => switchMethod(e.target.value)}
+          class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+        >
+          <option value="granular">Granular</option>
+          <option value="phaseVocoder">Phase Vocoder</option>
+          <option value="spectral">Spectral</option>
+          <option value="tdhs">Time-Domain Harmonic Scaling</option>
+          <option value="wsola">Waveform Similarity Overlap-Add</option>
+          <option value="transients">Transient Preserving</option>
+        </select>
+      </div>
+      <div>
+        <label for="stretchFactor" class="mb-1 block text-xs text-accent-yellow">Stretch Factor</label>
+        <input
+          type="number"
+          id="stretchFactor"
+          bind:value={stretchFactor}
+          step="0.1"
+          min="0.1"
+          class="h-10 w-28 rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
+        />
+      </div>
+    </SegmentGroup>
+  </div>
 
   <div class="flex flex-col gap-1">
     <div class="relative rounded border border-dark-300 bg-gray-950 px-4">

@@ -11,13 +11,20 @@ export class WaveformSimilarityOverlapAdd {
   private midBuffer: Float32Array[];
   private frameLength: number;
 
-  constructor(context: AudioContext, tempo: number = 1.0) {
+  constructor(
+    context: AudioContext,
+    config: {
+      tempo?: number;
+      seekWindowMs?: number;
+      overlapMs?: number;
+    } = {},
+  ) {
     this.context = context;
     this.sampleRate = context.sampleRate;
     this.channels = 2; // Assume stereo
-    this.tempo = tempo;
-    this.seekWindowMs = 2;
-    this.overlapMs = 8;
+    this.tempo = config.tempo || 1.0;
+    this.seekWindowMs = config.seekWindowMs || 2;
+    this.overlapMs = config.overlapMs || 8;
     this.seekLength = Math.floor((this.seekWindowMs * this.sampleRate) / 1000);
     this.overlapLength = Math.floor((this.overlapMs * this.sampleRate) / 1000);
     this.outputBuffer = [new Float32Array(this.overlapLength), new Float32Array(this.overlapLength)];
@@ -69,8 +76,9 @@ export class WaveformSimilarityOverlapAdd {
     }
   }
 
-  public process(inputBuffer: AudioBuffer): Promise<AudioBuffer> {
+  public process(inputBuffer: AudioBuffer): AudioBuffer {
     const inputLength = inputBuffer.length;
+    // TODO: might have to multiply this to invert the tempo to become stretch factor
     const outputLength = Math.floor(inputLength / this.tempo);
     const outputBuffer = this.context.createBuffer(this.channels, outputLength, this.sampleRate);
 

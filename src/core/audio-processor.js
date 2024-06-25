@@ -1,6 +1,19 @@
 import FFT from "fft.js";
 
-class WindowFunctions {
+export class WindowFunctions {
+  static run(type, size) {
+    switch (type) {
+      case "hann":
+        return WindowFunctions.hann(size);
+      case "hamming":
+        return WindowFunctions.hamming(size);
+      case "blackman":
+        return WindowFunctions.blackman(size);
+      default:
+        return WindowFunctions.hann(size); // Default window if no type matched
+    }
+  }
+
   static hann(size) {
     const window = new Float32Array(size);
     for (let i = 0; i < size; i++) {
