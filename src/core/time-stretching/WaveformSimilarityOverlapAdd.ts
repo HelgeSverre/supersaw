@@ -110,11 +110,6 @@ export class WaveformSimilarityOverlapAdd {
         this.outputBuffer[ch].set(this.outputBuffer[ch].subarray(this.seekLength));
       }
 
-      // Fill the leftover part of output buffer with zeros
-      for (let ch = 0; ch < this.channels; ch++) {
-        this.outputBuffer[ch].fill(0, this.overlapLength - this.seekLength);
-      }
-
       // Advance input
       inputOffset += Math.floor(this.seekLength / this.stretchFactor);
 

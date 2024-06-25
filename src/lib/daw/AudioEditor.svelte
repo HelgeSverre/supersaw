@@ -259,7 +259,7 @@
         }
         case "wsola": {
           const engine = new WaveformSimilarityOverlapAdd(audioManager.audioContext, {
-            tempo: stretchFactor,
+            stretchFactor: stretchFactor,
             overlapMs: params.overlapMs,
             seekWindowMs: params.seekWindowMs,
           });
