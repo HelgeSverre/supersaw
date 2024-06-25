@@ -139,18 +139,7 @@
   // ------------------------------------------------------
 
   let method = "transients";
-  let windowType = "hann";
-
-  // Granular synthesis
-  let grainSize = 256;
-  let overlap = 0.5;
-  let transientThreshold = 0.1;
-  let stretchFactor = 0.5;
-  let windowSize = 256;
-  let overlapMs = 8;
-  let seekWindowMs = 2;
-  let hopSize = 64;
-
+  let stretchFactor = 0.8;
   let canvasOriginal;
   let originalDuration;
 
@@ -331,14 +320,6 @@
     canvasContext.stroke();
   }
 
-  function updateParam(paramName, value) {
-    // Convert value to number if it's a numeric input
-    if (typeof value === "string" && !isNaN(value)) {
-      value = Number(value);
-    }
-    eval(`${paramName} = value`);
-  }
-
   function switchMethod(newMethod) {
     method = newMethod;
     params = synthesisParams[method].reduce((acc, param) => {
@@ -360,8 +341,11 @@
     />
   </div>
   <div>
-    <pre class="text-xs text-white">{JSON.stringify(method)}</pre>
-    <pre class="text-xs text-white">{JSON.stringify(params)}</pre>
+    <pre class="rounded border border-dark-400 bg-dark-600 p-2 text-xs text-white">{JSON.stringify(
+        params,
+        null,
+        2,
+      )}</pre>
   </div>
 
   <SegmentGroup>
@@ -373,7 +357,6 @@
             <select
               id={param.name}
               bind:value={params[param.name]}
-              on:change={(e) => updateParam(param.name, e.target.value)}
               class="h-10 w-full rounded bg-dark-400 px-2 text-sm font-normal placeholder-light-soft/50 focus:border-transparent focus:outline-none focus:ring-0 focus:ring-transparent"
             >
               {#each param.options as option}
@@ -385,7 +368,6 @@
               type="number"
               id={param.name}
               bind:value={params[param.name]}
-              on:input={(e) => updateParam(param.name, e.target.value)}
               step={param.step}
               min={param.min}
               max={param.max}
