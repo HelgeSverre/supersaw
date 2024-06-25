@@ -2,7 +2,7 @@ export class WaveformSimilarityOverlapAdd {
   private context: AudioContext;
   private sampleRate: number;
   private channels: number;
-  private tempo: number;
+  private stretchFactor: number;
   private seekWindowMs: number;
   private seekLength: number;
   private overlapMs: number;
@@ -13,9 +13,8 @@ export class WaveformSimilarityOverlapAdd {
 
   constructor(
     context: AudioContext,
-
     config: {
-      tempo?: number;
+      stretchFactor?: number;
       seekWindowMs?: number;
       overlapMs?: number;
     } = {},
@@ -23,7 +22,7 @@ export class WaveformSimilarityOverlapAdd {
     this.context = context;
     this.sampleRate = context.sampleRate;
     this.channels = 2; // Assume stereo
-    this.tempo = config.tempo || 1.0;
+    this.stretchFactor = config.stretchFactor || 1.0;
     this.seekWindowMs = config.seekWindowMs || 2;
     this.overlapMs = config.overlapMs || 8;
     this.seekLength = Math.floor((this.seekWindowMs * this.sampleRate) / 1000);
@@ -79,8 +78,7 @@ export class WaveformSimilarityOverlapAdd {
 
   public process(inputBuffer: AudioBuffer): AudioBuffer {
     const inputLength = inputBuffer.length;
-    // TODO: might have to multiply this to invert the tempo to become stretch factor
-    const outputLength = Math.floor(inputLength / this.tempo);
+    const outputLength = Math.floor(inputLength * this.stretchFactor);
     const outputBuffer = this.context.createBuffer(this.channels, outputLength, this.sampleRate);
 
     let inputOffset = 0;
@@ -118,7 +116,7 @@ export class WaveformSimilarityOverlapAdd {
       }
 
       // Advance input
-      inputOffset += Math.floor(this.seekLength * this.tempo);
+      inputOffset += Math.floor(this.seekLength / this.stretchFactor);
 
       // Copy next frame from input to midBuffer
       for (let ch = 0; ch < this.channels; ch++) {
