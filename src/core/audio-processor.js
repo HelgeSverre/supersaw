@@ -38,6 +38,14 @@ export class WindowFunctions {
     }
     return window;
   }
+
+  static sine(size) {
+    const window = new Float32Array(size);
+    for (let i = 0; i < size; i++) {
+      window[i] = (2 * Math.PI * i) / (size - 1);
+    }
+    return window;
+  }
 }
 
 export class AudioProcessor {

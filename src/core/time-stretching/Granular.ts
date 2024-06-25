@@ -1,6 +1,6 @@
 import { WindowFunctions } from "../audio-processor";
 
-export class Granular {
+export class GranularTimeStretcher {
   private context: AudioContext;
   private grainSize: number;
   private overlap: number;

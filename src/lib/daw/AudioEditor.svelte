@@ -7,7 +7,8 @@
   import SegmentGroup from "../ui/SegmentGroup.svelte";
   import { WaveformSimilarityOverlapAdd } from "../../core/time-stretching/WaveformSimilarityOverlapAdd";
   import { TransientPreservingStretcher } from "../../core/time-stretching/TransientPreserving";
-  import { Granular } from "../../core/time-stretching/Granular";
+  import { GranularTimeStretcher } from "../../core/time-stretching/Granular";
+  import { SpectralTimeStretcher } from "../../core/time-stretching/Spectral";
 
   let processing = false;
   let originalBuffer;
@@ -181,10 +182,10 @@
   onMount(() => {
     context = audioManager.audioContext;
 
-    // loadAudioUrl("/samples/freesound/hardstyle-kick-249.wav");
-    loadAudioUrl("/samples/freesound/vibes.wav");
+    loadAudioUrl("/samples/freesound/hardstyle-kick-249.wav");
+    // loadAudioUrl("/samples/freesound/vibes.wav");
 
-    switchMethod("transients");
+    switchMethod(localStorage.getItem("synthesisMethod") || "transients");
   });
 
   async function loadAudioUrl(url) {
@@ -214,12 +215,13 @@
   function processAudio() {
     processing = true;
 
+    console.log(`[START] Processing audio with method: ${method}`);
     const audioProcessor = new AudioProcessor(audioManager.audioContext);
 
     try {
       switch (method) {
         case "granular": {
-          const engine = new Granular(audioManager.audioContext, {
+          const engine = new GranularTimeStretcher(audioManager.audioContext, {
             stretchFactor: stretchFactor,
             grainSize: params.grainSize,
             overlap: params.overlap,
@@ -246,12 +248,13 @@
           });
           break;
         case "spectral": {
-          processedBuffer = audioProcessor.spectralProcessing(originalBuffer, {
-            stretchFactor: stretchFactor,
+          const engine = new SpectralTimeStretcher(audioManager.audioContext, {
+            tempo: stretchFactor,
             windowSize: params.windowSize,
             hopSize: params.hopSize,
             windowType: params.windowType,
           });
+          processedBuffer = engine.process(originalBuffer);
           break;
         }
         case "wsola": {
@@ -289,6 +292,7 @@
     } finally {
       processing = false;
     }
+    console.log("[END] Finished Processing audio");
   }
 
   let currentSource;
@@ -356,6 +360,8 @@
   }
 
   function switchMethod(newMethod) {
+    localStorage.setItem("synthesisMethod", newMethod);
+
     method = newMethod;
     params = synthesisParams[method].reduce((acc, param) => {
       acc[param.name] = param.default;

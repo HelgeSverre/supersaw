@@ -13,6 +13,7 @@ export class WaveformSimilarityOverlapAdd {
 
   constructor(
     context: AudioContext,
+
     config: {
       tempo?: number;
       seekWindowMs?: number;

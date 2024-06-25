@@ -1,3 +1,5 @@
+import { WindowFunctions } from "../audio-processor";
+
 export class TransientPreservingStretcher {
   private context: AudioContext;
   private tempo: number;
@@ -5,6 +7,7 @@ export class TransientPreservingStretcher {
   private hopSize: number;
   private threshold: number;
   private window: Float32Array;
+  private windowType: "hann" | "hamming" | "blackman";
 
   constructor(
     context: AudioContext,
@@ -13,6 +16,7 @@ export class TransientPreservingStretcher {
       windowSize?: number;
       hopSize?: number;
       threshold?: number;
+      windowType?: "hann" | "hamming" | "blackman";
     } = {},
   ) {
     this.context = context;
@@ -20,18 +24,18 @@ export class TransientPreservingStretcher {
     this.windowSize = config.windowSize || 1024;
     this.hopSize = config.hopSize || this.windowSize / 4;
     this.threshold = config.threshold || 0.1;
-    this.window = this.createWindow(this.windowSize);
+    this.windowType = config.windowType || "hann";
   }
 
   // TODO: defer to util method for window generation
-  private createWindow(size: number): Float32Array {
-    const window = new Float32Array(size);
-    for (let i = 0; i < size; i++) {
-      // Hann window
-      window[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (size - 1)));
-    }
-    return window;
-  }
+  // private createWindow(size: number): Float32Array {
+  //   const window = new Float32Array(size);
+  //   for (let i = 0; i < size; i++) {
+  //     Hann window
+  // window[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (size - 1)));
+  // }
+  // return window;
+  // }
 
   private detectTransients(buffer: Float32Array): boolean[] {
     const transients = new Array(buffer.length).fill(false);
@@ -60,7 +64,7 @@ export class TransientPreservingStretcher {
   private stretchNonTransients(input: Float32Array, transients: boolean[], stretchFactor: number): Float32Array {
     const outputLength = Math.floor(input.length * stretchFactor);
     const output = new Float32Array(outputLength);
-
+    const window = WindowFunctions.run(this.windowType, this.windowSize);
     let inputIndex = 0;
     let outputIndex = 0;
 
@@ -74,7 +78,7 @@ export class TransientPreservingStretcher {
         // Stretch non-transient regions
         const frame = new Float32Array(this.windowSize);
         for (let i = 0; i < this.windowSize && inputIndex + i < input.length; i++) {
-          frame[i] = input[inputIndex + i] * this.window[i];
+          frame[i] = input[inputIndex + i] * window[i];
         }
 
         const stretchedFrame = this.stretchFrame(frame, stretchFactor);
