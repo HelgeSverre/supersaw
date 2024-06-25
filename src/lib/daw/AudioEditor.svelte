@@ -10,6 +10,7 @@
   import { GranularTimeStretcher } from "../../core/time-stretching/Granular";
   import { SpectralTimeStretcher } from "../../core/time-stretching/Spectral";
   import { TimeDomainHarmonicScaling } from "../../core/time-stretching/TimeDomainHarmoniScaling";
+  import { PhaseVocoder } from "../../core/time-stretching/PhaseVocoder";
 
   let processing = false;
   let originalBuffer;
@@ -231,7 +232,7 @@
           processedBuffer = engine.process(originalBuffer);
           break;
         }
-        case "tdhs":
+        case "tdhs": {
           const engine = new TimeDomainHarmonicScaling(audioManager.audioContext, {
             stretchFactor: stretchFactor,
             windowSize: params.windowSize,
@@ -240,7 +241,17 @@
           });
           processedBuffer = engine.process(originalBuffer);
           break;
-        case "phaseVocoder":
+        }
+        case "phaseVocoder": {
+          const engine = new PhaseVocoder(audioManager.audioContext, {
+            stretchFactor: 1.5,
+            windowSize: 2048,
+            hopSize: 512,
+            windowType: "hann",
+          });
+
+          processedBuffer = engine.process(originalBuffer);
+
           processedBuffer = audioProcessor.phaseVocoder(originalBuffer, {
             stretchFactor: stretchFactor,
             windowSize: params.windowSize,
@@ -248,6 +259,7 @@
             windowType: params.windowType,
           });
           break;
+        }
         case "spectral": {
           const engine = new SpectralTimeStretcher(audioManager.audioContext, {
             stretchFactor: stretchFactor,
