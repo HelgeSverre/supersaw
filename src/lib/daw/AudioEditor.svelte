@@ -167,7 +167,7 @@
   // ------------------------------------------------------
 
   let method = "transients";
-  let stretchFactor = 0.5;
+  let stretchFactor = 0.9;
   let canvasOriginal;
   let originalDuration;
 
@@ -269,7 +269,7 @@
         }
         case "transients": {
           const engine = new TransientPreservingStretcher(audioManager.audioContext, {
-            tempo: stretchFactor,
+            stretchFactor: stretchFactor,
             threshold: params.transientThreshold,
             windowSize: params.windowSize,
             hopSize: params.hopSize,

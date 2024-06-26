@@ -2,17 +2,16 @@ import { WindowFunctions } from "../window-functions";
 
 export class TransientPreservingStretcher {
   private context: AudioContext;
-  private tempo: number;
+  private stretchFactor: number;
   private windowSize: number;
   private hopSize: number;
   private threshold: number;
-  private window: Float32Array;
   private windowType: "hann" | "hamming" | "blackman";
 
   constructor(
     context: AudioContext,
     config: {
-      tempo?: number;
+      stretchFactor?: number;
       windowSize?: number;
       hopSize?: number;
       threshold?: number;
@@ -20,7 +19,7 @@ export class TransientPreservingStretcher {
     } = {},
   ) {
     this.context = context;
-    this.tempo = config.tempo || 1.0;
+    this.stretchFactor = config.stretchFactor || 1.0;
     this.windowSize = config.windowSize || 1024;
     this.hopSize = config.hopSize || this.windowSize / 4;
     this.threshold = config.threshold || 0.1;
@@ -103,13 +102,13 @@ export class TransientPreservingStretcher {
 
   public process(inputBuffer: AudioBuffer): AudioBuffer {
     const inputLength = inputBuffer.length;
-    const outputLength = Math.floor(inputLength / this.tempo);
+    const outputLength = Math.floor(inputLength * this.stretchFactor);
     const outputBuffer = this.context.createBuffer(inputBuffer.numberOfChannels, outputLength, inputBuffer.sampleRate);
 
     for (let channel = 0; channel < inputBuffer.numberOfChannels; channel++) {
       const inputData = inputBuffer.getChannelData(channel);
       const transients = this.detectTransients(inputData);
-      const outputData = this.stretchNonTransients(inputData, transients, 1 / this.tempo);
+      const outputData = this.stretchNonTransients(inputData, transients, 1 * this.stretchFactor);
       outputBuffer.copyToChannel(outputData, channel);
     }
 
