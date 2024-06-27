@@ -269,7 +269,7 @@
     <div class="flex flex-row items-center justify-between gap-3 px-3 py-2">
       <div class="flex flex-row items-center justify-center gap-1">
         <SmileySticker size="24" weight="duotone" color="gray" />
-        <span class="font-mono text-xs leading-tight tracking-tighter text-gray-500">Roland TR-303 Emulation</span>
+        <span class="font-mono text-xs leading-tight tracking-tighter text-gray-500">Roland TB-303 Emulation</span>
       </div>
 
       <div class="flex flex-row items-center gap-3">
