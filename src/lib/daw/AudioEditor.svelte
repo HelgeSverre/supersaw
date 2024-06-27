@@ -773,7 +773,9 @@
           ></div>
         </div>
 
-        <div class="pointer-events-none absolute inset-0 bottom-0 flex w-full items-center justify-start">
+        <div
+          class="pointer-events-none absolute inset-0 bottom-0 flex w-full items-center justify-start overflow-hidden overflow-hidden"
+        >
           <div class="absolute h-full border-r border-red-600 bg-accent-neon/5" style="width: {progress * 100}%;"></div>
         </div>
       </div>
@@ -858,7 +860,9 @@
           ></div>
         </div>
 
-        <div class="pointer-events-none absolute inset-0 bottom-0 flex w-full items-center justify-start">
+        <div
+          class="pointer-events-none absolute inset-0 bottom-0 flex w-full items-center justify-start overflow-hidden"
+        >
           <div
             class="absolute h-full border-r border-red-600 bg-accent-yellow/10"
             style="width: {progress * 100}%;"
