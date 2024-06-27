@@ -79,7 +79,7 @@
 </script>
 
 <div class="flex w-full max-w-7xl flex-col gap-6">
-  <div class=" mx-auto w-full max-w-5xl rounded-lg bg-white p-6 shadow-lg">
+  <div class=" mx-auto w-full max-w-5xl rounded-lg bg-white p-4 shadow-lg">
     <!-- Header -->
     <div class="mb-4 flex items-center justify-between">
       <div class="text-3xl font-bold tracking-wider text-orange-600">Roland</div>
@@ -220,7 +220,10 @@
       <div class="flex space-x-2">
         {#each tracks as track, index}
           <div class="flex flex-1 flex-col space-y-1">
-            <button on:click={() => triggerSample(index)} class="h-16 rounded-sm bg-gray-400"></button>
+            <button
+              on:click={() => triggerSample(index)}
+              class="h-16 rounded-sm bg-gray-400 duration-75 ease-out active:bg-gray-300"
+            ></button>
             <div class="h-4 rounded-sm bg-orange-400 text-center text-[10px] font-bold text-black">
               {track.sample.split("/").pop().split(".")[0]}
             </div>
