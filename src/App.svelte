@@ -30,6 +30,7 @@
   import Synthesia from "./lib/daw/Synthesia.svelte";
   import AudioEditor from "./lib/daw/AudioEditor.svelte";
   import Sampler8 from "./lib/daw/instruments/Sampler8.svelte";
+  import TR707 from "./lib/daw/instruments/TR707.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -187,14 +188,16 @@
           <section class="flex h-full flex-1 grow items-center justify-center">
             <TransistorBass />
           </section>
+        {:else if $currentView === "tr707"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <TR707 />
+          </section>
         {:else if $currentView === "tenori"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <Tenori />
           </section>
         {:else if $currentView === "audio-editor"}
-          <section class="flex h-full flex-1 grow items-center justify-center">
-            <AudioEditor />
-          </section>
+          <AudioEditor />
         {:else if $currentView === "sampler"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <Sampler8 />

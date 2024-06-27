@@ -54,6 +54,27 @@ class AudioManager {
     return decodedAudio;
   };
 
+  extractAudioSegment(buffer, startTime, endTime) {
+    const start = Math.max(0, Math.min(startTime, endTime));
+    const end = Math.min(buffer.duration * 1000, Math.max(startTime, endTime));
+
+    // Convert milliseconds to samples
+    const startSample = Math.floor((start / 1000) * buffer.sampleRate);
+    const endSample = Math.floor((end / 1000) * buffer.sampleRate);
+    const sampleCount = endSample - startSample;
+
+    // Create a new AudioBuffer for the segment
+    const newBuffer = this.audioContext.createBuffer(buffer.numberOfChannels, sampleCount, buffer.sampleRate);
+
+    // Copy the data from the original buffer to the segment buffer
+    for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+      const data = buffer.getChannelData(channel);
+      newBuffer.copyToChannel(data.subarray(startSample, endSample), channel);
+    }
+
+    return newBuffer;
+  }
+
   generateWaveformFromBuffer = async (audioBuffer, numberOfSamples = 1000) => {
     const isMono = audioBuffer.numberOfChannels === 1;
 

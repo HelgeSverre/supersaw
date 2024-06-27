@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
-  import { Spinner, Waveform } from "phosphor-svelte";
+  import { Repeat, Spinner, Stop, Waveform } from "phosphor-svelte";
   import TextButton from "../ui/TextButton.svelte";
   import SegmentGroup from "../ui/SegmentGroup.svelte";
   import { WaveformSimilarityOverlapAdd } from "../../core/time-stretching/WaveformSimilarityOverlapAdd";
@@ -10,6 +10,7 @@
   import { SpectralTimeStretcher } from "../../core/time-stretching/Spectral";
   import { TimeDomainHarmonicScaling } from "../../core/time-stretching/TimeDomainHarmoniScaling";
   import { PhaseVocoder } from "../../core/time-stretching/PhaseVocoder";
+  import IconButton from "../ui/IconButton.svelte";
 
   let processing = false;
   let originalBuffer;
@@ -295,37 +296,66 @@
   }
 
   let currentSource;
+  let playing = false;
+  let currentSegment = null;
 
-  function playAudio(buffer) {
-    if (currentSource) {
-      currentSource.stop();
-      currentSource.disconnect();
-      currentSource = null;
-    }
+  function playSegment(segment) {
+    currentSegment = {
+      start: segment.start / 1000,
+      end: segment.end / 1000,
+      duration: (segment.end - segment.start) / 1000,
+    };
+    playAudio(segment.buffer, false); // Set loop to true for segments
+  }
+
+  function playAudio(buffer, loop = false) {
+    stopAudio();
 
     currentSource = context.createBufferSource();
     currentSource.buffer = buffer;
     currentSource.connect(audioManager.mixer);
+    currentSource.loop = loop;
     currentSource.start();
 
+    playing = true;
+
     startTime = context.currentTime;
-    duration = buffer.duration;
-    elapsed = context.currentTime - startTime;
+    duration = currentSegment ? currentSegment.duration : buffer.duration;
+    elapsed = 0;
 
     progressAnimationFrameId = requestAnimationFrame(updateProgress);
   }
 
+  function stopAudio() {
+    if (!currentSource) return;
+    currentSegment = null;
+    playing = false;
+    currentSource.stop();
+    currentSource.disconnect();
+    currentSource = null;
+  }
+
   function updateProgress() {
     elapsed = context.currentTime - startTime;
-    progress = Math.min(elapsed / duration, 1);
 
-    if (progress < 1) {
-      requestAnimationFrame(updateProgress);
+    if (currentSegment) {
+      progress = Math.min(
+        (currentSegment.start + elapsed) / originalBuffer.duration,
+        currentSegment.end / originalBuffer.duration,
+      );
+      if (elapsed >= currentSegment.duration) {
+        stopAudio();
+        return;
+      }
+    } else {
+      progress = Math.min(elapsed / duration, 1);
+    }
+
+    if (playing) {
+      progressAnimationFrameId = requestAnimationFrame(updateProgress);
     } else {
       cancelAnimationFrame(progressAnimationFrameId);
-      setTimeout(() => {
-        progress = 0;
-      }, 100);
+      progress = 0;
     }
   }
 
@@ -385,20 +415,176 @@
       return acc;
     }, {});
   }
+
+  let segments = [];
+  let activeSegment = null;
+  let mousePosition = null;
+
+  function handleMouseDown(event, buffer) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const clickTime = (x / rect.width) * buffer.duration * 1000; // Convert to ms
+
+    activeSegment = { start: clickTime, end: clickTime };
+    mousePosition = x;
+  }
+
+  function handleMouseMove(event, buffer) {
+    if (activeSegment) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      mousePosition = x;
+      const currentTime = (x / rect.width) * buffer.duration * 1000;
+      activeSegment.end = currentTime;
+    }
+  }
+
+  function handleMouseUp(event, buffer) {
+    if (activeSegment) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const endTime = (x / rect.width) * buffer.duration * 1000;
+
+      // Clamp the start and end times to the buffer boundaries
+      const start = Math.max(0, Math.min(activeSegment.start, endTime));
+      const end = Math.min(buffer.duration * 1000, Math.max(activeSegment.start, endTime));
+
+      // Convert milliseconds to samples
+      const startSample = Math.floor((start / 1000) * buffer.sampleRate);
+      const endSample = Math.floor((end / 1000) * buffer.sampleRate);
+      const sampleCount = endSample - startSample;
+
+      if (sampleCount < 100) return;
+
+      // Create a new AudioBuffer for the segment
+      const segmentBuffer = audioManager.audioContext.createBuffer(
+        buffer.numberOfChannels,
+        sampleCount,
+        buffer.sampleRate,
+      );
+
+      // Copy the data from the original buffer to the segment buffer
+      for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+        const channelData = buffer.getChannelData(channel);
+        segmentBuffer.copyToChannel(channelData.subarray(startSample, endSample), channel);
+      }
+
+      // Generate waveform for the segment
+      const segmentWaveform = generateWaveformPath(segmentBuffer, 1000, 128);
+
+      segments = [
+        ...segments,
+        {
+          start,
+          end,
+          buffer: segmentBuffer,
+          waveform: segmentWaveform,
+        },
+      ];
+      activeSegment = null;
+      mousePosition = null;
+    }
+  }
+
+  let splits = [];
+
+  function splitSegment(event, buffer) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const splitTime = (x / rect.width) * buffer.duration * 1000;
+    const firstBuffer = audioManager.extractAudioSegment(buffer, 0, splitTime);
+    const firstWaveform = generateWaveformPath(firstBuffer, 1000, 128);
+    const first = { start: 0, end: splitTime, buffer: firstBuffer, waveform: firstWaveform };
+
+    const lastBuffer = audioManager.extractAudioSegment(buffer, splitTime, buffer.duration * 1000);
+    const lastWaveform = generateWaveformPath(lastBuffer, 1000, 128);
+    const last = { start: splitTime, end: buffer.duration * 1000, buffer: lastBuffer, waveform: lastWaveform };
+
+    splits = [splitTime];
+    segments = [first, last];
+    activeSegment = null;
+    mousePosition = null;
+  }
+
+  function cancelActiveSegment(buffer) {
+    if (activeSegment) {
+      const start = Math.max(0, Math.min(activeSegment.start, activeSegment.end));
+      const end = Math.min(buffer.duration * 1000, Math.max(activeSegment.start, activeSegment.end));
+
+      const segmentBuffer = audioManager.extractAudioSegment(buffer, start, end);
+      const segmentWaveform = generateWaveformPath(segmentBuffer, 1000, 128);
+
+      segments = [
+        ...segments,
+        {
+          start,
+          end,
+          buffer: segmentBuffer,
+          waveform: segmentWaveform,
+        },
+      ];
+      activeSegment = null;
+      mousePosition = null;
+    }
+  }
+
+  function clearSegments() {
+    segments = [];
+  }
+
+  function removeSegment(index) {
+    segments = segments.filter((_, i) => i !== index);
+  }
+
+  $: splitLines = splits.map((split) => {
+    return (split / (originalBuffer?.duration * 1000 || 1)) * 1000;
+  });
+
+  $: segmentRects = segments.map((segment) => {
+    const startX = (segment.start / (originalBuffer?.duration * 1000 || 1)) * 1000;
+    const endX = (segment.end / (originalBuffer?.duration * 1000 || 1)) * 1000;
+
+    return `M${startX},0 L${startX},128 L${endX},128 L${endX},0 Z`;
+  });
+
+  $: activeSegmentRect = activeSegment
+    ? (() => {
+        const startX = (activeSegment.start / (originalBuffer?.duration * 1000 || 1)) * 1000;
+        const endX = (activeSegment.end / (originalBuffer?.duration * 1000 || 1)) * 1000;
+        return `M${startX},0 L${startX},128 L${endX},128 L${endX},0 Z`;
+      })()
+    : null;
 </script>
 
-<div class="flex w-full max-w-4xl flex-col gap-3 rounded border border-dark-600 bg-dark-800 p-4">
+<div class="mx-auto my-12 flex w-full max-w-4xl flex-col gap-3 rounded border border-dark-600 bg-dark-800 p-4">
   <div class="flex flex-row items-end justify-between">
     <div class="flex flex-col gap-1">
       <label for="audioFile" class=" block text-xs text-accent-yellow">Controls</label>
-      <SegmentGroup>
-        <TextButton on:click={processAudio}>
-          <Waveform size="24" class="-mx-1 text-accent-yellow" />
-        </TextButton>
+      <div class="flex flex-row gap-3">
+        <SegmentGroup>
+          <TextButton on:click={processAudio}>
+            <Waveform size="24" class="-mx-1 text-accent-yellow" />
+          </TextButton>
+        </SegmentGroup>
 
-        <TextButton on:click={() => playAudio(originalBuffer)}>Original</TextButton>
-        <TextButton on:click={() => playAudio(processedBuffer)}>Processed</TextButton>
-      </SegmentGroup>
+        <SegmentGroup additionalClasses="-space-x-2">
+          <TextButton on:click={() => playAudio(originalBuffer)}>Original</TextButton>
+          {#if playing}
+            <IconButton icon={Stop} on:click={() => stopAudio()} />
+          {:else}
+            <IconButton icon={Repeat} on:click={() => playAudio(originalBuffer, true)} />
+          {/if}
+        </SegmentGroup>
+
+        <SegmentGroup additionalClasses="-space-x-2">
+          <TextButton on:click={() => playAudio(processedBuffer)}>Processed</TextButton>
+          {#if playing}
+            <IconButton icon={Stop} on:click={() => stopAudio()} />
+          {:else}
+            <IconButton icon={Repeat} on:click={() => playAudio(processedBuffer, true)} />
+          {/if}
+        </SegmentGroup>
+      </div>
     </div>
     <SegmentGroup>
       <div>
@@ -474,22 +660,64 @@
   </div>
 
   <div class="flex flex-col gap-1">
-    <div class="relative rounded border border-dark-300 bg-gray-950 px-4">
+    <div class="relative rounded border border-dark-300 bg-gray-950">
       {#if originalDuration}
         <span class="absolute right-2 top-2 text-xs text-light/50">{originalDuration?.toFixed(3)}s</span>
       {/if}
-      <svg
-        width="100%"
-        height="128"
-        viewBox="0 0 1000 128"
-        preserveAspectRatio="none"
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-32 w-full py-2"
-      >
-        <path d={originalPath} stroke="#61dafb" stroke-width="1" fill="none" vector-effect="non-scaling-stroke" />
-      </svg>
+      <div class="relative">
+        <svg
+          width="100%"
+          height="128"
+          viewBox="0 0 1000 128"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-32 w-full py-2"
+        >
+          <path d={originalPath} stroke="#61dafb" stroke-width="1" fill="none" vector-effect="non-scaling-stroke" />
 
-      <div class="absolute inset-0 bottom-0 flex w-full items-center justify-start">
+          {#each segmentRects as rect, i}
+            <path
+              d={rect}
+              fill="rgba(255, 255, 0, 0.2)"
+              stroke="rgba(255, 255, 0, 0.7)"
+              stroke-width="1"
+              vector-effect="non-scaling-stroke"
+            />
+          {/each}
+
+          {#each splitLines as splitPosition}
+            <line
+              x1={splitPosition}
+              x2={splitPosition}
+              y1="0"
+              y2="128"
+              stroke="#80FF00"
+              stroke-width="1"
+              vector-effect="non-scaling-stroke"
+            />
+          {/each}
+          {#if activeSegmentRect}
+            <path
+              d={activeSegmentRect}
+              fill="rgba(255, 0, 0, 0.2)"
+              stroke="red"
+              stroke-width="1"
+              vector-effect="non-scaling-stroke"
+            />
+          {/if}
+        </svg>
+        <div
+          aria-hidden="true"
+          class="absolute inset-0 cursor-pointer"
+          on:dblclick|preventDefault={(e) => splitSegment(e, originalBuffer)}
+          on:mousedown={(e) => handleMouseDown(e, originalBuffer)}
+          on:mousemove={(e) => handleMouseMove(e, originalBuffer)}
+          on:mouseup={(e) => handleMouseUp(e, originalBuffer)}
+          on:mouseleave={() => cancelActiveSegment(originalBuffer)}
+        ></div>
+      </div>
+
+      <div class="pointer-events-none absolute inset-0 bottom-0 flex w-full items-center justify-start">
         <div
           class="absolute h-full border-r border-accent-neon bg-accent-neon/5"
           style="width: {progress * 100}%;"
@@ -497,7 +725,7 @@
       </div>
     </div>
 
-    <div class="relative rounded border border-dark-300 bg-gray-950 px-4">
+    <div class="relative rounded border border-dark-300 bg-gray-950">
       {#if processedDuration}
         <span class="absolute right-2 top-2 text-xs text-light/50">{processedDuration?.toFixed(3)}s</span>
       {/if}
@@ -526,10 +754,53 @@
       {/if}
     </div>
   </div>
-</div>
+  {#if segments.length > 0 || activeSegment}
+    <div class="mt-4">
+      <div class="mb-2 flex items-center justify-between gap-3">
+        <h3 class="block text-xs text-accent-yellow">Segments</h3>
+        {#if segments.length > 0}
+          <button class="px-2 text-xs text-red-500 hover:text-red-700" on:click={clearSegments}>Clear</button>
+        {/if}
+      </div>
+      <ul class="flex flex-col gap-2">
+        {#each segments as segment, i}
+          <li class="flex w-full flex-col items-center justify-center rounded bg-dark-600 p-2">
+            <div class="mb-1 flex w-full items-center justify-between text-sm">
+              <span class="text-light">
+                {segment.start.toFixed(2)}ms - {segment.end.toFixed(2)}ms
+              </span>
 
-<style>
-  canvas {
-    image-rendering: high-quality;
-  }
-</style>
+              <button on:click={() => removeSegment(i)} class="text-red-500 hover:text-red-700">Remove</button>
+            </div>
+            <button on:click={() => playSegment(segment)} class="bg-gray-950">
+              <svg
+                width="100%"
+                height="128"
+                viewBox="0 0 1000 128"
+                preserveAspectRatio="none"
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-32 w-full py-2"
+              >
+                <path
+                  d={segment.waveform}
+                  stroke="#61dafb"
+                  stroke-width="1"
+                  fill="none"
+                  vector-effect="non-scaling-stroke"
+                />
+              </svg>
+            </button>
+          </li>
+        {/each}
+
+        {#if activeSegment}
+          <li class="rounded bg-dark-600 p-2">
+            <span class="block text-sm text-light">
+              {activeSegment.start.toFixed(2)}ms - (In progress)
+            </span>
+          </li>
+        {/if}
+      </ul>
+    </div>
+  {/if}
+</div>
