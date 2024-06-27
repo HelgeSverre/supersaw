@@ -377,12 +377,12 @@
 
   function stopAudio() {
     if (!currentSource) return;
+    cancelAnimationFrame(progressAnimationFrameId);
     currentSegment = null;
     playing = false;
     currentSource.stop();
     currentSource.disconnect();
     currentSource = null;
-    cancelAnimationFrame(progressAnimationFrameId);
   }
 
   let maxDuration = 0;
@@ -528,11 +528,11 @@
     const splitTime = (x / rect.width) * buffer.duration * 1000;
     const firstBuffer = audioManager.extractAudioSegment(buffer, 0, splitTime);
     const firstWaveform = generateWaveformPath(firstBuffer, 1000, 128);
-    const first = { start: 0, end: splitTime, buffer: firstBuffer, waveform: firstWaveform };
+    const first = { which, start: 0, end: splitTime, buffer: firstBuffer, waveform: firstWaveform };
 
     const lastBuffer = audioManager.extractAudioSegment(buffer, splitTime, buffer.duration * 1000);
     const lastWaveform = generateWaveformPath(lastBuffer, 1000, 128);
-    const last = { start: splitTime, end: buffer.duration * 1000, buffer: lastBuffer, waveform: lastWaveform };
+    const last = { which, start: splitTime, end: buffer.duration * 1000, buffer: lastBuffer, waveform: lastWaveform };
 
     splits = [splitTime];
     segments = [first, last];
