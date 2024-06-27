@@ -547,20 +547,8 @@
     setLoopRegion(0, 0);
     expandLoopRegion(bars * 4);
 
-    let roots = [
-      // "B3", "A3", "G3", "A3",
-      // "B3", "A3", "B3", "D4",
-      "A4",
-      "G4",
-      "F4",
-      "G4",
-      "A4",
-      "G4",
-      "F4",
-      "G4",
-    ];
 
-    let wip = new GeneratorHardstyle(150, "harmonicMinor", "F#");
+    let wip = new GeneratorHardstyle(150, "harmonicMinor", "E");
     let { melody, bassline, tonics } = wip.generate(bars);
 
     // melody=[]

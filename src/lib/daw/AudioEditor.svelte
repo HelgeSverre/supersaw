@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { audioManager } from "../../core/audio.js";
-  import { Repeat, Spinner, Stop, Waveform } from "phosphor-svelte";
+  import { DownloadSimple, Waveform } from "phosphor-svelte";
   import TextButton from "../ui/TextButton.svelte";
   import SegmentGroup from "../ui/SegmentGroup.svelte";
   import { WaveformSimilarityOverlapAdd } from "../../core/time-stretching/WaveformSimilarityOverlapAdd";
@@ -10,6 +10,7 @@
   import { SpectralTimeStretcher } from "../../core/time-stretching/Spectral";
   import { TimeDomainHarmonicScaling } from "../../core/time-stretching/TimeDomainHarmoniScaling";
   import { PhaseVocoder } from "../../core/time-stretching/PhaseVocoder";
+  import { Repeat2 } from "lucide-svelte";
   import IconButton from "../ui/IconButton.svelte";
 
   let processing = false;
@@ -296,8 +297,17 @@
   }
 
   let currentSource;
+  let loop = false;
   let playing = false;
   let currentSegment = null;
+
+  function toggleLooping() {
+    if (loop) {
+      stopAudio();
+    }
+
+    loop = !loop;
+  }
 
   function playSegment(segment) {
     currentSegment = {
@@ -305,10 +315,11 @@
       end: segment.end / 1000,
       duration: (segment.end - segment.start) / 1000,
     };
-    playAudio(segment.buffer, false); // Set loop to true for segments
+
+    playAudio(segment.buffer); // Set loop to true for segments
   }
 
-  function playAudio(buffer, loop = false) {
+  function playAudio(buffer) {
     stopAudio();
 
     currentSource = context.createBufferSource();
@@ -343,6 +354,7 @@
         (currentSegment.start + elapsed) / originalBuffer.duration,
         currentSegment.end / originalBuffer.duration,
       );
+
       if (elapsed >= currentSegment.duration) {
         stopAudio();
         return;
@@ -353,6 +365,13 @@
 
     if (playing) {
       progressAnimationFrameId = requestAnimationFrame(updateProgress);
+
+      if (progress >= 1) {
+        cancelAnimationFrame(progressAnimationFrameId);
+        setTimeout(() => {
+          progress = 0;
+        }, 500);
+      }
     } else {
       cancelAnimationFrame(progressAnimationFrameId);
       progress = 0;
@@ -420,7 +439,8 @@
   let activeSegment = null;
   let mousePosition = null;
 
-  function handleMouseDown(event, buffer) {
+  function handleMouseDown(event, buffer, which) {
+    whichBuffer = which;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const clickTime = (x / rect.width) * buffer.duration * 1000; // Convert to ms
@@ -429,8 +449,9 @@
     mousePosition = x;
   }
 
-  function handleMouseMove(event, buffer) {
+  function handleMouseMove(event, buffer, which) {
     if (activeSegment) {
+      whichBuffer = which;
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX - rect.left;
       mousePosition = x;
@@ -439,8 +460,9 @@
     }
   }
 
-  function handleMouseUp(event, buffer) {
+  function handleMouseUp(event, buffer, which) {
     if (activeSegment) {
+      whichBuffer = which;
       const rect = event.currentTarget.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const endTime = (x / rect.width) * buffer.duration * 1000;
@@ -454,7 +476,10 @@
       const endSample = Math.floor((end / 1000) * buffer.sampleRate);
       const sampleCount = endSample - startSample;
 
-      if (sampleCount < 100) return;
+      if (sampleCount < 100) {
+        activeSegment = null;
+        return;
+      }
 
       // Create a new AudioBuffer for the segment
       const segmentBuffer = audioManager.audioContext.createBuffer(
@@ -475,6 +500,7 @@
       segments = [
         ...segments,
         {
+          which,
           start,
           end,
           buffer: segmentBuffer,
@@ -488,7 +514,8 @@
 
   let splits = [];
 
-  function splitSegment(event, buffer) {
+  function splitSegment(event, buffer, which) {
+    whichBuffer = which;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const splitTime = (x / rect.width) * buffer.duration * 1000;
@@ -532,9 +559,15 @@
     segments = [];
   }
 
+  function downloadAudioBuffer(buffer) {
+    audioManager.downloadBufferAsWave(buffer, "segment.wav");
+  }
+
   function removeSegment(index) {
     segments = segments.filter((_, i) => i !== index);
   }
+
+  let whichBuffer;
 
   $: splitLines = splits.map((split) => {
     return (split / (originalBuffer?.duration * 1000 || 1)) * 1000;
@@ -554,6 +587,21 @@
         return `M${startX},0 L${startX},128 L${endX},128 L${endX},0 Z`;
       })()
     : null;
+
+  $: processedSegmentRects = segments.map((segment) => {
+    const startX = (segment.start / (processedBuffer?.duration * 1000 || 1)) * 1000;
+    const endX = (segment.end / (processedBuffer?.duration * 1000 || 1)) * 1000;
+
+    return `M${startX},0 L${startX},128 L${endX},128 L${endX},0 Z`;
+  });
+
+  $: activeProcessedSegmentRect = activeSegment
+    ? (() => {
+        const startX = (activeSegment.start / (processedBuffer?.duration * 1000 || 1)) * 1000;
+        const endX = (activeSegment.end / (processedBuffer?.duration * 1000 || 1)) * 1000;
+        return `M${startX},0 L${startX},128 L${endX},128 L${endX},0 Z`;
+      })()
+    : null;
 </script>
 
 <div class="mx-auto my-12 flex w-full max-w-4xl flex-col gap-3 rounded border border-dark-600 bg-dark-800 p-4">
@@ -565,24 +613,10 @@
           <TextButton on:click={processAudio}>
             <Waveform size="24" class="-mx-1 text-accent-yellow" />
           </TextButton>
-        </SegmentGroup>
+          <IconButton icon={Repeat2} on:click={toggleLooping} additionalClasses={loop ? "!text-accent-yellow" : ""} />
 
-        <SegmentGroup additionalClasses="-space-x-2">
           <TextButton on:click={() => playAudio(originalBuffer)}>Original</TextButton>
-          {#if playing}
-            <IconButton icon={Stop} on:click={() => stopAudio()} />
-          {:else}
-            <IconButton icon={Repeat} on:click={() => playAudio(originalBuffer, true)} />
-          {/if}
-        </SegmentGroup>
-
-        <SegmentGroup additionalClasses="-space-x-2">
           <TextButton on:click={() => playAudio(processedBuffer)}>Processed</TextButton>
-          {#if playing}
-            <IconButton icon={Stop} on:click={() => stopAudio()} />
-          {:else}
-            <IconButton icon={Repeat} on:click={() => playAudio(processedBuffer, true)} />
-          {/if}
         </SegmentGroup>
       </div>
     </div>
@@ -659,148 +693,230 @@
     </SegmentGroup>
   </div>
 
-  <div class="flex flex-col gap-1">
-    <div class="relative rounded border border-dark-300 bg-gray-950">
-      {#if originalDuration}
-        <span class="absolute right-2 top-2 text-xs text-light/50">{originalDuration?.toFixed(3)}s</span>
-      {/if}
-      <div class="relative">
-        <svg
-          width="100%"
-          height="128"
-          viewBox="0 0 1000 128"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-32 w-full py-2"
-        >
-          <path d={originalPath} stroke="#61dafb" stroke-width="1" fill="none" vector-effect="non-scaling-stroke" />
-
-          {#each segmentRects as rect, i}
-            <path
-              d={rect}
-              fill="rgba(255, 255, 0, 0.2)"
-              stroke="rgba(255, 255, 0, 0.7)"
-              stroke-width="1"
-              vector-effect="non-scaling-stroke"
-            />
-          {/each}
-
-          {#each splitLines as splitPosition}
-            <line
-              x1={splitPosition}
-              x2={splitPosition}
-              y1="0"
-              y2="128"
-              stroke="#80FF00"
-              stroke-width="1"
-              vector-effect="non-scaling-stroke"
-            />
-          {/each}
-          {#if activeSegmentRect}
-            <path
-              d={activeSegmentRect}
-              fill="rgba(255, 0, 0, 0.2)"
-              stroke="red"
-              stroke-width="1"
-              vector-effect="non-scaling-stroke"
-            />
-          {/if}
-        </svg>
-        <div
-          aria-hidden="true"
-          class="absolute inset-0 cursor-pointer"
-          on:dblclick|preventDefault={(e) => splitSegment(e, originalBuffer)}
-          on:mousedown={(e) => handleMouseDown(e, originalBuffer)}
-          on:mousemove={(e) => handleMouseMove(e, originalBuffer)}
-          on:mouseup={(e) => handleMouseUp(e, originalBuffer)}
-          on:mouseleave={() => cancelActiveSegment(originalBuffer)}
-        ></div>
-      </div>
-
-      <div class="pointer-events-none absolute inset-0 bottom-0 flex w-full items-center justify-start">
-        <div
-          class="absolute h-full border-r border-accent-neon bg-accent-neon/5"
-          style="width: {progress * 100}%;"
-        ></div>
-      </div>
-    </div>
-
-    <div class="relative rounded border border-dark-300 bg-gray-950">
-      {#if processedDuration}
-        <span class="absolute right-2 top-2 text-xs text-light/50">{processedDuration?.toFixed(3)}s</span>
-      {/if}
-
-      <svg
-        width="100%"
-        height="128"
-        viewBox="0 0 1000 128"
-        preserveAspectRatio="none"
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-32 w-full py-2"
-      >
-        <path d={processedPath} stroke="#61dafb" stroke-width="1" vector-effect="non-scaling-stroke" />
-      </svg>
-      <div class="absolute inset-0 bottom-0 flex w-full items-center justify-start">
-        <div
-          class="absolute h-full border-r border-accent-neon bg-accent-neon/5"
-          style="width: {progress * 100}%;"
-        ></div>
-      </div>
-
-      {#if processing}
-        <div class="absolute inset-0 flex items-center justify-center bg-gray-500/80">
-          <Spinner size="42" class="animate-spin text-black" />
-        </div>
-      {/if}
-    </div>
-  </div>
-  {#if segments.length > 0 || activeSegment}
-    <div class="mt-4">
-      <div class="mb-2 flex items-center justify-between gap-3">
-        <h3 class="block text-xs text-accent-yellow">Segments</h3>
-        {#if segments.length > 0}
-          <button class="px-2 text-xs text-red-500 hover:text-red-700" on:click={clearSegments}>Clear</button>
+  <div class="flex flex-col gap-6">
+    <div>
+      <label for="method" class="mb-2 block text-xs text-accent-yellow">Original Audio</label>
+      <div class="relative rounded border border-dark-300 bg-gray-950">
+        {#if originalDuration}
+          <span class="absolute right-2 top-2 text-xs text-light/50">{originalDuration?.toFixed(3)}s</span>
         {/if}
-      </div>
-      <ul class="flex flex-col gap-2">
-        {#each segments as segment, i}
-          <li class="flex w-full flex-col items-center justify-center rounded bg-dark-600 p-2">
-            <div class="mb-1 flex w-full items-center justify-between text-sm">
-              <span class="text-light">
-                {segment.start.toFixed(2)}ms - {segment.end.toFixed(2)}ms
-              </span>
+        <div class="relative">
+          <svg
+            width="100%"
+            height="128"
+            viewBox="0 0 1000 128"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-32 w-full py-2"
+          >
+            <path d={originalPath} stroke="#61dafb" stroke-width="1" fill="none" vector-effect="non-scaling-stroke" />
 
-              <button on:click={() => removeSegment(i)} class="text-red-500 hover:text-red-700">Remove</button>
-            </div>
-            <button on:click={() => playSegment(segment)} class="bg-gray-950">
-              <svg
-                width="100%"
-                height="128"
-                viewBox="0 0 1000 128"
-                preserveAspectRatio="none"
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-32 w-full py-2"
-              >
+            {#if splitLines.length > 0}
+              {#each segmentRects as rect, i}
                 <path
-                  d={segment.waveform}
-                  stroke="#61dafb"
+                  d={rect}
+                  fill={i === 0 ? "rgba(50, 120, 255, 0.2)" : "rgba(0, 255, 255, 0.2)"}
+                  stroke={i === 0 ? "rgba(50, 120, 255, 0.7)" : "rgba(0, 255, 255, 0.7)"}
                   stroke-width="1"
-                  fill="none"
                   vector-effect="non-scaling-stroke"
                 />
-              </svg>
-            </button>
-          </li>
-        {/each}
+              {/each}
+            {:else}
+              {#each segmentRects as rect, i}
+                <path
+                  d={rect}
+                  fill={whichBuffer === "original" ? "rgba(0, 255, 0, 0.2)" : "rgba(255, 255, 255, 0.2)"}
+                  stroke={whichBuffer === "original" ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 255, 255, 0.5)"}
+                  stroke-width="1"
+                  vector-effect="non-scaling-stroke"
+                />
+              {/each}
+            {/if}
 
-        {#if activeSegment}
-          <li class="rounded bg-dark-600 p-2">
-            <span class="block text-sm text-light">
-              {activeSegment.start.toFixed(2)}ms - (In progress)
-            </span>
-          </li>
-        {/if}
-      </ul>
+            {#each splitLines as splitPosition}
+              <line
+                x1={splitPosition}
+                x2={splitPosition}
+                y1="0"
+                y2="128"
+                stroke="red"
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+              />
+            {/each}
+
+            {#if activeSegmentRect}
+              <path
+                d={activeSegmentRect}
+                fill={whichBuffer === "original" ? "rgba(0, 255, 0, 0.2)" : "rgba(255, 255, 255, 0.2)"}
+                stroke={whichBuffer === "original" ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 255, 255, 0.5)"}
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+              />
+            {/if}
+          </svg>
+          <div
+            aria-hidden="true"
+            class="absolute inset-0 cursor-pointer"
+            on:dblclick|preventDefault={(e) => splitSegment(e, originalBuffer, "original")}
+            on:mousedown={(e) => handleMouseDown(e, originalBuffer, "original")}
+            on:mousemove={(e) => handleMouseMove(e, originalBuffer, "original")}
+            on:mouseup={(e) => handleMouseUp(e, originalBuffer, "original")}
+            on:mouseleave={() => cancelActiveSegment(originalBuffer, "original")}
+          ></div>
+        </div>
+
+        <div class="pointer-events-none absolute inset-0 bottom-0 flex w-full items-center justify-start">
+          <div class="absolute h-full border-r border-red-600 bg-accent-neon/5" style="width: {progress * 100}%;"></div>
+        </div>
+      </div>
     </div>
-  {/if}
+
+    <div>
+      <label for="method" class="mb-2 block text-xs text-accent-yellow">Processed Audio</label>
+      <div class="relative rounded border border-dark-300 bg-gray-950">
+        {#if processedDuration}
+          <span class="absolute right-2 top-2 text-xs text-light/50">{processedDuration?.toFixed(3)}s</span>
+        {/if}
+        <div class="relative">
+          <svg
+            width="100%"
+            height="128"
+            viewBox="0 0 1000 128"
+            preserveAspectRatio="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-32 w-full py-2"
+          >
+            <path
+              d={processedPath}
+              class="text-yellow-300"
+              stroke="currentColor"
+              stroke-width="1"
+              fill="none"
+              vector-effect="non-scaling-stroke"
+            />
+
+            {#if splitLines.length > 0}
+              {#each processedSegmentRects as rect, i}
+                <path
+                  d={rect}
+                  fill={i === 0 ? "rgba(50, 120, 255, 0.2)" : "rgba(0, 255, 255, 0.2)"}
+                  stroke={i === 0 ? "rgba(50, 120, 255, 0.7)" : "rgba(0, 255, 255, 0.7)"}
+                  stroke-width="1"
+                  vector-effect="non-scaling-stroke"
+                />
+              {/each}
+            {:else}
+              {#each processedSegmentRects as rect, i}
+                <path
+                  d={rect}
+                  fill={whichBuffer === "processed" ? "rgba(0, 255, 0, 0.2)" : "rgba(255, 255, 255, 0.2)"}
+                  stroke={whichBuffer === "processed" ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 255, 255, 0.5)"}
+                  stroke-width="1"
+                  vector-effect="non-scaling-stroke"
+                />
+              {/each}
+            {/if}
+
+            {#each splitLines as splitPosition}
+              <line
+                x1={splitPosition}
+                x2={splitPosition}
+                y1="0"
+                y2="128"
+                stroke="red"
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+              />
+            {/each}
+
+            {#if activeProcessedSegmentRect}
+              <path
+                d={activeProcessedSegmentRect}
+                fill={whichBuffer === "processed" ? "rgba(0, 255, 0, 0.2)" : "rgba(255, 255, 255, 0.2)"}
+                stroke={whichBuffer === "processed" ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 255, 255, 0.5)"}
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+              />
+            {/if}
+          </svg>
+          <div
+            aria-hidden="true"
+            class="absolute inset-0 cursor-pointer"
+            on:dblclick|preventDefault={(e) => splitSegment(e, processedBuffer, "processed")}
+            on:mousedown={(e) => handleMouseDown(e, processedBuffer, "processed")}
+            on:mousemove={(e) => handleMouseMove(e, processedBuffer, "processed")}
+            on:mouseup={(e) => handleMouseUp(e, processedBuffer, "processed")}
+            on:mouseleave={() => cancelActiveSegment(processedBuffer, "processed")}
+          ></div>
+        </div>
+
+        <div class="pointer-events-none absolute inset-0 bottom-0 flex w-full items-center justify-start">
+          <div
+            class="absolute h-full border-r border-red-600 bg-accent-yellow/10"
+            style="width: {progress * 100}%;"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    {#if segments.length > 0 || activeSegment}
+      <div class="mb-6 mt-3">
+        <div class="mb-2 flex items-center justify-between gap-3">
+          <h3 class="block text-xs text-accent-yellow">Segments</h3>
+          {#if segments.length > 0}
+            <button class="px-2 text-xs text-red-500 hover:text-red-700" on:click={clearSegments}> Remove all</button>
+          {/if}
+        </div>
+        <ul class="flex flex-col gap-2">
+          {#each segments as segment, i}
+            <li class="flex w-full flex-col items-center justify-center rounded bg-dark-600 p-2">
+              <div class="mb-1 flex w-full items-center justify-between text-sm">
+                <button
+                  on:click={() => downloadAudioBuffer(segment.buffer)}
+                  class="flex flex-row items-center justify-center gap-1 text-xs text-accent-yellow hover:opacity-80"
+                >
+                  <DownloadSimple size="14" />
+                  <span class="text-light">
+                    {segment.start.toFixed(2)}ms - {segment.end.toFixed(2)}ms
+                  </span>
+                  <span class="text-xs text-light-soft">({segment.which})</span>
+                </button>
+                <div class="flex flex-row gap-6">
+                  <button on:click={() => removeSegment(i)} class="text-red-500 hover:text-red-700">Remove</button>
+                </div>
+              </div>
+              <button on:click={() => playSegment(segment)} class="w-full bg-gray-950">
+                <svg
+                  width="100%"
+                  height="128"
+                  viewBox="0 0 1000 128"
+                  preserveAspectRatio="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-16 w-full py-2"
+                >
+                  <path
+                    d={segment.waveform}
+                    class="text-accent-neon"
+                    stroke="currentColor"
+                    stroke-width="1"
+                    fill="none"
+                    vector-effect="non-scaling-stroke"
+                  />
+                </svg>
+              </button>
+            </li>
+          {/each}
+
+          {#if activeSegment}
+            <li class="rounded bg-dark-600 p-2">
+              <span class="block text-sm text-light">
+                {activeSegment.start.toFixed(2)}ms - (In progress)
+              </span>
+            </li>
+          {/if}
+        </ul>
+      </div>
+    {/if}
+  </div>
 </div>
