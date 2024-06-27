@@ -15,7 +15,7 @@
     switchView,
     toggleLooping,
     zoomIn,
-    zoomOut
+    zoomOut,
   } from "../../core/store.js";
   import { Drum, Pause, Play, Plus, Repeat2, Square, Trash, ZoomIn, ZoomOut } from "lucide-svelte";
   import { formatTime, formatTimeDuration } from "../../core/utils.js";

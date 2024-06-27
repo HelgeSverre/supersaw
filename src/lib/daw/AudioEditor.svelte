@@ -337,6 +337,44 @@
     progressAnimationFrameId = requestAnimationFrame(updateProgress);
   }
 
+  function updateProgress() {
+    const currentTime = context.currentTime;
+    elapsed = currentTime - startTime;
+
+    if (currentSegment) {
+      // Segment playback
+      const segmentDuration = currentSegment.duration;
+      const segmentElapsed = elapsed % segmentDuration;
+      const segmentProgress = segmentElapsed / segmentDuration;
+
+      progress =
+        currentSegment.start / originalBuffer.duration +
+        (segmentProgress * (currentSegment.end - currentSegment.start)) / originalBuffer.duration;
+
+      if (elapsed >= segmentDuration && !loop) {
+        stopAudio();
+        return;
+      }
+    } else {
+      // Full audio playback
+      const fullDuration = currentSource.buffer.duration;
+      const fullElapsed = elapsed % fullDuration;
+      progress = fullElapsed / fullDuration;
+
+      if (elapsed >= fullDuration && !loop) {
+        stopAudio();
+        return;
+      }
+    }
+
+    if (playing) {
+      progressAnimationFrameId = requestAnimationFrame(updateProgress);
+    } else {
+      cancelAnimationFrame(progressAnimationFrameId);
+      progress = 0;
+    }
+  }
+
   function stopAudio() {
     if (!currentSource) return;
     currentSegment = null;
@@ -344,38 +382,7 @@
     currentSource.stop();
     currentSource.disconnect();
     currentSource = null;
-  }
-
-  function updateProgress() {
-    elapsed = context.currentTime - startTime;
-
-    if (currentSegment) {
-      progress = Math.min(
-        (currentSegment.start + elapsed) / originalBuffer.duration,
-        currentSegment.end / originalBuffer.duration,
-      );
-
-      if (elapsed >= currentSegment.duration) {
-        stopAudio();
-        return;
-      }
-    } else {
-      progress = Math.min(elapsed / duration, 1);
-    }
-
-    if (playing) {
-      progressAnimationFrameId = requestAnimationFrame(updateProgress);
-
-      if (progress >= 1) {
-        cancelAnimationFrame(progressAnimationFrameId);
-        setTimeout(() => {
-          progress = 0;
-        }, 500);
-      }
-    } else {
-      cancelAnimationFrame(progressAnimationFrameId);
-      progress = 0;
-    }
+    cancelAnimationFrame(progressAnimationFrameId);
   }
 
   let maxDuration = 0;

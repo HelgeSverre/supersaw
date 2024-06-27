@@ -122,7 +122,6 @@
       ]),
     ]);
 
-
     const freq = midiNoteToFrequency(invertedRowIndex + 60);
     const duration = 0.9;
     const channel = audioManager.createChannel("tenori");

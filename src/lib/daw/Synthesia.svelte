@@ -167,18 +167,17 @@
         aria-hidden="true"
         class="note-area absolute inset-0 overflow-y-hidden overflow-x-scroll bg-dark-700/50"
       >
-          <div class="note-lanes">
-            {#each notesArray as noteNumber}
-              <div
-                class={classNames("note-lane", {
-                  "black-key": isBlackKey(noteNumber),
-                  "white-key": !isBlackKey(noteNumber),
-                })}
-              ></div>
-            {/each}
-          </div>
+        <div class="note-lanes">
+          {#each notesArray as noteNumber}
+            <div
+              class={classNames("note-lane", {
+                "black-key": isBlackKey(noteNumber),
+                "white-key": !isBlackKey(noteNumber),
+              })}
+            ></div>
+          {/each}
+        </div>
         <div class="note-area-inner">
-
           <!-- Notes -->
           {#each notesForDisplay as note (note.uuid)}
             <div

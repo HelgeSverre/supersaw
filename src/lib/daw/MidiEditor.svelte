@@ -547,7 +547,6 @@
     setLoopRegion(0, 0);
     expandLoopRegion(bars * 4);
 
-
     let wip = new GeneratorHardstyle(150, "harmonicMinor", "E");
     let { melody, bassline, tonics } = wip.generate(bars);
 

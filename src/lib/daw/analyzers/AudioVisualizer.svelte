@@ -17,7 +17,7 @@
   function drawAnalyzer() {
     if (canvasCtx === null) return;
 
-    analyser.fftSize = 2048 * 4 ;
+    analyser.fftSize = 2048 * 4;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
