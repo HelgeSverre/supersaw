@@ -238,7 +238,7 @@ class AudioManager {
     Object.keys(this.sources).forEach((id) => this.stopClip(id));
   };
 
-  playPreviewFromBuffer = async (audioBuffer) => {
+  playPreviewFromBuffer = async (audioBuffer, volume = 1) => {
     const source = this.audioContext.createBufferSource();
     source.buffer = audioBuffer;
     const gainNode = this.audioContext.createGain();
@@ -246,6 +246,7 @@ class AudioManager {
     source.connect(gainNode);
     gainNode.connect(this.mixer);
 
+    gainNode.gain.value = volume;
     source.start(0); // Start immediately
     source.onended = () => {
       source.disconnect();
