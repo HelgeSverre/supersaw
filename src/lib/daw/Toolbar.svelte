@@ -100,6 +100,7 @@
             { value: "piano", label: "Piano (Shift + 6)" },
             { value: "kick", label: "Kick Generator (Shift + 7)" },
             { value: "tb303", label: "TB-303 (Shift + 8)" },
+            { value: "tenori", label: "Tenori-On (Shift + 9)" },
             { value: "tr707", label: "Rythm Composer TR707" },
             { value: "audio-editor", label: "Audio Editor" },
             { value: "sampler", label: "Sampler" },
