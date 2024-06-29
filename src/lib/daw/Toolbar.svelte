@@ -39,7 +39,7 @@
   }
 </script>
 
-<section class="bg-dark-600 px-2">
+<section class="bg-dark-600 shrink grow-0 px-2">
   <div class="flex h-14 flex-row items-center gap-2">
     <div class="flex w-full flex-row items-center justify-start gap-x-2 py-2">
       <SegmentGroup>
@@ -103,6 +103,7 @@
             { value: "tr707", label: "Rythm Composer TR707" },
             { value: "audio-editor", label: "Audio Editor" },
             { value: "sampler", label: "Sampler" },
+            { value: "tracker", label: "Tracker" },
           ]}
         />
       </SegmentGroup>

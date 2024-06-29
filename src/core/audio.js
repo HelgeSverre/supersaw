@@ -136,7 +136,7 @@ class AudioManager {
     return blob;
   };
 
-  generateWaveformFromBuffer = async (audioBuffer, numberOfSamples = 1000) => {
+  generateWaveformFromBuffer = (audioBuffer, numberOfSamples = 1000) => {
     const isMono = audioBuffer.numberOfChannels === 1;
 
     const leftChannelData = audioBuffer.getChannelData(0);

@@ -31,6 +31,7 @@
   import AudioEditor from "./lib/daw/AudioEditor.svelte";
   import Sampler8 from "./lib/daw/instruments/Sampler8.svelte";
   import TR707 from "./lib/daw/instruments/TR707.svelte";
+  import Tracker from "./lib/daw/instruments/Tracker.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -201,6 +202,10 @@
         {:else if $currentView === "sampler"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <Sampler8 />
+          </section>
+        {:else if $currentView === "tracker"}
+          <section class="relative size-full">
+            <Tracker />
           </section>
         {:else}
           <section class="flex h-full flex-1 grow items-center justify-center">
