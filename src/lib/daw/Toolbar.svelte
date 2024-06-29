@@ -105,6 +105,7 @@
             { value: "audio-editor", label: "Audio Editor" },
             { value: "sampler", label: "Sampler" },
             { value: "tracker", label: "Tracker" },
+            { value: "wavetable", label: "Wavetable" },
           ]}
         />
       </SegmentGroup>

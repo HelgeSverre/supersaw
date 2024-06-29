@@ -32,6 +32,7 @@
   import Sampler8 from "./lib/daw/instruments/Sampler8.svelte";
   import TR707 from "./lib/daw/instruments/TR707.svelte";
   import Tracker from "./lib/daw/instruments/Tracker.svelte";
+  import Wavetable from "./lib/daw/instruments/Wavetable.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -176,6 +177,10 @@
         {:else if $currentView === "piano"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <Piano />
+          </section>
+        {:else if $currentView === "wavetable"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <Wavetable />
           </section>
         {:else if $currentView === "kick"}
           <section class="flex h-full flex-1 grow items-center justify-center">

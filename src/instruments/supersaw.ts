@@ -52,7 +52,13 @@ export class Supersaw implements Instrument {
     this.reverb = new Reverb(this.audioContext, this.reverbTime);
 
     this.effectChain = new ParallelChain(audioContext, [
-      new EffectChain(this.audioContext, [this.dryCompressor, this.dryDistortion, this.cutoffFilter]),
+      new EffectChain(this.audioContext, [
+        this.dryCompressor,
+        this.dryDistortion,
+        this.cutoffFilter,
+        // --
+      ]),
+
       new EffectChain(this.audioContext, [
         this.cutoffFilter,
         this.reverb,
