@@ -13,6 +13,13 @@
   let detune = 10;
   let spread = 0.2;
 
+  let attack = 0.1;
+  let decay = 0.2;
+  let sustain = 0.7;
+  let release = 0.5;
+  let filterCutoff = 1000;
+  let resonance = 1;
+
   let buzzIntensity = 0;
   let buzzFrequency = 110;
 
@@ -20,6 +27,7 @@
   let wavetables = [];
   let oscillators = [];
   let isPlaying = false;
+
   const wavetableSize = 512;
   const numWavetables = 16;
 
@@ -48,6 +56,13 @@
       wavetable[i] = sample;
     }
     return wavetable;
+  }
+
+  function applyEnvelope(param, startValue, endValue, duration) {
+    const now = audioContext.currentTime;
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(startValue, now);
+    param.linearRampToValueAtTime(endValue, now + duration);
   }
 
   function normalizeWavetable(wavetable) {
@@ -111,26 +126,61 @@
     return interpolatedWavetable;
   }
 
-  function drawWaveform(wavetable) {
-    if (!canvas) return;
-    if (!wavetable) return;
 
-    console.log("drawing waveform");
+  function drawWaveform() {
+    if (!canvas || wavetables.length === 0) return;
+
     let ctx = canvas.getContext("2d");
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw spread waveforms
+    for (let i = 0; i < numOscillators; i++) {
+      const spreadAmount = calculateSpreadAmount(i, numOscillators, spread);
+      const morphPosition = Math.max(0, Math.min(1, morph + spreadAmount));
+      const wavetable = interpolateWavetables(morphPosition);
+
+      // Calculate opacity based on spread and oscillator position
+      const distanceFromCenter = Math.abs(i - (numOscillators - 1) / 2) / ((numOscillators - 1) / 2);
+      const opacity = 1 - distanceFromCenter * spread;
+
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(97, 218, 251, ${opacity.toFixed(2)})`;
+      ctx.lineWidth = 2;
+
+      for (let x = 0; x < canvas.width; x++) {
+        const index = Math.floor((x / canvas.width) * wavetableSize);
+        const y = (1 - wavetable[index]) * 0.5 * canvas.height;
+        if (x === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+
+      ctx.stroke();
+    }
+
+    // Draw the main (center) waveform
+    const centerWavetable = interpolateWavetables(morph);
     ctx.beginPath();
-    ctx.moveTo(0, canvas.height / 2);
+    ctx.strokeStyle = "#61dafb"; // Solid blue for the main waveform
+    ctx.lineWidth = 2;
 
     for (let x = 0; x < canvas.width; x++) {
       const index = Math.floor((x / canvas.width) * wavetableSize);
-      const y = (1 - wavetable[index]) * 0.5 * canvas.height;
-      ctx.lineTo(x, y);
+      const y = (1 - centerWavetable[index]) * 0.5 * canvas.height;
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
     }
 
-    ctx.strokeStyle = "#61dafb";
-    ctx.lineWidth = 2;
     ctx.stroke();
+  }
+
+  function calculateSpreadAmount(index, totalOscillators, spreadValue) {
+    return (index / (totalOscillators - 1) - 0.5) * 2 * spreadValue;
   }
 
   function updateWavetable() {
@@ -142,11 +192,23 @@
     }
   }
 
+  let filterNode;
+
   function initAudio() {
     audioContext = audioManager.audioContext;
+
+    // Gain
     gainNode = audioContext.createGain();
     gainNode.gain.setValueAtTime(0.8 / Math.sqrt(numOscillators), audioContext.currentTime);
-    gainNode.connect(audioManager.mixer);
+
+    // Filter
+    filterNode = audioContext.createBiquadFilter();
+    filterNode.type = "lowpass";
+    filterNode.frequency.setValueAtTime(filterCutoff, audioContext.currentTime);
+    filterNode.Q.setValueAtTime(resonance, audioContext.currentTime);
+
+    gainNode.connect(filterNode);
+    filterNode.connect(audioManager.mixer);
   }
 
   function createOscillators() {
@@ -167,7 +229,7 @@
 
     oscillators.forEach((osc, index) => {
       try {
-        const spreadAmount = (index / (oscillators.length - 1) - 0.5) * 2;
+        const spreadAmount = calculateSpreadAmount(index, numOscillators, spread);
         const morphPosition = Math.max(0, Math.min(1, morph + spread * spreadAmount));
         const wavetable = interpolateWavetables(morphPosition);
 
@@ -186,6 +248,9 @@
         console.error("Error updating oscillator:", error);
       }
     });
+
+    filterNode.frequency.setValueAtTime(filterCutoff, audioContext.currentTime);
+    filterNode.Q.setValueAtTime(resonance, audioContext.currentTime);
 
     if (gainNode) {
       gainNode.gain.setValueAtTime(0.8 / Math.sqrt(numOscillators), audioContext.currentTime);
@@ -207,15 +272,29 @@
 
   const togglePlayPause = () => {
     if (isPlaying) {
-      stopOscillators();
-      if (gainNode) gainNode.disconnect();
+      // Release
+      applyEnvelope(gainNode.gain, gainNode.gain.value, 0, release);
+
+      setTimeout(() => {
+        stopOscillators();
+        gainNode.disconnect();
+      }, release * 1000);
     } else {
+      initAudio();
+
       createOscillators();
       updateOscillators();
       oscillators.forEach((osc) => {
         osc.start();
         osc.started = true;
       });
+
+      // Attack
+      applyEnvelope(gainNode.gain, 0, 1, attack);
+      // Decay and Sustain
+      setTimeout(() => {
+        applyEnvelope(gainNode.gain, 1, sustain, decay);
+      }, attack * 1000);
     }
     isPlaying = !isPlaying;
   };
@@ -235,6 +314,8 @@
     }
   });
 
+  $: spread && drawWaveform();
+  $: numOscillators && drawWaveform();
   $: handleMorphChange(morph);
   $: handleFrequencyChange(frequency);
   $: handleHarmonicsChange(harmonics);
@@ -242,6 +323,22 @@
   $: handleDetuneChange(detune);
   $: handleSpreadChange(spread);
   $: handleBuzzChange(buzzIntensity, buzzFrequency);
+  $: handleFilterCutoffChange(filterCutoff);
+  $: handleResonanceChange(resonance);
+
+  function handleFilterCutoffChange(value) {
+    filterCutoff = value;
+    if (isPlaying && audioContext) {
+      updateOscillators();
+    }
+  }
+
+  function handleResonanceChange(value) {
+    resonance = value;
+    if (isPlaying && audioContext) {
+      updateOscillators();
+    }
+  }
 
   function handleBuzzChange(value) {
     if (isPlaying && audioContext) {
@@ -288,12 +385,12 @@
 
 <main class="flex max-w-4xl flex-col rounded-lg border border-dark-900 bg-dark-400 p-6">
   <div class="relative rounded border border-dark-300 bg-gray-950 py-3">
-    <canvas bind:this={canvas} width="800" height="200"></canvas>
+    <canvas bind:this={canvas} width="2000" height="800" class="w-full "></canvas>
   </div>
   <div class="grid grid-cols-6 gap-3">
     <div class="flex flex-col gap-1">
-      <Value label="Morph" value={morph.toFixed(2)} />
-      <Knob min="0" max="1" step="0.01" bind:value={morph} />
+      <Value label="Morph" value={morph.toFixed(3)} />
+      <Knob min="0" max="1" step="0.001" bind:value={morph} />
     </div>
     <div class="flex flex-col gap-1">
       <Value label="Frequency" value={frequency.toFixed(2)} />
@@ -312,9 +409,10 @@
       <Knob min="0" max="100" step="1" bind:value={detune} />
     </div>
     <div class="flex flex-col gap-1">
-      <Value label="Spread" value={spread.toFixed(2)} />
-      <Knob min="0" max="1" step="0.01" bind:value={spread} />
+      <Value label="Spread" value={spread.toFixed(3)} />
+      <Knob min="0" max="1" step="0.001" bind:value={spread} />
     </div>
+
     <div class="flex flex-col gap-1">
       <Value label="Buzz" value={buzzIntensity.toFixed(2)} />
       <Knob min="0" max="100" step="1" bind:value={buzzIntensity} />
@@ -322,6 +420,32 @@
     <div class="flex flex-col gap-1">
       <Value label="Buzz Freq" value={buzzFrequency.toFixed(2)} />
       <Knob min="20" max="2000" step="1" bind:value={buzzFrequency} />
+    </div>
+  </div>
+  <div class="grid grid-cols-6 gap-3">
+    <div class="flex flex-col gap-1">
+      <Value label="Attack" value={attack?.toFixed(2)} />
+      <Knob min="0" max="2" step="0.01" bind:value={attack} />
+    </div>
+    <div class="flex flex-col gap-1">
+      <Value label="Decay" value={decay?.toFixed(2)} />
+      <Knob min="0" max="2" step="0.01" bind:value={decay} />
+    </div>
+    <div class="flex flex-col gap-1">
+      <Value label="Sustain" value={sustain?.toFixed(2)} />
+      <Knob min="0" max="1" step="0.01" bind:value={sustain} />
+    </div>
+    <div class="flex flex-col gap-1">
+      <Value label="Release" value={release?.toFixed(2)} />
+      <Knob min="0" max="5" step="0.01" bind:value={release} />
+    </div>
+    <div class="flex flex-col gap-1">
+      <Value label="Filter Cutoff" value={filterCutoff?.toFixed(0)} />
+      <Knob min="20" max="20000" step="1" bind:value={filterCutoff} />
+    </div>
+    <div class="flex flex-col gap-1">
+      <Value label="Resonance" value={resonance?.toFixed(2)} />
+      <Knob min="0" max="20" step="0.1" bind:value={resonance} />
     </div>
 
     <div class="col-span-full">
