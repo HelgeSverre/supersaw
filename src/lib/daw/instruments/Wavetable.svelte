@@ -126,6 +126,16 @@
     return interpolatedWavetable;
   }
 
+  function calculateMystifyIntensity(spread, numOscillators, detune) {
+    // Normalize each parameter
+    const normalizedSpread = spread; // Already 0-1
+    const normalizedNumOsc = (numOscillators - 1) / 7; // Assuming max 8 oscillators
+    const normalizedDetune = detune / 100; // Assuming detune range 0-100
+
+    // Combine the parameters
+    const intensity = (normalizedSpread + normalizedNumOsc + normalizedDetune) / 3;
+    return Math.min(Math.max(intensity, 0), 1); // Ensure it's between 0 and 1
+  }
 
   function drawWaveform() {
     if (!canvas || wavetables.length === 0) return;
@@ -133,19 +143,62 @@
     let ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Calculate mystify intensity based on current parameters
+    const mystifyIntensity = calculateMystifyIntensity(spread, numOscillators, detune);
+
+    // Calculate number of interpolations based on mystifyIntensity
+    const maxInterpolations = 30;
+    const minInterpolations = 5;
+    const numInterpolations = Math.floor(
+      minInterpolations + (maxInterpolations - minInterpolations) * mystifyIntensity,
+    );
+
+    // Draw interpolated background waveforms
+    for (let i = 0; i < wavetables.length - 1; i++) {
+      for (let j = 0; j < numInterpolations; j++) {
+        const t = j / numInterpolations;
+        const currentPosition = i / (wavetables.length - 1) + t / (wavetables.length - 1);
+        const interpolatedWavetable = interpolateWavetables(currentPosition);
+
+        // Calculate distance from current morph position
+        const distanceFromMorph = Math.abs(currentPosition - morph);
+        const normalizedDistance = Math.min(distanceFromMorph * 2, 1); // Normalize to 0-1, with 0.5 morph distance as max
+
+        // Calculate opacity based on mystify intensity and distance from morph
+        const baseOpacity = 0.02 + mystifyIntensity * 1.08; // Range from 0.02 to 0.1
+        const distanceFactor = 1 - normalizedDistance;
+        const opacity = baseOpacity * distanceFactor;
+
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(97, 218, 251, ${opacity})`;
+        ctx.lineWidth = 1;
+
+        for (let x = 0; x < canvas.width; x++) {
+          const index = Math.floor((x / canvas.width) * wavetableSize);
+          const y = (1 - interpolatedWavetable[index]) * 0.5 * canvas.height;
+          if (x === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        ctx.stroke();
+      }
+    }
+
     // Draw spread waveforms
     for (let i = 0; i < numOscillators; i++) {
       const spreadAmount = calculateSpreadAmount(i, numOscillators, spread);
       const morphPosition = Math.max(0, Math.min(1, morph + spreadAmount));
       const wavetable = interpolateWavetables(morphPosition);
 
-      // Calculate opacity based on spread and oscillator position
       const distanceFromCenter = Math.abs(i - (numOscillators - 1) / 2) / ((numOscillators - 1) / 2);
       const opacity = 1 - distanceFromCenter * spread;
 
       ctx.beginPath();
       ctx.strokeStyle = `rgba(97, 218, 251, ${opacity.toFixed(2)})`;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1 ;
 
       for (let x = 0; x < canvas.width; x++) {
         const index = Math.floor((x / canvas.width) * wavetableSize);
@@ -163,7 +216,7 @@
     // Draw the main (center) waveform
     const centerWavetable = interpolateWavetables(morph);
     ctx.beginPath();
-    ctx.strokeStyle = "#61dafb"; // Solid blue for the main waveform
+    ctx.strokeStyle = "#61dafb";
     ctx.lineWidth = 2;
 
     for (let x = 0; x < canvas.width; x++) {
@@ -179,8 +232,11 @@
     ctx.stroke();
   }
 
+  // Update your reactive declarations
+  $: morph, spread, numOscillators, detune, drawWaveform();
+
   function calculateSpreadAmount(index, totalOscillators, spreadValue) {
-    return (index / (totalOscillators - 1) - 0.5) * 2 * spreadValue;
+    return (index / (totalOscillators - 1) - 0.5) * 0.9 * spreadValue;
   }
 
   function updateWavetable() {
@@ -383,9 +439,9 @@
   }
 </script>
 
-<main class="flex max-w-4xl flex-col rounded-lg border border-dark-900 bg-dark-400 p-6">
+<main class="flex max-w-4xl flex-col rounded-lg border border-dark-900 bg-black/20 p-6">
   <div class="relative rounded border border-dark-300 bg-gray-950 py-3">
-    <canvas bind:this={canvas} width="2000" height="800" class="w-full "></canvas>
+    <canvas bind:this={canvas} width="2000" height="800" class="w-full"></canvas>
   </div>
   <div class="grid grid-cols-6 gap-3">
     <div class="flex flex-col gap-1">
