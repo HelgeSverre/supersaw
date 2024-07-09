@@ -8,13 +8,14 @@
 
 It is not meant to be a full-fledged DAW, or a commercial tool, or something you rely on for anything serious, it is
 meant to be fun to build for developers that are interested in DSP, music production and sound stuff.
+dc
 
 > **Open source is not a democracy, it's a gift.**
 >
 > Pull requests are welcome, but please keep in mind that this is a hobby project and ultimately I do what I want with
 > it, if you want to fork it and do your own thing, that's cool too.
 
-## Tech Stack 🛠️
+## 🛠️ Tech Stack
 
 - Svelte
 - Tailwind CSS
@@ -44,7 +45,7 @@ etc), DSP (Digital Signal Processing), Web Audio, MIDI and Svelte.
 
 > "Build it all from scratch, because why not." - Loosely inspired by [SerenityOS](https://serenityos.org/)
 
-## FAQ 🤔
+## 🤔 FAQ
 
 ### Why the name "Supersaw"?
 
@@ -59,7 +60,7 @@ I wanted to learn Svelte.
 
 Why not? For fun.
 
-### Why so much trance and hardstyle?
+### Why so much Trance and HardStyle?
 
 I like Trance and HardStyle.
 
