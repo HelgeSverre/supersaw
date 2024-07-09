@@ -198,7 +198,7 @@
 
       ctx.beginPath();
       ctx.strokeStyle = `rgba(97, 218, 251, ${opacity.toFixed(2)})`;
-      ctx.lineWidth = 1 ;
+      ctx.lineWidth = 1;
 
       for (let x = 0; x < canvas.width; x++) {
         const index = Math.floor((x / canvas.width) * wavetableSize);

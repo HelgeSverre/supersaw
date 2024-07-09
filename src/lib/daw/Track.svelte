@@ -254,6 +254,7 @@
             bind:value={track.instrument}
             on:change={(e) => setInstrumentForTrack(track.id, e.target.value)}
           >
+              <option value="midi_out">MIDI Out</option>
             {#each audioManager.instruments.keys() as instrument}
               <option value={instrument}>{instrument}</option>
             {/each}

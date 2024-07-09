@@ -53,18 +53,18 @@ export class Supersaw implements Instrument {
 
     this.effectChain = new ParallelChain(audioContext, [
       new EffectChain(this.audioContext, [
-        this.dryCompressor,
-        this.dryDistortion,
+        // this.dryCompressor,
+        // this.dryDistortion,
         this.cutoffFilter,
         // --
       ]),
 
       new EffectChain(this.audioContext, [
         this.cutoffFilter,
-        this.reverb,
-        this.reverbControl,
         new Filter(this.audioContext, "highpass", 600),
         new Filter(this.audioContext, "lowpass", 8000),
+        this.reverb,
+        this.reverbControl,
       ]),
     ]);
 
