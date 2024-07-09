@@ -39,7 +39,7 @@
   }
 </script>
 
-<section class="bg-dark-600 shrink grow-0 px-2">
+<section class="shrink grow-0 bg-dark-600 px-2">
   <div class="flex h-14 flex-row items-center gap-2">
     <div class="flex w-full flex-row items-center justify-start gap-x-2 py-2">
       <SegmentGroup>

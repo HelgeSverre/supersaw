@@ -57,8 +57,25 @@ I wanted to learn Svelte.
 
 ### Why create a DAW?
 
-Why not?
+Why not? For fun.
 
-## License
+### Why so much trance and hardstyle?
 
-This package is licensed under the MIT License. For more details, refer to the [License File](LICENSE.md).
+I like Trance and HardStyle.
+
+---
+
+## Trademarks and Copyright (Ass covering)
+
+All Logos, images, brand names and trademarks not made by myself, belong to the owner of those trademarks
+(Roland, Korg, Waldorf Music, Behringer, etc), don't sue me n shit, lawyers can send your SEIZE and DESIST letters to
+this [email](helge.sverre+legal-threats@gmail.com).
+
+### Samples and MIDI files.
+
+This repo contains some MIDI files used for testing and as demo content,
+these are free midi files from Nonstop2K.com, Some drum samples are from
+drumkito.com and the Hardstyle kick is
+from [here](https://freesound.org/people/harddancewarrior/sounds/415871/download/415871__harddancewarrior__hardstyle-kick-249.wav),
+the others were acquired from other sources I can't remember, no commercial packs are included AFAIK, If i am wrong, let
+me know via email and I will replace them.
