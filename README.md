@@ -1,4 +1,4 @@
-<p align="center"><img src="art/Supersawww.png"></p>****
+<p align="center"><img src="art/Supersawww.png"></p>
 
 # Supersaw - Open Source Web Based DAW
 
