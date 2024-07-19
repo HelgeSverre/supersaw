@@ -24,18 +24,18 @@
 
   function updateCompressorSettings() {
     if (compressor) {
-      compressor.threshold.value = compressorSettings.threshold;
-      compressor.knee.value = compressorSettings.knee;
-      compressor.ratio.value = compressorSettings.ratio;
-      compressor.attack.value = compressorSettings.attack;
-      compressor.release.value = compressorSettings.release;
+      compressor.threshold.setValueAtTime(compressorSettings.threshold, audioManager.audioContext.currentTime);
+      compressor.knee.setValueAtTime(compressorSettings.knee, audioManager.audioContext.currentTime);
+      compressor.ratio.setValueAtTime(compressorSettings.ratio, audioManager.audioContext.currentTime);
+      compressor.attack.setValueAtTime(compressorSettings.attack, audioManager.audioContext.currentTime);
+      compressor.release.setValueAtTime(compressorSettings.release, audioManager.audioContext.currentTime);
     }
   }
 
   function setupAudio() {
     const audioContext = audioManager.audioContext;
     analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048 * 8 * 2;
+    analyser.fftSize = 2048 * 8;
     audioManager.mixer.connect(analyser);
 
     compressor = audioContext.createDynamicsCompressor();
@@ -44,9 +44,12 @@
     updateCompressorSettings();
 
     analyserCompressed = audioContext.createAnalyser();
-    analyserCompressed.fftSize = 2048 * 8 * 2;
+    analyserCompressed.fftSize = 2048 * 8;
     compressor.connect(analyserCompressed);
-    audioManager.mixer.connect(analyserCompressed);
+
+    let channel = audioManager.createChannel("compressor");
+
+    channel.connect(compressor);
 
     updateCompressorSettings();
   }
@@ -57,15 +60,18 @@
     const height = canvas.height;
     const bufferLength = analyser.fftSize;
     const dataArray = new Uint8Array(bufferLength);
+    const compressedDataArray = new Uint8Array(bufferLength);
 
     analyser.getByteTimeDomainData(dataArray);
+    analyserCompressed.getByteTimeDomainData(compressedDataArray);
 
     // Clear
     ctx.fillStyle = "#383843";
     ctx.fillRect(0, 0, width, height);
 
+    // Draw original waveform
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "#61dafb";
+    ctx.strokeStyle = "#61dafbcc";
 
     ctx.beginPath();
 
@@ -84,37 +90,25 @@
       x += sliceWidth;
     }
 
-    // Draw middle line
-    ctx.lineTo(canvas.width, canvas.height / 2);
     ctx.stroke();
 
-    /// ================================================
-
-    // Draw raw
+    // Draw compressed waveform
     ctx.lineWidth = 1;
     ctx.strokeStyle = "#fbf361";
-    // Draw compressed
-    const bufferLengthCompressed = analyserCompressed.fftSize;
-    const dataCompressed = new Uint8Array(bufferLengthCompressed);
-    analyserCompressed.getByteTimeDomainData(dataCompressed);
-
     ctx.beginPath();
-    let compressedSliceWidth = (width * 1.0) / bufferLengthCompressed;
-    let compressedX = 0;
-    for (let i = 0; i < bufferLengthCompressed; i++) {
-      let v = dataCompressed[i] / 128.0;
+
+    x = 0;
+    for (let i = 0; i < bufferLength; i++) {
+      const v = compressedDataArray[i] / 128.0;
       const y = (v * height) / 2;
       if (i === 0) {
-        ctx.moveTo(compressedX, y);
+        ctx.moveTo(x, y);
       } else {
-        ctx.lineTo(compressedX, y);
+        ctx.lineTo(x, y);
       }
-      compressedX += compressedSliceWidth;
+      x += sliceWidth;
     }
     ctx.stroke();
-
-    /// ================================================
-    /// Draw stuff
 
     // Draw threshold line
     const thresholdY = (height / 2) * (1 + compressorSettings.threshold / 100);
@@ -122,6 +116,16 @@
     ctx.strokeStyle = "red";
     ctx.moveTo(0, thresholdY);
     ctx.lineTo(width, thresholdY);
+    ctx.stroke();
+
+    // Draw compression ratio visualization
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width, height / 2);
+    ctx.moveTo(width, thresholdY);
+    const compressedHeight = (height / 2 - thresholdY) / compressorSettings.ratio;
+    ctx.lineTo(width, height / 2 + compressedHeight);
     ctx.stroke();
 
     requestAnimationFrame(drawWaveform);
@@ -140,6 +144,7 @@
           type="number"
           min={setting === "threshold" ? "-100" : "0"}
           max={setting === "threshold" ? "0" : setting === "ratio" ? "20" : "100"}
+          step={setting === "attack" || setting === "release" ? "0.01" : "1"}
           name={setting}
           bind:value={compressorSettings[setting]}
         />

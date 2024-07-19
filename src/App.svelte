@@ -39,7 +39,7 @@
 
   onMount(() => {
     if ($tracks.length === 0) {
-      createTranceDemo();
+      // createTranceDemo();
     }
   });
 
@@ -85,7 +85,7 @@
       }
     }
 
-    if (event.shiftKey && key === "I") {
+    if (event.shiftKey && key === "I ") {
       instrumentDialog.showModal();
     }
     if (event.shiftKey && key === "O") {

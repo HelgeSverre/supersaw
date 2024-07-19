@@ -84,8 +84,6 @@
 
       const newStartTime = $pixelsToTime(newOffset);
 
-      console.log(newStartTime, relativeX, timelineRect.left, event.clientX);
-
       moveClipToTime(track.id, data.clipId, newStartTime);
     }
 
