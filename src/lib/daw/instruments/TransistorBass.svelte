@@ -3,7 +3,6 @@
   import { audioManager } from "../../../core/audio.js";
   import Encoder from "../../ui/Encoder.svelte";
   import LED from "../../ui/LED.svelte";
-  import { frequencyToMidiNote, midiNoteToFrequency, noteLabel } from "../../../core/midi.js";
   import { Sliders, SmileySticker, WaveSawtooth, WaveSquare, WaveTriangle } from "phosphor-svelte";
   import classNames from "classnames";
 
@@ -17,6 +16,8 @@
     .map((_, i) => ({
       frequency: 65.41,
       accent: false,
+      transposeUp: false,
+      transposeDown: false,
       glide: false,
       on: true,
     }));
@@ -37,95 +38,75 @@
   let elapsedPlayTime = 0;
   const patterns = [
     {
-      name: "Glide test",
-      tempo: 80,
-      steps: [
-        { frequency: midiNoteToFrequency(60), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(60), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(60), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(65), accent: false, glide: true },
-      ],
+      name: "Pattern 1",
+      tempo: 135,
+      pattern: "F#-F#vag-F#vag-F#v-F#-F#a-F#a-F#-F#-F#^-x-x-F#^-F#^-F#a-F#",
     },
     {
-      name: "Scale test",
-      tempo: 100,
-      steps: [
-        { frequency: midiNoteToFrequency(60 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(61 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(62 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(63 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(64 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(65 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(66 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(67 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(68 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(69 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(70 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(71 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(72 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(73 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(74 - 12), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(75 - 12), accent: false, glide: false },
-      ],
+      name: "Pattern 2",
+      tempo: 135,
+      pattern: "G-Gag-Gag-Gva-x-Gva-G-Gva-x-Ga-Ga-x-x-x-x-x",
     },
     {
-      name: "Phuture - Acid Tracks",
-      tempo: 114,
-      steps: [
-        { frequency: midiNoteToFrequency(47), accent: true, glide: true }, // B up, Accent + Slide
-        { frequency: midiNoteToFrequency(47), accent: false, glide: false }, // B up
-        { frequency: midiNoteToFrequency(36), accent: true, glide: false }, // C lo, Accent
-        { frequency: midiNoteToFrequency(48), accent: true, glide: false }, // C hi, Accent
-        { frequency: midiNoteToFrequency(36), accent: false, glide: false }, // C lo
-        { frequency: midiNoteToFrequency(51), accent: true, glide: true }, // D# up, Accent + Slide
-        { frequency: midiNoteToFrequency(51), accent: false, glide: false }, // D#
-        { frequency: midiNoteToFrequency(48), accent: true, glide: false }, // C hi, Accent
-      ],
-    },
-    {
-      name: "Josh Wink - Higher State of Consciousness",
-      steps: [
-        { frequency: midiNoteToFrequency(60), accent: true, glide: false },
-        { frequency: midiNoteToFrequency(60), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(62), accent: true, glide: false },
-        { frequency: midiNoteToFrequency(64), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(65), accent: true, glide: true },
-        { frequency: midiNoteToFrequency(67), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(69), accent: true, glide: true },
-        { frequency: midiNoteToFrequency(71), accent: false, glide: false },
-      ],
-    },
-    {
-      name: "Lower",
-      steps: [
-        { frequency: midiNoteToFrequency(60 - 12 * 2), accent: true, glide: false },
-        { frequency: midiNoteToFrequency(60 - 12 * 2), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(62 - 12 * 2), accent: true, glide: false },
-        { frequency: midiNoteToFrequency(64 - 12 * 2), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(65 - 12 * 2), accent: true, glide: true },
-        { frequency: midiNoteToFrequency(67 - 12 * 2), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(69 - 12 * 2), accent: true, glide: true },
-        { frequency: midiNoteToFrequency(71 - 12 * 2), accent: false, glide: false },
-      ],
-    },
-    {
-      name: "Hardfloor - Acperience 1",
-      steps: [
-        { frequency: midiNoteToFrequency(50), accent: true, glide: false },
-        { frequency: midiNoteToFrequency(52), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(50), accent: false, glide: true },
-        { frequency: midiNoteToFrequency(48), accent: true, glide: false },
-        { frequency: midiNoteToFrequency(50), accent: false, glide: true },
-        { frequency: midiNoteToFrequency(52), accent: false, glide: false },
-        { frequency: midiNoteToFrequency(53), accent: true, glide: false },
-        { frequency: midiNoteToFrequency(55), accent: false, glide: true },
-      ],
+      name: "Pattern 3",
+      tempo: 135,
+      pattern: "D#^ag-D#^ag-Bv-D#-D#^-D#^-x-x-F-F-Ca-A-F#a-F#a-Aa-Aa",
     },
   ];
 
+  function parsePattern(patternString) {
+    return patternString.split("-").map((step) => {
+      let note = "C";
+      let transposeUp = false;
+      let transposeDown = false;
+      let accent = false;
+      let glide = false;
+      let on = true;
+
+      if (step === "x") {
+        return { note, transposeUp, transposeDown, accent, glide, on: false };
+      }
+
+      note = step.match(/[A-G]#?/)[0];
+      transposeUp = step.includes("^");
+      transposeDown = step.includes("v");
+      accent = step.includes("a");
+      glide = step.includes("g");
+
+      return { note, transposeUp, transposeDown, accent, glide, on };
+    });
+  }
+
+  function noteToFrequency(note, transposeUp, transposeDown) {
+    const noteToMidi = {
+      "C": 60,
+      "C#": 61,
+      "D": 62,
+      "D#": 63,
+      "E": 64,
+      "F": 65,
+      "F#": 66,
+      "G": 67,
+      "G#": 68,
+      "A": 69,
+      "A#": 70,
+      "B": 71,
+    };
+
+    let midiNote = noteToMidi[note] - 12; // Subtract 12 to get to octave 2
+
+    if (transposeUp) midiNote += 12;
+    if (transposeDown) midiNote -= 12;
+
+    return 440 * Math.pow(2, (midiNote - 69) / 12);
+  }
+
   function selectPresetPattern(index) {
-    pattern = patterns[index]?.steps ?? [];
-    tempo = patterns[index]?.tempo ?? tempo;
+    const selectedPattern = patterns[index];
+    if (selectedPattern) {
+      pattern = parsePattern(selectedPattern.pattern);
+      tempo = selectedPattern.tempo;
+    }
   }
 
   onMount(() => {
@@ -182,24 +163,31 @@
 
     let index = currentStep % pattern.length;
     const step = pattern[index];
-    const nextFrequency = step.frequency * Math.pow(2, tuning / 1200);
 
-    if (step.glide && currentStep > 0) {
-      oscillator.frequency.linearRampToValueAtTime(nextFrequency, audioContext.currentTime + 60 / tempo / 8);
+    if (step.on) {
+      let nextFrequency = noteToFrequency(step.note, step.transposeUp, step.transposeDown);
+
+      if (step.glide && currentStep > 0) {
+        oscillator.frequency.exponentialRampToValueAtTime(nextFrequency, audioContext.currentTime + 60 / tempo / 8);
+      } else {
+        oscillator.frequency.setValueAtTime(nextFrequency, audioContext.currentTime);
+      }
+
+      // Handle the decay envelope for both amplitude and filter cutoff
+      let initialGain = step.accent ? 1.2 : 1;
+      envelope.gain.cancelScheduledValues(audioContext.currentTime);
+      envelope.gain.setValueAtTime(initialGain, audioContext.currentTime);
+      envelope.gain.exponentialRampToValueAtTime(0.1, audioContext.currentTime + decay);
+
+      let modulatedCutoff = step.accent ? cutoff + envMod * 1000 : cutoff;
+      filter.Q.setValueAtTime(resonance * (1 + accentIntensity), audioContext.currentTime);
+      filter.frequency.setValueAtTime(modulatedCutoff, audioContext.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(cutoff, audioContext.currentTime + decay);
     } else {
-      oscillator.frequency.setValueAtTime(nextFrequency, audioContext.currentTime);
+      // If the note is off, create a rest by silencing the envelope
+      envelope.gain.cancelScheduledValues(audioContext.currentTime);
+      envelope.gain.setValueAtTime(0, audioContext.currentTime);
     }
-
-    // Handle the decay envelope for both amplitude and filter cutoff
-    let initialGain = step.accent ? 1.2 : 1; // Boost gain if accent is true
-    envelope.gain.cancelScheduledValues(audioContext.currentTime);
-    envelope.gain.setValueAtTime(initialGain, audioContext.currentTime);
-    envelope.gain.exponentialRampToValueAtTime(0.1, audioContext.currentTime + decay);
-
-    let modulatedCutoff = step.accent ? cutoff + envMod * 1000 : cutoff;
-    filter.Q.setValueAtTime(resonance * (1 + accentIntensity), audioContext.currentTime);
-    filter.frequency.setValueAtTime(modulatedCutoff, audioContext.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(cutoff, audioContext.currentTime + decay);
 
     currentStep++;
   }
@@ -232,21 +220,40 @@
     pattern = Array(16)
       .fill()
       .map((_, i) => ({
-        frequency: 65.41,
+        note: "C",
         accent: false,
+        transposeUp: false,
+        transposeDown: false,
         glide: false,
         on: true,
       }));
   }
 
-  function updateNoteFrequency(index, frequency) {
-    pattern[index].frequency = parseFloat(frequency);
+  function updateNote(index, newNote) {
+    pattern[index].note = newNote;
+    pattern[index].transposeUp = false;
+    pattern[index].transposeDown = false;
+  }
+
+  function toggleTranspose(index, direction) {
+    if (direction === "up") {
+      pattern[index].transposeUp = true;
+      pattern[index].transposeDown = false; // Ensure only one direction is active
+    } else if (direction === "down") {
+      pattern[index].transposeDown = true;
+      pattern[index].transposeUp = false; // Ensure only one direction is active
+    }
+  }
+
+  function toggleNote(index) {
+    pattern[index].on = !pattern[index].on ?? true;
   }
 
   $: if (oscillator) {
     const step = pattern[currentStep % pattern.length];
     oscillator.type = waveform;
-    oscillator.frequency.setValueAtTime(step.frequency * Math.pow(2, tuning / 1200), audioContext.currentTime);
+    const frequency = noteToFrequency(step.note, step.transposeUp, step.transposeDown);
+    oscillator.frequency.setValueAtTime(frequency * Math.pow(2, tuning / 1200), audioContext.currentTime);
   }
 
   $: if (filter) {
@@ -257,6 +264,7 @@
   $: if (gainNode) {
     gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
   }
+
   $: if (distortionAmount) {
     distortion.curve = makeDistortionCurve(distortionAmount);
   }
@@ -458,49 +466,75 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-8 gap-x-2 gap-y-3 pl-4">
-          {#each pattern as note, index (note + index)}
-            <div class="flex flex-col items-center justify-between gap-2 rounded-lg bg-black/5 px-1.5 py-2">
-              <div>
-                <LED size="14" on={patternIndex === index} />
+        <div class="grid w-full grid-cols-8 gap-x-2 gap-y-3 pl-4">
+          {#each pattern as step, index (step + index)}
+            <div
+              class="flex flex-col items-center justify-between gap-2 rounded-lg bg-black/5 px-1.5 py-2 {patternIndex ===
+              index
+                ? 'border border-black'
+                : 'border border-transparent'}"
+            >
+              <LED size="14" on={patternIndex === index} />
+              <div class="flex w-full items-center justify-center">
+                <span class="text-sm text-light-soft">{index + 1}</span>
               </div>
-              <span class="text-xs">{noteLabel(frequencyToMidiNote(note.frequency))}</span>
 
-              <button
-                on:click={() => (note.on = !note.on)}
-                class={classNames("block w-full rounded p-1 text-center text-xs text-gray-700", {
-                  "bg-accent-neon": note.on,
-                  "bg-gray-300": !note.on,
-                })}
-              >
-                <span>{index + 1}</span>
-              </button>
-
-              <input
-                type="number"
+              <select
                 class="block w-full appearance-none rounded border border-gray-300 bg-gray-100 p-1 text-center font-mono text-sm text-light-soft"
-                value={note.frequency.toFixed(2)}
-                step="0.01"
-                on:change={(e) => updateNoteFrequency(index, e.target.value)}
-              />
+                value={step.note}
+                on:change={(e) => updateNote(index, e.target.value)}
+              >
+                {#each ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"] as note}
+                  <option value={note}>{note}</option>
+                {/each}
+              </select>
 
-              <div class="flex w-full flex-col items-center gap-1">
-                <div class="flex w-full gap-1">
-                  <button
-                    class="metal w-full py-1 text-sm leading-tight text-dark-100"
-                    class:active={note.accent}
-                    on:click={() => (note.accent = !note.accent)}
-                  >
-                    A
-                  </button>
-                  <button
-                    class="metal w-full py-1 text-sm leading-tight text-dark-100"
-                    class:active={note.glide}
-                    on:click={() => (note.glide = !note.glide)}
-                  >
-                    G
-                  </button>
-                </div>
+              <div class="flex w-full flex-col gap-1">
+                <button
+                  class={classNames("w-full rounded p-1 text-center text-xs leading-3 text-dark-900", {
+                    "bg-accent-neon": step.on,
+                    "bg-black/5": !step.on,
+                  })}
+                  on:click={() => toggleNote(index)}
+                >
+                  {step.on ? "On" : "Off"}
+                </button>
+                <button
+                  class={classNames("w-full rounded p-1 text-center text-xs leading-3 text-dark-900", {
+                    "bg-accent-neon": step.accent,
+                    "bg-black/5": !step.accent,
+                  })}
+                  on:click={() => (step.accent = !step.accent)}
+                >
+                  Accent
+                </button>
+                <button
+                  class={classNames("w-full rounded p-1 text-center text-xs leading-3 text-dark-900", {
+                    "bg-accent-neon": step.glide,
+                    "bg-black/5": !step.glide,
+                  })}
+                  on:click={() => (step.glide = !step.glide)}
+                >
+                  Glide
+                </button>
+                <button
+                  class={classNames("w-full rounded p-1 text-center text-xs leading-3 text-dark-900", {
+                    "bg-accent-neon": step.transposeUp,
+                    "bg-black/5": !step.transposeUp,
+                  })}
+                  on:click={() => toggleTranspose(index, "up")}
+                >
+                  Up
+                </button>
+                <button
+                  class={classNames("w-full rounded p-1 text-center text-xs leading-3 text-dark-900", {
+                    "bg-accent-neon": step.transposeDown,
+                    "bg-black/5": !step.transposeDown,
+                  })}
+                  on:click={() => toggleTranspose(index, "down")}
+                >
+                  Down
+                </button>
               </div>
             </div>
           {/each}
