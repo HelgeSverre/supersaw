@@ -1,54 +1,89 @@
-<tmeplate>
-  <div
-    class="lcd-panel relative w-full overflow-hidden rounded-sm bg-gray-900 p-1 shadow-inner shadow-slate-200/10 ring-1 ring-black/20"
-  >
-    <div class="lcd-panel-screen relative rounded-sm bg-black p-2 shadow-lg shadow-red-100/10">
-      <!-- LCD Display -->
-      <div class="pulsate lcd-grid relative z-10 text-sm text-red-600">
-        <!-- First row -->
-        <div class="lcd-character">1</div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character">V</div>
-        <div class="lcd-character">O</div>
-        <div class="lcd-character">C</div>
-        <div class="lcd-character">O</div>
-        <div class="lcd-character">D</div>
-        <div class="lcd-character">E</div>
-        <div class="lcd-character">R</div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <!-- Second row -->
-        <div class="lcd-character">M</div>
-        <div class="lcd-character">o</div>
-        <div class="lcd-character">d</div>
-        <div class="lcd-character">e</div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character"></div>
-        <div class="lcd-character">o</div>
-        <div class="lcd-character">f</div>
-        <div class="lcd-character">f</div>
-        <div class="lcd-character"></div>
-      </div>
-      <!-- Glow effect -->
-      <div class="absolute inset-0 bg-red-800 opacity-10 blur-sm"></div>
-      <!-- Inset shadow effect -->
-      <div class="absolute inset-0 shadow-inner shadow-black/50"></div>
-      <!-- Smudgy overlay -->
-      <div class="smudgy-overlay absolute inset-0"></div>
+<script>
+  import { onMount, tick } from "svelte";
+
+  export let columns = 16;
+  export let rows = 2;
+
+  export let line1 = "";
+  export let line2 = "";
+  export let speed = 100;
+  export let delay = 1000;
+  export let delayEveryLoop = true;
+
+  let displayLine1 = "";
+  let displayLine2 = "";
+
+  let offset1 = 0;
+  let offset2 = 0;
+  let isScrolling = false;
+  let initialDelay = true;
+
+  $: wrappedLine1 = line1 + " ".repeat(columns) + line1;
+  $: wrappedLine2 = line2 + " ".repeat(columns) + line2;
+
+  $: {
+    displayLine1 = wrappedLine1.slice(offset1, offset1 + columns);
+    displayLine2 = wrappedLine2.slice(offset2, offset2 + columns);
+  }
+
+  async function startScrolling() {
+    if (initialDelay || delayEveryLoop) {
+      isScrolling = false;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      initialDelay = false;
+    }
+    isScrolling = true;
+  }
+
+  async function advanceText() {
+    if (!isScrolling) return;
+
+    if (line1.length > columns) {
+      offset1 = (offset1 + 1) % (line1.length + columns);
+      if (offset1 === 0 && delayEveryLoop) await startScrolling();
+    }
+    if (line2.length > columns) {
+      offset2 = (offset2 + 1) % (line2.length + columns);
+      if (offset2 === 0 && delayEveryLoop) await startScrolling();
+    }
+    await tick();
+  }
+
+  onMount(async () => {
+    await startScrolling();
+    const intervalId = setInterval(advanceText, speed);
+    return () => clearInterval(intervalId);
+  });
+</script>
+
+<div
+  style="--text-columns: {columns}; --text-rows: {rows};"
+  class="lcd-panel relative w-80 overflow-hidden rounded-sm bg-gray-900 p-1 ring-1 ring-black/50"
+>
+  <div class="lcd-panel-screen relative rounded-sm bg-black p-2 shadow-lg shadow-red-100/10">
+    <!-- LCD Display -->
+    <div class="pulsate lcd-grid relative z-10 text-sm text-red-600">
+      <!-- First row -->
+      {#each displayLine1.split("") as char, i}
+        <div class="lcd-character text-center font-medium">
+          {char}
+        </div>
+      {/each}
+      <!-- Second row -->
+      {#each displayLine2.split("") as char, i}
+        <div class="lcd-character text-center font-medium">
+          {char}
+        </div>
+      {/each}
     </div>
+    <!-- Glow effect -->
+    <div class="absolute inset-0 bg-red-800 opacity-10 blur-sm"></div>
+    <!-- Inset shadow effect -->
+    <div class="absolute inset-0 shadow-inner shadow-black/50"></div>
+    <!-- Smudgy overlay -->
+    <div class="smudgy-overlay absolute inset-0"></div>
   </div>
-</tmeplate>
+</div>
 
 <style>
   @keyframes pulsate {
@@ -79,14 +114,14 @@
 
   .lcd-grid {
     display: grid;
-    grid-template-columns: repeat(16, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(var(--text-columns, 16), 1fr);
+    grid-template-rows: repeat(var(--text-rows, 2), 1fr);
     gap: 2px;
   }
 
   .lcd-character {
     font-family: "Pathway Extreme", "Helvetica Neue", "Helvetica", sans-serif;
-    aspect-ratio: 1 / 1.3;
+    aspect-ratio: minmax(1 / 1.3, 1);
     background-color: rgba(80, 0, 0, 0.45);
     text-shadow:
       0 0 1px rgba(200, 0, 0, 0.1),

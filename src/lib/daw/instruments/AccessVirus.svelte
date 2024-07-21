@@ -1,5 +1,6 @@
 <script>
   import LED from "../../ui/LED.svelte";
+  import LCD from "../../ui/LCD.svelte";
 </script>
 
 <main class="flex h-full w-full flex-col items-center justify-center gap-6 p-12">
@@ -95,7 +96,13 @@
             </div>
             <div class="flex h-full w-full flex-1 flex-row gap-2 bg-blue-600">
               <div class="w-full bg-gray-500">EFFECTS</div>
-              <div class="w-full bg-gray-500">BUTTON AREA AND SCREEN</div>
+              <div class="w-full bg-gray-500">
+                <div>BUTTON AREA AND SCREEN</div>
+
+                <div class="p-2">
+                  <LCD line1="MidiChannel" line2="ch 2 - and some - other - things" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -235,31 +242,6 @@
 
   .label {
     font-family: "HandelGothic BT", "HandelGothic", sans-serif;
-  }
-
-  .cutCorner {
-    position: relative;
-    background-color: blue;
-    border: 1px solid silver;
-    display: inline-block;
-  }
-
-  .cutCorner:before {
-    position: absolute;
-    left: -1px;
-    top: -1px;
-    content: "";
-    border-top: 70px solid silver;
-    border-right: 70px solid transparent;
-  }
-
-  .cutCorner:after {
-    position: absolute;
-    left: -2px;
-    top: -2px;
-    content: "";
-    border-top: 70px solid white;
-    border-right: 70px solid transparent;
   }
 
   .panel {
