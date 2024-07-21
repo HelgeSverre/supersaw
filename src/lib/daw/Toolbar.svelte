@@ -106,6 +106,7 @@
             { value: "sampler", label: "Sampler" },
             { value: "tracker", label: "Tracker" },
             { value: "wavetable", label: "Wavetable" },
+            { value: "virus", label: "Access Virus C" },
           ]}
         />
       </SegmentGroup>

@@ -14,6 +14,7 @@
   import Fader2 from "./Fader2.svelte";
   import Encoder from "./Encoder.svelte";
   import EQ from "../daw/EQ.svelte";
+  import LCD from "./LCD.svelte";
 
   let knobValue = 30;
   let knobValue2 = 0;
@@ -130,6 +131,10 @@
 
         <div>
           <ADSR attack={0.05} decay={0.1} sustain={0.7} release={0.3} />
+        </div>
+
+        <div>
+          <LCD />
         </div>
       </div>
     </div>

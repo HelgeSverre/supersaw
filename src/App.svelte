@@ -33,6 +33,7 @@
   import TR707 from "./lib/daw/instruments/TR707.svelte";
   import Tracker from "./lib/daw/instruments/Tracker.svelte";
   import Wavetable from "./lib/daw/instruments/Wavetable.svelte";
+  import AccessVirus from "./lib/daw/instruments/AccessVirus.svelte";
 
   let instrumentDialog;
   let synthDialog;
@@ -174,6 +175,10 @@
           <div>
             <Blofeld />
           </div>
+        {:else if $currentView === "virus"}
+          <section class="flex h-full flex-1 grow items-center justify-center">
+            <AccessVirus />
+          </section>
         {:else if $currentView === "piano"}
           <section class="flex h-full flex-1 grow items-center justify-center">
             <Piano />
