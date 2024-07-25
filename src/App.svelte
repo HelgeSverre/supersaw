@@ -33,7 +33,7 @@
   import TR707 from "./lib/daw/instruments/TR707.svelte";
   import Tracker from "./lib/daw/instruments/Tracker.svelte";
   import Wavetable from "./lib/daw/instruments/Wavetable.svelte";
-  import AccessVirus from "./lib/daw/instruments/AccessVirus.svelte";
+  import AccessVirus from "./lib/daw/instruments/virus/AccessVirus.svelte";
 
   let instrumentDialog;
   let synthDialog;

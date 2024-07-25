@@ -1,33 +1,44 @@
 <script>
-  import { onMount, tick } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
+  import classNames from "classnames";
 
+  export let on = false;
   export let columns = 16;
   export let rows = 2;
-
-  export let line1 = "";
-  export let line2 = "";
-  export let speed = 100;
+  export let lines = [];
+  export let speed = 500;
   export let delay = 1000;
-  export let delayEveryLoop = true;
+  export let pauseAtCycleEnd = false;
+  export let alternate = false;
 
-  let displayLine1 = "";
-  let displayLine2 = "";
+  $: _lines = typeof lines === "string" ? [lines] : lines;
+  $: rows = Math.max(rows, _lines.length);
 
-  let offset1 = 0;
-  let offset2 = 0;
+  let displayLines = [];
+  let offsets = [];
   let isScrolling = false;
   let initialDelay = true;
+  let scrollDirections = [];
 
-  $: wrappedLine1 = line1 + " ".repeat(columns) + line1;
-  $: wrappedLine2 = line2 + " ".repeat(columns) + line2;
+  $: paddedLines = _lines.map((line) =>
+    line.length <= columns ? line.padEnd(columns, " ") : line + " ".repeat(columns) + line.slice(0, columns),
+  );
+
+  $: totalLengths = paddedLines.map((line) => Math.max(line.length - columns, 0));
 
   $: {
-    displayLine1 = wrappedLine1.slice(offset1, offset1 + columns);
-    displayLine2 = wrappedLine2.slice(offset2, offset2 + columns);
+    displayLines = paddedLines.map((line, i) =>
+      line.slice(offsets[i] || 0, (offsets[i] || 0) + columns).padEnd(columns, " "),
+    );
+  }
+
+  $: {
+    offsets = _lines.map(() => 0);
+    scrollDirections = _lines.map(() => 1);
   }
 
   async function startScrolling() {
-    if (initialDelay || delayEveryLoop) {
+    if (initialDelay || pauseAtCycleEnd) {
       isScrolling = false;
       await new Promise((resolve) => setTimeout(resolve, delay));
       initialDelay = false;
@@ -38,42 +49,227 @@
   async function advanceText() {
     if (!isScrolling) return;
 
-    if (line1.length > columns) {
-      offset1 = (offset1 + 1) % (line1.length + columns);
-      if (offset1 === 0 && delayEveryLoop) await startScrolling();
-    }
-    if (line2.length > columns) {
-      offset2 = (offset2 + 1) % (line2.length + columns);
-      if (offset2 === 0 && delayEveryLoop) await startScrolling();
-    }
+    _lines.forEach((line, i) => {
+      if (line.length > columns) {
+        if (alternate) {
+          offsets[i] += scrollDirections[i];
+          if (offsets[i] <= 0 || offsets[i] >= totalLengths[i]) {
+            scrollDirections[i] *= -1;
+            startScrolling();
+          }
+        } else {
+          offsets[i] = (offsets[i] + 1) % totalLengths[i];
+          if (offsets[i] === 0 && pauseAtCycleEnd) startScrolling();
+        }
+      }
+    });
+
     await tick();
   }
 
-  onMount(async () => {
+  let intervalId;
+
+  async function start() {
     await startScrolling();
-    const intervalId = setInterval(advanceText, speed);
-    return () => clearInterval(intervalId);
+    intervalId = setInterval(advanceText, speed);
+  }
+
+  onDestroy(() => clearInterval(intervalId));
+
+  onMount(() => {
+    start();
   });
+
+  // ------------------------------------------------
+
+  const blockChars = ["░", "▒", "▓", "█", "▄", "▀", "■"];
+
+  function generateRandomString(length) {
+    return Array(length)
+      .fill()
+      .map(() => blockChars[Math.floor(Math.random() * blockChars.length)])
+      .join("");
+  }
+
+  async function showProgressAnimation(duration = 5000) {
+    let length = 0;
+    const progressChars = ["▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"];
+
+    for (let i = 0; i < duration / 100; i++) {
+      const progress = progressChars[length % progressChars.length].repeat(columns);
+      lines = [progress];
+      length = (length + 1) % columns;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    lines = ["Complete!"];
+  }
+
+  function snapshot() {
+    const backup = [...lines];
+
+    return () => (lines = backup);
+  }
+
+  async function showBouncingBall(cycles = 3, interval = 80) {
+    const restore = snapshot();
+    let position = 0;
+    let direction = 1;
+    const maxPosition = columns - 1;
+    const duration = interval * maxPosition * 2 * cycles + 1;
+
+    for (let i = 0; i < duration / interval; i++) {
+      let line = Array(columns).fill(" ");
+      if (position === 0) {
+        line[position] = "@"; // hit wall
+      } else if (position === 1) {
+        line[position] = "ø"; // before wall
+      } else if (position === maxPosition - 1) {
+        line[position] = "ø"; // before wall
+      } else if (position === maxPosition) {
+        line[position] = "@"; // hit wall
+      } else {
+        line[position] = "●"; // normal
+      }
+
+      lines = [line.join("")];
+
+      position += direction;
+      if (position === 0 || position === maxPosition) {
+        direction *= -1;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+
+    restore();
+  }
+
+  async function wakkaWakka(cycles = 3, interval = 200) {
+    const restore = snapshot();
+    let position = 0;
+    let direction = 1;
+    const maxPosition = columns - 1;
+    const duration = interval * maxPosition * 2 * cycles + 1;
+
+    for (let i = 0; i < duration / interval; i++) {
+      let line = Array(columns).fill(" ");
+
+      if (direction === 1) {
+        line[position + (2 % columns)] = "°";
+      } else {
+        line[position - (2 % columns)] = "°";
+      }
+
+      line[position] = direction === -1 ? "ᗤ" : "ᗧ";
+
+      lines = [line.join("")];
+
+      position += direction;
+
+      if (position === 0 || position === maxPosition) {
+        direction *= -1;
+      }
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+
+    restore();
+  }
+
+  async function spin(cycles = 3, interval = 100) {
+    const restore = snapshot();
+
+    const sequence = "◴◵◶◷◴◵◶◷".split("");
+    let step = 0;
+
+    for (let i = 0; i < cycles * sequence.length; i++) {
+      lines[0] = [sequence[step % sequence.length], " ".repeat(columns - 2), sequence[step % sequence.length]].join("");
+      lines[1] = "";
+
+      step++;
+
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+
+    restore();
+  }
+
+  async function spin2(cycles = 3, interval = 200) {
+    const restore = snapshot();
+
+    const sequence = "◜◝◞◟◠◡◜◝◞◟◦".split("");
+    let step = 0;
+
+    for (let i = 0; i < cycles * sequence.length; i++) {
+      const char = sequence[step % sequence.length];
+      lines[0] = [char.repeat(columns)].join("");
+      lines[1] = "";
+
+      step++;
+
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+
+    restore();
+  }
+
+  async function doop(cycles = 10, interval = 150) {
+    const restore = snapshot();
+    // const wave = "▁▂▃▄▅▆▇█▇▆▅▄▃▂▁".split("");
+
+    // const sequence = "◦◌◯○●".split("");
+    const sequence = "●◯○●◞◟◜◝◞◟◜◝◦◌◦◌◡◠◡◠⊂⊃⊂⊃⊂⊃◞◟◜◝◞◟◜◝◦◌◦◌◡◠◡◠⊂⊃⊂⊃⊂⊃".split("");
+    // const sequence = "◦◌◯○●□◇△☆✚■◆▲★✜_,.-:;".split("");
+
+    let step = 0;
+
+    for (let i = 0; i < cycles * sequence.length; i++) {
+      let a = sequence[step % sequence.length];
+      let b = sequence[(step + 1) % sequence.length];
+      let c = sequence[(step + 2) % sequence.length];
+
+      lines[0] = [a, b, c].join("").repeat(columns).slice(0, columns);
+      lines[1] = [b, c, a].join("").repeat(columns).slice(0, columns);
+      lines[2] = [a, b, c].join("").repeat(columns).slice(0, columns);
+
+      step++;
+
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+
+    restore();
+  }
+
+  async function showGeometricPattern(duration = 10000) {
+    const patterns = ["■□■□■□■□", "□■□■□■□■", "▄▀▄▀▄▀▄▀", "▀▄▀▄▀▄▀▄", "▌▐▌▐▌▐▌▐", "▐▌▐▌▐▌▐▌"];
+    const interval = 200; // 200ms between frames
+
+    for (let i = 0; i < duration / interval; i++) {
+      const pattern = patterns[i % patterns.length];
+      lines = [pattern.repeat(Math.ceil(columns / pattern.length)).slice(0, columns)];
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+  }
+
+  // ------------------------------------------------
 </script>
 
 <div
   style="--text-columns: {columns}; --text-rows: {rows};"
-  class="lcd-panel relative w-80 overflow-hidden rounded-sm bg-gray-900 p-1 ring-1 ring-black/50"
+  class={classNames("lcd-panel relative max-w-80 overflow-hidden rounded-sm bg-gray-900 p-1 ring-1 ring-black/50", {
+    "panel-off": on === false,
+    "panel-on": on === true,
+  })}
 >
   <div class="lcd-panel-screen relative rounded-sm bg-black p-2 shadow-lg shadow-red-100/10">
     <!-- LCD Display -->
     <div class="pulsate lcd-grid relative z-10 text-sm text-red-600">
-      <!-- First row -->
-      {#each displayLine1.split("") as char, i}
-        <div class="lcd-character text-center font-medium">
-          {char}
-        </div>
-      {/each}
-      <!-- Second row -->
-      {#each displayLine2.split("") as char, i}
-        <div class="lcd-character text-center font-medium">
-          {char}
-        </div>
+      {#each Array(rows) as _, rowIndex}
+        {#each Array(columns) as _, colIndex}
+          <div class="lcd-character text-center font-medium">
+            {displayLines[rowIndex]?.[colIndex] || " "}
+          </div>
+        {/each}
       {/each}
     </div>
     <!-- Glow effect -->
@@ -100,6 +296,10 @@
     animation: pulsate 84ms ease-in-out infinite;
   }
 
+  .panel-off .lcd-character {
+    visibility: hidden;
+  }
+
   .lcd-grid::before {
     content: "";
     position: absolute;
@@ -121,8 +321,14 @@
 
   .lcd-character {
     font-family: "Pathway Extreme", "Helvetica Neue", "Helvetica", sans-serif;
-    aspect-ratio: minmax(1 / 1.3, 1);
     background-color: rgba(80, 0, 0, 0.45);
+    aspect-ratio: 3/4;
+    width: 100%;
+    height: 100%;
+      overflow: hidden;
+
+    white-space: nowrap;
+
     text-shadow:
       0 0 1px rgba(200, 0, 0, 0.1),
       0 0 4px rgba(180, 0, 0, 0.15),
