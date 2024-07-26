@@ -273,7 +273,7 @@
                   </div>
                 </div>
               </Panel>
-              <div>
+              <div class="w-full">
                 <div class="flex h-full w-full items-center justify-center bg-black p-2">
                   <div class="max-w-60">
                     <LCD
@@ -283,6 +283,55 @@
                       columns={18}
                       rows={2}
                     />
+                  </div>
+
+                  <div class="ml-auto flex flex-col gap-2">
+                    <div class="flex flex-col items-center justify-center gap-1">
+                      <div class="ml-auto flex flex-row items-end justify-center gap-0.5">
+                        <div class="flex flex-col items-center gap-1">
+                          <VirusButton />
+                        </div>
+                        <div class="flex flex-col items-center gap-1">
+                          <VirusButton />
+                        </div>
+                      </div>
+
+                      <div class="flex flex-col items-center">
+                        <span class="label">PART</span>
+                        <span class="label !text-[6px]">DEMO</span>
+                      </div>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center gap-1">
+                      <div class="ml-auto flex flex-row items-end justify-center gap-0.5">
+                        <div class="flex flex-col items-center gap-1">
+                          <VirusButton />
+                        </div>
+                        <div class="flex flex-col items-center gap-1">
+                          <VirusButton />
+                        </div>
+                      </div>
+                      <div class="flex flex-col items-center">
+                        <span class="label leading-none">PARAMETER</span>
+                        <span class="label !text-[6px] leading-none">BANK</span>
+                      </div>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center gap-1">
+                      <div class="ml-auto flex flex-row items-end justify-center gap-0.5">
+                        <div class="flex flex-col items-center gap-1">
+                          <VirusButton />
+                        </div>
+                        <div class="flex flex-col items-center gap-1">
+                          <VirusButton />
+                        </div>
+                      </div>
+
+                      <div class="flex flex-col items-center">
+                        <span class="label leading-none">VALUE</span>
+                        <span class="label !text-[6px] leading-none">PROGRAM</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

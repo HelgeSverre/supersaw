@@ -6,7 +6,7 @@
     .knob {
         --knob-color: #5e5c5d;
         --knob-color-border: #575556;
-        --knob-size: 1.5rem;
+        --knob-size: 1.8rem;
     }
 
     .knob {
