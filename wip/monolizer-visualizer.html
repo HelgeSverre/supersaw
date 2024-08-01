@@ -72,6 +72,21 @@
           <input type="range" id="mix" min="0" max="100" value="100" />
         </div>
       </div>
+
+      <button
+        id="stop"
+        style="
+          margin-top: 20px;
+          cursor: pointer;
+          background-color: #ff5f5f;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 5px;
+        "
+      >
+        stop the noise
+      </button>
     </div>
 
     <script>
@@ -122,7 +137,7 @@
       ctx.scale(SCALE_FACTOR, SCALE_FACTOR);
 
       function init() {
-        // createSoundGenerator();
+        createSoundGenerator();
 
         // Set initial values for the controls
         document.getElementById("freq").value = freq;
@@ -146,13 +161,14 @@
         animate();
       }
 
-      function createSoundGenerator() {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
+      const createOscillator = (type, frequency) => {
         const oscillator = audioCtx.createOscillator();
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // initial frequency
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime); // initial frequency
+        return oscillator;
+      };
 
+      const createNoise = () => {
         const noise = audioCtx.createBufferSource();
         const bufferSize = audioCtx.sampleRate * 2;
         const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -164,26 +180,148 @@
 
         noise.buffer = noiseBuffer;
         noise.loop = true;
+        return noise;
+      };
+
+      function createSoundGenerator() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         const gainNode = audioCtx.createGain();
-        gainNode.gain.value = 0.05; // very low volume
+        gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
 
-        oscillator.connect(gainNode);
+        // Create a lowpass filter node
+        const lowpassFilter = audioCtx.createBiquadFilter();
+        lowpassFilter.type = "lowpass";
+        lowpassFilter.frequency.setValueAtTime(2000, audioCtx.currentTime);
+
+        // Create a panner node
+        const panner = audioCtx.createStereoPanner();
+        panner.pan.setValueAtTime(0, audioCtx.currentTime);
+
+        const oscillators = [
+          createOscillator("square", 1000),
+          createOscillator("square", 500),
+          createOscillator("square", 250),
+        ];
+
+        const noise = createNoise();
+
+        oscillators.forEach((osc) => osc.connect(gainNode));
         noise.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+        gainNode.connect(lowpassFilter);
+        lowpassFilter.connect(panner);
+        panner.connect(audioCtx.destination);
 
-        analyzerNode = audioCtx.createAnalyser();
+        const analyzerNode = audioCtx.createAnalyser();
         analyzerNode.fftSize = 256;
-        bufferLength = analyzerNode.frequencyBinCount;
+        const bufferLength = analyzerNode.frequencyBinCount;
         dataArray = new Uint8Array(bufferLength);
 
-        gainNode.connect(analyzerNode);
+        panner.connect(analyzerNode);
 
-        oscillator.start();
+        console.log("Audio context created");
+
+        oscillators.forEach((osc) => osc.start());
         noise.start();
+
+        // Randomize the oscillator frequency every second
+        setInterval(() => {
+          const notes = [
+            261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 1046.5, 1108.73, 1174.66, 1244.51, 1318.51,
+            1479.98, 1567.98, 1661.22, 1760.0, 1864.66, 1975.53,
+          ];
+
+          oscillators.forEach((osc) => {
+            const randomNote = notes[Math.floor(Math.random() * notes.length)];
+            osc.frequency.setValueAtTime(randomNote, audioCtx.currentTime);
+          });
+        }, 400);
+
+        setInterval(() => {
+          const freqs = [
+            1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700,
+            2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200, 4300, 4400, 4500,
+            4600, 4700, 4800, 4900, 5000, 5100, 5200, 5300, 5400, 5500, 5600, 5700, 5800, 5900, 6000, 6100, 6200, 6300,
+            6400, 6500, 6600, 6700, 6800, 6900, 7000, 7100, 7200, 7300, 7400, 7500, 7600, 7700, 7800, 7900, 8000, 8100,
+          ];
+          const randomHz = freqs[Math.floor(Math.random() * freqs.length)];
+          lowpassFilter.frequency.linearRampToValueAtTime(randomHz, audioCtx.currentTime + 0.5);
+        }, 50);
+
+        setInterval(() => {
+          const randomPan = Math.random() * 2 - 1;
+          panner.pan.setValueAtTime(randomPan + -0.01, audioCtx.currentTime);
+        }, 500);
+
+        // audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        //
+        // const oscillator = audioCtx.createOscillator();
+        // oscillator.type = "sawtooth";
+        // oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // initial frequency
+        //
+        // const noise = audioCtx.createBufferSource();
+        // const bufferSize = audioCtx.sampleRate * 2;
+        // const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        // const output = noiseBuffer.getChannelData(0);
+        //
+        // for (let i = 0; i < bufferSize; i++) {
+        //   output[i] = Math.random() * 2 - 1;
+        // }
+        //
+        // noise.buffer = noiseBuffer;
+        // noise.loop = true;
+        //
+        // const gainNode = audioCtx.createGain();
+        // gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
+        //
+        // // Create a lowpass filter node
+        // const lowpassFilter = audioCtx.createBiquadFilter();
+        // lowpassFilter.type = "lowpass";
+        // lowpassFilter.frequency.setValueAtTime(2000, audioCtx.currentTime);
+        //
+        // oscillator.connect(gainNode);
+        // noise.connect(gainNode);
+        // gainNode.connect(lowpassFilter);
+        // lowpassFilter.connect(audioCtx.destination);
+        //
+        // analyzerNode = audioCtx.createAnalyser();
+        // analyzerNode.fftSize = 256;
+        // bufferLength = analyzerNode.frequencyBinCount;
+        // dataArray = new Uint8Array(bufferLength);
+        //
+        // lowpassFilter.connect(analyzerNode);
+        //
+        // console.log("Audio context created");
+        // oscillator.start();
+        // noise.start();
+        //
+        // // Randomize the oscillator frequency every second
+        // setInterval(() => {
+        //   const notes = [
+        //     261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 1046.5, 1108.73, 1174.66, 1244.51, 1318.51,
+        //     1479.98, 1567.98, 1661.22, 1760.0, 1864.66, 1975.53,
+        //   ];
+        //
+        //   const randomNote = notes[Math.floor(Math.random() * notes.length)];
+        //   oscillator.frequency.setValueAtTime(randomNote, audioCtx.currentTime);
+        //   // oscillator.frequency.setValueAtTime(Math.random() * 1000 + 200, audioCtx.currentTime);
+        // }, 400);
+        // setInterval(() => {
+        //   const freqs = [
+        //     1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700,
+        //     2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200, 4300, 4400, 4500,
+        //     4600, 4700, 4800, 4900, 5000, 5100, 5200, 5300, 5400, 5500, 5600, 5700, 5800, 5900, 6000, 6100, 6200, 6300,
+        //     6400, 6500, 6600, 6700, 6800, 6900, 7000, 7100, 7200, 7300, 7400, 7500, 7600, 7700, 7800, 7900, 8000, 8100,
+        //   ];
+        //   const randomHz = freqs[Math.floor(Math.random() * freqs.length)];
+        //   lowpassFilter.frequency.linearRampToValueAtTime(randomHz, audioCtx.currentTime + 0.5);
+        // }, 100);
       }
 
       function drawStereoSpectrum() {
+        if (!analyzerNode) return;
+        if (!dataArray) return;
+
         analyzerNode.getByteFrequencyData(dataArray);
 
         const barWidth = (SCALED_WIDTH / bufferLength) * 2.5;
@@ -249,7 +387,7 @@
 
         bands.forEach((band) => {
           // Skip bands that are not shown
-          if (band.show == false) return;
+          if (band.show === false) return;
 
           ctx.save();
           const fromX = toCanvasX(band.from);
@@ -315,7 +453,7 @@
             const centerY = SCALED_HEIGHT / 2;
             p.y = centerY + (p.y - centerY) * (1 - kneeEffect) * 0.2;
             size *= 1 - kneeEffect * 0.5;
-            p.speedY *= 1 * kneeEffect;
+            p.speedY *= kneeEffect;
           }
 
           // Draw particle circle
@@ -390,7 +528,14 @@
         document.getElementById("mixValue").textContent = mix;
       });
 
-      init();
+      document.addEventListener("mousemove", init, { once: true });
+      document.addEventListener("mousemove", () => {
+        if (audioCtx) audioCtx.resume();
+      });
+
+      document.getElementById("stop").addEventListener("click", () => {
+        audioCtx.close();
+      });
     </script>
   </body>
 </html>
