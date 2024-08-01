@@ -4,89 +4,237 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Monolizer - Advanced 2D Visualization</title>
+
     <style>
+      :root {
+        /* Light mode colors */
+        --background-color: #e1e5e6;
+        --text-color: #000;
+        --plugin-bg-color: #e0e0e0;
+        --box-shadow-color1: #bebebe;
+        --box-shadow-color2: #ffffff;
+        --logo-color: #2a2a2a;
+        --visualizer-inset-shadow1: #bebebe;
+        --visualizer-inset-shadow2: #ffffff;
+        --knob-bg-color: #e0e0e0;
+        --knob-center-color: #00a7b6;
+        --action-color: #ec5e6c;
+        --value-color: #555;
+        --footer-color: #777;
+      }
+
+      [data-theme="dark"] {
+        /* Dark mode colors */
+        --background-color: #121212;
+        --text-color: white;
+        --plugin-bg-color: #1e1e1e;
+        --box-shadow-color1: #0f0f0f;
+        --box-shadow-color2: #151515;
+        --logo-color: #f0f0f0;
+        --visualizer-inset-shadow1: #0f0f0f;
+        --visualizer-inset-shadow2: #151515;
+        --knob-bg-color: #2e2e2e;
+        --knob-center-color: #5ff2ff;
+        --action-color: #ec5e6c;
+        --value-color: #cccccc;
+        --footer-color: #999;
+      }
+
       body {
-        font-family: Arial, sans-serif;
+        font-family: "Helvetica Neue", Helvetica, Inter, system-ui, Avenir, Arial, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
         margin: 0;
-        background-color: #1a1a1a;
-        color: #ffffff;
+        user-select: none;
       }
 
       .plugin-container {
-        background-color: #2a2a2a;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        position: relative;
+        background-color: var(--plugin-bg-color);
+        width: 600px;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow:
+          20px 20px 60px var(--box-shadow-color1),
+          -20px -20px 60px var(--box-shadow-color2);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .logo {
+        font-size: 2em;
+        font-weight: bold;
+        color: var(--logo-color);
       }
 
       .visualizer-container {
         position: relative;
-        width: 800px;
-        height: 400px;
+        margin-top: 20px;
         margin-bottom: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow:
+          inset 5px 5px 10px var(--visualizer-inset-shadow1),
+          inset -5px -5px 10px var(--visualizer-inset-shadow2);
       }
 
-      canvas {
-        border: 1px solid lightgreen;
+      #visualizer {
+        background-color: #111;
         width: 100%;
-        height: 100%;
       }
 
       .controls {
         display: flex;
-        justify-content: space-between;
+        justify-content: space-around;
+        align-items: flex-start;
+      }
+
+      .knob-container {
+        text-align: center;
+      }
+
+      .knob-wrapper {
+        position: relative;
+        border-radius: 50%;
+        overflow: hidden;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 10px;
+        box-shadow:
+          10px 10px 20px var(--box-shadow-color1),
+          -10px -10px 20px var(--box-shadow-color2);
+      }
+
+      .knob {
+        width: 100px;
+        height: 100px;
+        background-color: var(--knob-bg-color);
+        border-radius: 50%;
+        position: relative;
+        cursor: pointer;
+      }
+
+      .knob::after {
+        content: "";
+        position: absolute;
+        top: 1px;
+        left: 50%;
+        width: 6px;
+        height: 30px;
+        background-color: var(--knob-center-color);
+        border-radius: 6px;
+        transform: translateX(-50%);
+      }
+
+      .knob-label {
+        font-size: 1em;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .value {
+        font-size: 0.9em;
+        color: var(--value-color);
+      }
+
+      .footer {
         margin-top: 20px;
+        text-align: center;
+        font-size: 0.8em;
+        color: var(--footer-color);
       }
 
-      .control {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+      #toggle-theme {
+        position: fixed;
+        top: 20px;
+        right: 20px;
       }
 
-      input[type="range"] {
-        width: 150px;
+      #stop {
+        font-weight: bold;
+        color: var(--background-color);
+        background: #ec5e6c;
+        text-transform: uppercase;
+      }
+
+      .button {
+        color: var(--text-color);
+        border: none;
+        font-size: 14px;
+        padding: 10px 20px;
+        border-radius: 6px;
+        background: var(--plugin-bg-color);
+        box-shadow:
+          20px 20px 60px var(--box-shadow-color1),
+          -20px -20px 60px var(--box-shadow-color2);
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
+    <button id="toggle-theme" class="button">Theme: <span style="font-weight: bold"></span></button>
+
+    <script>
+      document.getElementById("toggle-theme").addEventListener("click", swapTheme);
+
+      function swapTheme() {
+        const themes = ["light", "dark"];
+
+        const currentIndex = themes.indexOf(document.body.dataset.theme);
+        const nextIndex = (currentIndex + 1) % themes.length;
+        document.body.dataset.theme = themes[nextIndex];
+
+        document.getElementById("toggle-theme").querySelector("span").textContent = document.body.dataset.theme;
+      }
+
+      swapTheme();
+    </script>
+
     <div class="plugin-container">
+      <div class="header">
+        <div class="logo">Monolizer</div>
+      </div>
       <div class="visualizer-container">
         <canvas id="visualizer" width="1800" height="1400"></canvas>
       </div>
       <div class="controls">
-        <div class="control">
-          <label for="freq"> Frequency: <span id="freqValue">1000</span> Hz </label>
-          <input type="range" id="freq" min="20" max="10000" value="1000" />
+        <div class="knob-container">
+          <div class="knob-wrapper">
+            <div class="knob" id="freqKnob"></div>
+          </div>
+
+          <div class="knob-label">FREQ</div>
+          <div class="value" id="freqValue">300 Hz</div>
         </div>
-        <div class="control">
-          <label for="knee"> Knee: <span id="kneeValue">0.5</span> </label>
-          <input type="range" id="knee" min="0" max="1" step="0.01" value="0.5" />
+        <div class="knob-container">
+          <div class="knob-wrapper">
+            <div class="knob" id="kneeKnob"></div>
+          </div>
+
+          <div class="knob-label">KNEE</div>
+          <div class="value" id="kneeValue">0.5</div>
         </div>
-        <div class="control">
-          <label for="mix"> Mix: <span id="mixValue">100</span>% </label>
-          <input type="range" id="mix" min="0" max="100" value="100" />
+        <div class="knob-container">
+          <div class="knob-wrapper">
+            <div class="knob" id="mixKnob"></div>
+          </div>
+
+          <div class="knob-label">MIX</div>
+          <div class="value" id="mixValue">100%</div>
         </div>
       </div>
 
-      <button
-        id="stop"
-        style="
-          margin-top: 20px;
-          cursor: pointer;
-          background-color: #ff5f5f;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 5px;
-        "
-      >
-        stop the noise
-      </button>
+      <div style="margin: 20px auto; display: flex; align-items: center; justify-content: center">
+        <button id="stop" class="button button-red">Panic!</button>
+      </div>
+      <div class="footer">Monolizer v1.0 - Turn your bass mono!</div>
     </div>
 
     <script>
@@ -113,7 +261,7 @@
       const PARTICLE_SIZE = 2;
 
       // Stereo width lines
-      const STEREO_MARGIN = 60;
+      const STEREO_MARGIN = 20;
       const BAND_SPACING = 0;
 
       const MIN_FREQ = 20;
@@ -138,16 +286,6 @@
 
       function init() {
         createSoundGenerator();
-
-        // Set initial values for the controls
-        document.getElementById("freq").value = freq;
-        document.getElementById("knee").value = knee;
-        document.getElementById("mix").value = mix;
-
-        // Labels
-        document.getElementById("freqValue").textContent = Math.round(freq);
-        document.getElementById("kneeValue").textContent = knee.toFixed(2);
-        document.getElementById("mixValue").textContent = mix;
 
         for (let i = 0; i < 1000; i++) {
           particles.push({
@@ -192,7 +330,7 @@
         // Create a lowpass filter node
         const lowpassFilter = audioCtx.createBiquadFilter();
         lowpassFilter.type = "lowpass";
-        lowpassFilter.frequency.setValueAtTime(2000, audioCtx.currentTime);
+        lowpassFilter.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
         // Create a panner node
         const panner = audioCtx.createStereoPanner();
@@ -210,14 +348,26 @@
         noise.connect(gainNode);
         gainNode.connect(lowpassFilter);
         lowpassFilter.connect(panner);
-        panner.connect(audioCtx.destination);
 
-        const analyzerNode = audioCtx.createAnalyser();
-        analyzerNode.fftSize = 256;
-        const bufferLength = analyzerNode.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLength);
+        // Split the audio signal
+        splitter = audioCtx.createChannelSplitter(2);
+        panner.connect(splitter);
 
-        panner.connect(analyzerNode);
+        // Create analyzers for left and right channels
+        analyserLeft = audioCtx.createAnalyser();
+        analyserRight = audioCtx.createAnalyser();
+        analyserLeft.fftSize = 2048;
+        analyserRight.fftSize = 2048;
+
+        bufferLength = analyserLeft.fftSize;
+        dataArrayLeft = new Uint8Array(bufferLength);
+        dataArrayRight = new Uint8Array(bufferLength);
+
+        splitter.connect(analyserLeft, 0);
+        splitter.connect(analyserRight, 1);
+
+        // Connect to the destination
+        splitter.connect(audioCtx.destination);
 
         console.log("Audio context created");
 
@@ -252,91 +402,31 @@
           const randomPan = Math.random() * 2 - 1;
           panner.pan.setValueAtTime(randomPan + -0.01, audioCtx.currentTime);
         }, 500);
-
-        // audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        //
-        // const oscillator = audioCtx.createOscillator();
-        // oscillator.type = "sawtooth";
-        // oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // initial frequency
-        //
-        // const noise = audioCtx.createBufferSource();
-        // const bufferSize = audioCtx.sampleRate * 2;
-        // const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        // const output = noiseBuffer.getChannelData(0);
-        //
-        // for (let i = 0; i < bufferSize; i++) {
-        //   output[i] = Math.random() * 2 - 1;
-        // }
-        //
-        // noise.buffer = noiseBuffer;
-        // noise.loop = true;
-        //
-        // const gainNode = audioCtx.createGain();
-        // gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
-        //
-        // // Create a lowpass filter node
-        // const lowpassFilter = audioCtx.createBiquadFilter();
-        // lowpassFilter.type = "lowpass";
-        // lowpassFilter.frequency.setValueAtTime(2000, audioCtx.currentTime);
-        //
-        // oscillator.connect(gainNode);
-        // noise.connect(gainNode);
-        // gainNode.connect(lowpassFilter);
-        // lowpassFilter.connect(audioCtx.destination);
-        //
-        // analyzerNode = audioCtx.createAnalyser();
-        // analyzerNode.fftSize = 256;
-        // bufferLength = analyzerNode.frequencyBinCount;
-        // dataArray = new Uint8Array(bufferLength);
-        //
-        // lowpassFilter.connect(analyzerNode);
-        //
-        // console.log("Audio context created");
-        // oscillator.start();
-        // noise.start();
-        //
-        // // Randomize the oscillator frequency every second
-        // setInterval(() => {
-        //   const notes = [
-        //     261.63, 293.66, 329.63, 349.23, 392.0, 440.0, 493.88, 523.25, 1046.5, 1108.73, 1174.66, 1244.51, 1318.51,
-        //     1479.98, 1567.98, 1661.22, 1760.0, 1864.66, 1975.53,
-        //   ];
-        //
-        //   const randomNote = notes[Math.floor(Math.random() * notes.length)];
-        //   oscillator.frequency.setValueAtTime(randomNote, audioCtx.currentTime);
-        //   // oscillator.frequency.setValueAtTime(Math.random() * 1000 + 200, audioCtx.currentTime);
-        // }, 400);
-        // setInterval(() => {
-        //   const freqs = [
-        //     1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700,
-        //     2800, 2900, 3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000, 4100, 4200, 4300, 4400, 4500,
-        //     4600, 4700, 4800, 4900, 5000, 5100, 5200, 5300, 5400, 5500, 5600, 5700, 5800, 5900, 6000, 6100, 6200, 6300,
-        //     6400, 6500, 6600, 6700, 6800, 6900, 7000, 7100, 7200, 7300, 7400, 7500, 7600, 7700, 7800, 7900, 8000, 8100,
-        //   ];
-        //   const randomHz = freqs[Math.floor(Math.random() * freqs.length)];
-        //   lowpassFilter.frequency.linearRampToValueAtTime(randomHz, audioCtx.currentTime + 0.5);
-        // }, 100);
       }
 
       function drawStereoSpectrum() {
-        if (!analyzerNode) return;
-        if (!dataArray) return;
+        ctx.save();
+        analyserLeft.getByteTimeDomainData(dataArrayLeft);
+        analyserRight.getByteTimeDomainData(dataArrayRight);
 
-        analyzerNode.getByteFrequencyData(dataArray);
+        ctx.clearRect(0, 0, SCALED_WIDTH, SCALED_HEIGHT);
 
-        const barWidth = (SCALED_WIDTH / bufferLength) * 2.5;
-        let barHeight;
-        let x = 0;
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
 
+        ctx.beginPath();
         for (let i = 0; i < bufferLength; i++) {
-          barHeight = dataArray[i] / 2;
+          const x = ((dataArrayLeft[i] / 128.0) * SCALED_WIDTH) / 2;
+          const y = ((dataArrayRight[i] / 128.0) * SCALED_HEIGHT) / 2;
 
-          // color: #5ff2ff
-          ctx.fillStyle = `rgba(95, 242, 255, ${mix / 100})`;
-          ctx.fillRect(x, SCALED_HEIGHT - barHeight / 2, barWidth, barHeight);
-
-          x += barWidth + 1;
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
         }
+        ctx.stroke();
+        ctx.restore();
       }
 
       function animate() {
@@ -386,6 +476,7 @@
         ];
 
         bands.forEach((band) => {
+          // return; // TODO: disable
           // Skip bands that are not shown
           if (band.show === false) return;
 
@@ -478,7 +569,7 @@
         const cutoffX = toCanvasX(freq);
 
         // Draw cutoff line
-        ctx.strokeStyle = "#ff5f5f";
+        ctx.strokeStyle = "var(--action-color)";
         ctx.beginPath();
         ctx.moveTo(cutoffX, STEREO_MARGIN);
         ctx.lineTo(cutoffX, SCALED_HEIGHT - STEREO_MARGIN);
@@ -491,10 +582,10 @@
         const controlPointY = SCALED_HEIGHT / 2;
 
         // debug, draw control point
-        ctx.fillStyle = "#bf5fff";
-        ctx.fillRect(controlPointX - 8, controlPointY - 8, 16, 16);
+        // ctx.fillStyle = "#bf5fff";
+        // ctx.fillRect(controlPointX - 8, controlPointY - 8, 16, 16);
 
-        ctx.strokeStyle = "rgba(255, 95, 95, 0.5)";
+        ctx.strokeStyle = "rgba(95, 242, 255, 0.5)";
         ctx.beginPath();
         ctx.moveTo(Math.max(0, cutoffX - kneeWidth), SCALED_HEIGHT / 2);
         ctx.quadraticCurveTo(controlPointX, controlPointY, cutoffX, STEREO_MARGIN);
@@ -513,20 +604,20 @@
         return outMin + ((value - inMin) * (outMax - outMin)) / (inMax - inMin);
       }
 
-      document.getElementById("freq").addEventListener("input", (e) => {
-        freq = parseFloat(e.target.value);
-        document.getElementById("freqValue").textContent = Math.round(freq);
-      });
-
-      document.getElementById("knee").addEventListener("input", (e) => {
-        knee = parseFloat(e.target.value);
-        document.getElementById("kneeValue").textContent = knee.toFixed(2);
-      });
-
-      document.getElementById("mix").addEventListener("input", (e) => {
-        mix = parseFloat(e.target.value);
-        document.getElementById("mixValue").textContent = mix;
-      });
+      // document.getElementById("freq").addEventListener("input", (e) => {
+      //   freq = parseFloat(e.target.value);
+      //   document.getElementById("freqValue").textContent = Math.round(freq);
+      // });
+      //
+      // document.getElementById("knee").addEventListener("input", (e) => {
+      //   knee = parseFloat(e.target.value);
+      //   document.getElementById("kneeValue").textContent = knee.toFixed(2);
+      // });
+      //
+      // document.getElementById("mix").addEventListener("input", (e) => {
+      //   mix = parseFloat(e.target.value);
+      //   document.getElementById("mixValue").textContent = mix;
+      // });
 
       document.addEventListener("mousemove", init, { once: true });
       document.addEventListener("mousemove", () => {
@@ -536,6 +627,71 @@
       document.getElementById("stop").addEventListener("click", () => {
         audioCtx.close();
       });
+
+      /// NEW STUF ---------------------------------------
+      // Knob interaction logic
+      const freqKnob = document.getElementById("freqKnob");
+      const kneeKnob = document.getElementById("kneeKnob");
+      const mixKnob = document.getElementById("mixKnob");
+      const freqValue = document.getElementById("freqValue");
+      const kneeValue = document.getElementById("kneeValue");
+      const mixValue = document.getElementById("mixValue");
+
+      function updateKnob(knob, value, maxValue) {
+        const angle = (value / maxValue) * 360 - 180;
+        knob.style.transform = `rotate(${angle}deg)`;
+      }
+
+      freqKnob.addEventListener("mousedown", function (event) {
+        document.addEventListener("mousemove", moveFreq);
+        document.addEventListener("mouseup", stopMoving);
+      });
+
+      kneeKnob.addEventListener("mousedown", function (event) {
+        document.addEventListener("mousemove", moveKnee);
+        document.addEventListener("mouseup", stopMoving);
+      });
+
+      mixKnob.addEventListener("mousedown", function (event) {
+        document.addEventListener("mousemove", moveMix);
+        document.addEventListener("mouseup", stopMoving);
+      });
+
+      function moveFreq(event) {
+        const rect = freqKnob.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+        freq = Math.max(20, Math.min(MAX_FREQ, Math.round(((angle + Math.PI) / (2 * Math.PI)) * MAX_FREQ)));
+        freqValue.textContent = `${freq} Hz`;
+        updateKnob(freqKnob, freq, MAX_FREQ);
+      }
+
+      function moveKnee(event) {
+        const rect = kneeKnob.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+        knee = Math.max(0, Math.min(1, ((angle + Math.PI) / (2 * Math.PI)).toFixed(2)));
+        kneeValue.textContent = knee;
+        updateKnob(kneeKnob, knee, 1);
+      }
+
+      function moveMix(event) {
+        const rect = mixKnob.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+        mix = Math.max(0, Math.min(100, Math.round(((angle + Math.PI) / (2 * Math.PI)) * 100)));
+        mixValue.textContent = `${mix}%`;
+        updateKnob(mixKnob, mix, 100);
+      }
+
+      function stopMoving() {
+        document.removeEventListener("mousemove", moveFreq);
+        document.removeEventListener("mousemove", moveKnee);
+        document.removeEventListener("mousemove", moveMix);
+      }
     </script>
   </body>
 </html>
