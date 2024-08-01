@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monolizer Audio Plugin</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+      :root {
+        /* Light mode colors */
+        --background-color: #e1e5e6;
+        --text-color: #000;
+        --plugin-bg-color: #e0e0e0;
+        --box-shadow-color1: #bebebe;
+        --box-shadow-color2: #ffffff;
+        --logo-color: #2a2a2a;
+        --visualizer-inset-shadow1: #bebebe;
+        --visualizer-inset-shadow2: #ffffff;
+        --knob-bg-color: #e0e0e0;
+        --knob-center-color: #00a7b6;
+        --value-color: #555;
+        --footer-color: #777;
+      }
+
+      [data-theme="dark"] {
+        /* Dark mode colors */
+        --background-color: #121212;
+        --text-color: white;
+        --plugin-bg-color: #1e1e1e;
+        --box-shadow-color1: #0f0f0f;
+        --box-shadow-color2: #151515;
+        --logo-color: #f0f0f0;
+        --visualizer-inset-shadow1: #0f0f0f;
+        --visualizer-inset-shadow2: #151515;
+        --knob-bg-color: #2e2e2e;
+        --knob-center-color: #5ff2ff;
+        --value-color: #cccccc;
+        --footer-color: #999;
+      }
+
+      body {
+        font-family: "Helvetica Neue", Helvetica, Inter, system-ui, Avenir, Arial, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        user-select: none;
+      }
+
+      .plugin-container {
+        position: relative;
+        background-color: var(--plugin-bg-color);
+        width: 600px;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow:
+          20px 20px 60px var(--box-shadow-color1),
+          -20px -20px 60px var(--box-shadow-color2);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .logo {
+        font-size: 2em;
+        font-weight: bold;
+        color: var(--logo-color);
+      }
+
+      #visualizer {
+        width: 100%;
+        height: 300px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow:
+          inset 5px 5px 10px var(--visualizer-inset-shadow1),
+          inset -5px -5px 10px var(--visualizer-inset-shadow2);
+      }
+
+      .controls {
+        display: flex;
+        justify-content: space-around;
+        align-items: flex-start;
+      }
+
+      .knob-container {
+        text-align: center;
+      }
+
+      .knob-wrapper {
+        position: relative;
+        border-radius: 50%;
+        overflow: hidden;
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 10px;
+        box-shadow:
+          10px 10px 20px var(--box-shadow-color1),
+          -10px -10px 20px var(--box-shadow-color2);
+      }
+
+      .knob {
+        width: 100px;
+        height: 100px;
+        background-color: var(--knob-bg-color);
+        border-radius: 50%;
+        position: relative;
+        cursor: pointer;
+      }
+
+      .knob::after {
+        content: "";
+        position: absolute;
+        top: 1px;
+        left: 50%;
+        width: 6px;
+        height: 30px;
+        background-color: var(--knob-center-color);
+        border-radius: 6px;
+        transform: translateX(-50%);
+      }
+
+      .knob-label {
+        font-size: 1em;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .value {
+        font-size: 0.9em;
+        color: var(--value-color);
+      }
+
+      .footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 0.8em;
+        color: var(--footer-color);
+      }
+
+      .button {
+        position: fixed;
+        color: var(--text-color);
+        border: none;
+        font-size: 14px;
+        padding: 10px 20px;
+        border-radius: 6px;
+        background: var(--plugin-bg-color);
+        box-shadow:
+          20px 20px 60px var(--box-shadow-color1),
+          -20px -20px 60px var(--box-shadow-color2);
+        cursor: pointer;
+        top: 20px;
+        right: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="toggle-theme" class="button">Theme: <span style="font-weight: bold"></span></button>
+
+    <script>
+      document.getElementById("toggle-theme").addEventListener("click", swapTheme);
+
+      function swapTheme() {
+        const themes = ["light", "dark"];
+
+        const currentIndex = themes.indexOf(document.body.dataset.theme);
+        const nextIndex = (currentIndex + 1) % themes.length;
+        document.body.dataset.theme = themes[nextIndex];
+
+        document.getElementById("toggle-theme").querySelector("span").textContent = document.body.dataset.theme;
+      }
+
+      swapTheme();
+    </script>
+
+    <div class="plugin-container">
+      <div class="header">
+        <div class="logo">Monolizer</div>
+      </div>
+      <div id="visualizer"></div>
+      <div class="controls">
+        <div class="knob-container">
+          <div class="knob-wrapper">
+            <div class="knob" id="freqKnob"></div>
+          </div>
+
+          <div class="knob-label">FREQ</div>
+          <div class="value" id="freqValue">300 Hz</div>
+        </div>
+        <div class="knob-container">
+          <div class="knob-wrapper">
+            <div class="knob" id="kneeKnob"></div>
+          </div>
+
+          <div class="knob-label">KNEE</div>
+          <div class="value" id="kneeValue">0.5</div>
+        </div>
+        <div class="knob-container">
+          <div class="knob-wrapper">
+            <div class="knob" id="mixKnob"></div>
+          </div>
+
+          <div class="knob-label">MIX</div>
+          <div class="value" id="mixValue">100%</div>
+        </div>
+      </div>
+      <div class="footer">Monolizer v1.0 - Turn your bass mono!</div>
+    </div>
+
+    <script>
+      // Three.js setup
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(1, 2, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer();
+      renderer.setSize(600, 300);
+      document.getElementById("visualizer").appendChild(renderer.domElement);
+
+      // Create a group to hold all objects
+      const group = new THREE.Group();
+      scene.add(group);
+
+      // Cylinder geometry (representing mono range)
+      const cylinderGeometry = new THREE.CylinderGeometry(0.5, 0.5, 1);
+      const cylinderMaterial = new THREE.MeshBasicMaterial({
+        color: 0x5ff2ff,
+        wireframe: true,
+      });
+      const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+      cylinder.rotation.z = Math.PI / 2; // Rotate to horizontal orientation
+      group.add(cylinder);
+
+      // Cone geometry (representing stereo range)
+      const coneGeometry = new THREE.ConeGeometry(0.5, 1);
+      const coneMaterial = new THREE.MeshBasicMaterial({
+        color: 0x5ff2ff,
+        wireframe: true,
+      });
+      const cone = new THREE.Mesh(coneGeometry, coneMaterial);
+      cone.rotation.z = -Math.PI / 2; // Rotate to horizontal orientation
+      group.add(cone);
+
+      // Audio particles
+      const particlesGeometry = new THREE.BufferGeometry();
+      const particlesCnt = 1000; // Reduced for better performance
+      const posArray = new Float32Array(particlesCnt * 3);
+      for (let i = 0; i < particlesCnt * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 2; // Spread particles across the entire range
+      }
+      particlesGeometry.setAttribute("position", new THREE.BufferAttribute(posArray, 3));
+      const particlesMaterial = new THREE.PointsMaterial({
+        size: 0.02,
+        color: 0xffffff,
+      });
+      const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+      group.add(particlesMesh);
+
+      camera.position.z = 100;
+
+      // Knob interaction
+      let freq = 300;
+      let knee = 0.5;
+      let mix = 100;
+
+      function updateGeometries() {
+        const freqFactor = freq / 1000;
+        const kneeFactor = knee;
+        const totalLength = 2;
+        const cylinderLength = freqFactor * totalLength;
+        const coneLength = totalLength - cylinderLength;
+
+        // Update cylinder
+        cylinder.scale.set(1, cylinderLength, 1);
+        cylinder.position.x = -1 + cylinderLength / 2;
+
+        // Update cone
+        cone.scale.set(1, coneLength, 1);
+        cone.position.x = cylinder.position.x + cylinderLength / 2 + coneLength / 2;
+
+        // Update particles
+        particlesMesh.scale.set(1, mix / 100, mix / 100);
+
+        // Apply knee effect
+        const transitionStart = cylinder.position.x + cylinderLength / 2 - kneeFactor * 0.5;
+        const transitionEnd = cone.position.x - coneLength / 2 + kneeFactor * 0.5;
+
+        particlesMesh.geometry.attributes.position.array.forEach((value, index) => {
+          if (index % 3 === 0) {
+            // X-coordinate
+            const x = value;
+            if (x > transitionStart && x < transitionEnd) {
+              const t = (x - transitionStart) / (transitionEnd - transitionStart);
+              const scale = 1 - t * (1 - mix / 100);
+              particlesMesh.geometry.attributes.position.array[index + 1] *= scale; // Y-coordinate
+              particlesMesh.geometry.attributes.position.array[index + 2] *= scale; // Z-coordinate
+            }
+          }
+        });
+        particlesMesh.geometry.attributes.position.needsUpdate = true;
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Animate particles
+        particlesMesh.geometry.attributes.position.array.forEach((value, index) => {
+          if (index % 3 === 0) {
+            // X-coordinate
+            particlesMesh.geometry.attributes.position.array[index] += (Math.random() - 0.5) * 0.01;
+          }
+        });
+        particlesMesh.geometry.attributes.position.needsUpdate = true;
+
+        renderer.render(scene, camera);
+      }
+
+      updateGeometries();
+      animate();
+
+      // Knob interaction logic
+      const freqKnob = document.getElementById("freqKnob");
+      const kneeKnob = document.getElementById("kneeKnob");
+      const mixKnob = document.getElementById("mixKnob");
+      const freqValue = document.getElementById("freqValue");
+      const kneeValue = document.getElementById("kneeValue");
+      const mixValue = document.getElementById("mixValue");
+
+      function updateKnob(knob, value, maxValue) {
+        const angle = (value / maxValue) * 360 - 180;
+        knob.style.transform = `rotate(${angle}deg)`;
+      }
+
+      freqKnob.addEventListener("mousedown", function (event) {
+        document.addEventListener("mousemove", moveFreq);
+        document.addEventListener("mouseup", stopMoving);
+      });
+
+      kneeKnob.addEventListener("mousedown", function (event) {
+        document.addEventListener("mousemove", moveKnee);
+        document.addEventListener("mouseup", stopMoving);
+      });
+
+      mixKnob.addEventListener("mousedown", function (event) {
+        document.addEventListener("mousemove", moveMix);
+        document.addEventListener("mouseup", stopMoving);
+      });
+
+      function moveFreq(event) {
+        const rect = freqKnob.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+        freq = Math.max(20, Math.min(1000, Math.round(((angle + Math.PI) / (2 * Math.PI)) * 1000)));
+        freqValue.textContent = `${freq} Hz`;
+        updateKnob(freqKnob, freq, 1000);
+        updateGeometries();
+      }
+
+      function moveKnee(event) {
+        const rect = kneeKnob.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+        knee = Math.max(0, Math.min(1, ((angle + Math.PI) / (2 * Math.PI)).toFixed(2)));
+        kneeValue.textContent = knee;
+        updateKnob(kneeKnob, knee, 1);
+        updateGeometries();
+      }
+
+      function moveMix(event) {
+        const rect = mixKnob.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const angle = Math.atan2(event.clientY - centerY, event.clientX - centerX);
+        mix = Math.max(0, Math.min(100, Math.round(((angle + Math.PI) / (2 * Math.PI)) * 100)));
+        mixValue.textContent = `${mix}%`;
+        updateKnob(mixKnob, mix, 100);
+        updateGeometries();
+      }
+
+      function stopMoving() {
+        document.removeEventListener("mousemove", moveFreq);
+        document.removeEventListener("mousemove", moveKnee);
+        document.removeEventListener("mousemove", moveMix);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Monolizer - Advanced 2D Visualization</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #1a1a1a;
+        color: #ffffff;
+      }
+
+      .plugin-container {
+        background-color: #2a2a2a;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      }
+
+      .visualizer-container {
+        position: relative;
+        width: 800px;
+        height: 400px;
+        margin-bottom: 20px;
+      }
+
+      canvas {
+        border: 1px solid lightgreen;
+        width: 100%;
+        height: 100%;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+
+      .control {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      input[type="range"] {
+        width: 150px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="plugin-container">
+      <div class="visualizer-container">
+        <canvas id="visualizer" width="1800" height="1400"></canvas>
+      </div>
+      <div class="controls">
+        <div class="control">
+          <label for="freq"> Frequency: <span id="freqValue">1000</span> Hz </label>
+          <input type="range" id="freq" min="20" max="20000" value="1000" />
+        </div>
+        <div class="control">
+          <label for="knee"> Knee: <span id="kneeValue">0.5</span> </label>
+          <input type="range" id="knee" min="0" max="1" step="0.01" value="0.5" />
+        </div>
+        <div class="control">
+          <label for="mix"> Mix: <span id="mixValue">100</span>% </label>
+          <input type="range" id="mix" min="0" max="100" value="100" />
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("visualizer");
+      const ctx = canvas.getContext("2d");
+      const particles = [];
+      const frequencyLabels = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+
+      // Params
+      let freq = 4000;
+      let knee = 0.5;
+      let mix = 100;
+
+      // Audio generator
+      let audioCtx;
+      let analyzerNode;
+      let bufferLength;
+      let dataArray;
+
+      // Scale factor
+      const SCALE_FACTOR = 2;
+
+      // Scaled dimensions
+      const PARTICLE_SIZE = 2;
+
+      // Stereo width lines
+      const STEREO_MARGIN = 60;
+      const BAND_SPACING = 0;
+
+      const MIN_FREQ = 20;
+      const MAX_FREQ = 10000;
+
+      // Set actual size in memory (scaled up)
+      const CANVAS_WIDTH = 1600;
+      const CANVAS_HEIGHT = 800;
+
+      const SCALED_WIDTH = CANVAS_WIDTH / SCALE_FACTOR;
+      const SCALED_HEIGHT = CANVAS_HEIGHT / SCALE_FACTOR;
+
+      canvas.width = CANVAS_WIDTH;
+      canvas.height = CANVAS_HEIGHT;
+
+      // Set display size (scaled down)
+      canvas.style.width = `${CANVAS_WIDTH / 2}px`;
+      canvas.style.height = `${CANVAS_HEIGHT / 2}px`;
+
+      // Scale everything down
+      ctx.scale(SCALE_FACTOR, SCALE_FACTOR);
+
+      function init() {
+        // createSoundGenerator();
+
+        // Set initial values for the controls
+        document.getElementById("freq").value = freq;
+        document.getElementById("knee").value = knee;
+        document.getElementById("mix").value = mix;
+
+        // Labels
+        document.getElementById("freqValue").textContent = Math.round(freq);
+        document.getElementById("kneeValue").textContent = knee.toFixed(2);
+        document.getElementById("mixValue").textContent = mix;
+
+        for (let i = 0; i < 1000; i++) {
+          particles.push({
+            x: Math.random() * SCALED_WIDTH,
+            y: Math.random() * (SCALED_HEIGHT - 2 * STEREO_MARGIN) + STEREO_MARGIN,
+            size: Math.random() * PARTICLE_SIZE + 1,
+            speedX: (Math.random() - 0.5) * 2,
+            speedY: (Math.random() - 0.5) * 2.5,
+          });
+        }
+        animate();
+      }
+
+      function createSoundGenerator() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const oscillator = audioCtx.createOscillator();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // initial frequency
+
+        const noise = audioCtx.createBufferSource();
+        const bufferSize = audioCtx.sampleRate * 2;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+
+        noise.buffer = noiseBuffer;
+        noise.loop = true;
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0.05; // very low volume
+
+        oscillator.connect(gainNode);
+        noise.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        analyzerNode = audioCtx.createAnalyser();
+        analyzerNode.fftSize = 256;
+        bufferLength = analyzerNode.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+
+        gainNode.connect(analyzerNode);
+
+        oscillator.start();
+        noise.start();
+      }
+
+      function drawStereoSpectrum() {
+        analyzerNode.getByteFrequencyData(dataArray);
+
+        const barWidth = (SCALED_WIDTH / bufferLength) * 2.5;
+        let barHeight;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+          barHeight = dataArray[i] / 2;
+
+          // color: #5ff2ff
+          ctx.fillStyle = `rgba(95, 242, 255, ${mix / 100})`;
+          ctx.fillRect(x, SCALED_HEIGHT - barHeight / 2, barWidth, barHeight);
+
+          x += barWidth + 1;
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, SCALED_WIDTH, SCALED_HEIGHT);
+        drawBackground();
+        drawStereoSpectrum();
+        updateAndDrawParticles();
+        drawCutoffLine();
+        requestAnimationFrame(animate);
+      }
+
+      function drawBackground() {
+        ctx.save();
+        const format = (hz) => (hz >= 1000 ? `${hz / 1000} kHz` : `${hz} Hz`);
+
+        ctx.fillStyle = "#ccc";
+        ctx.font = "8px sans-serif";
+
+        // Draw frequency labels
+        frequencyLabels.forEach((hz) => {
+          ctx.save();
+          const x = toCanvasX(hz);
+
+          // Draw tick
+          ctx.strokeStyle = "#222";
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, SCALED_HEIGHT - STEREO_MARGIN);
+          ctx.stroke();
+
+          ctx.translate(x, SCALED_HEIGHT - 5);
+          ctx.fillStyle = "#555";
+          ctx.textAlign = "center";
+          ctx.fillText(format(hz), 0, 0);
+          ctx.restore();
+        });
+
+        // Draw frequency bands
+        const bands = [
+          { label: "Sub", from: 20, to: 60, show: false },
+          { label: "Bass", from: 60, to: 250, show: false },
+          { label: "Low Mid", from: 250, to: 500, show: false },
+          { label: "Mid", from: 500, to: 2000 },
+          { label: "High Mid", from: 2000, to: 6000 },
+          { label: "Presence", from: 6000, to: 12000 },
+          { label: "Treble", from: 12000, to: 20000, show: false },
+        ];
+
+        bands.forEach((band) => {
+          // Skip bands that are not shown
+          if (band.show == false) return;
+
+          ctx.save();
+          const fromX = toCanvasX(band.from);
+          const toX = toCanvasX(band.to);
+
+          // Draw band background
+          ctx.strokeStyle = "#555";
+          ctx.fillStyle = "transparent";
+          ctx.fillStyle = "#333";
+          ctx.fillRect(fromX, SCALED_HEIGHT - STEREO_MARGIN, toX - fromX - BAND_SPACING, STEREO_MARGIN / 2);
+
+          // Draw band border/stroke
+          // ctx.strokeStyle = "#555";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(fromX, SCALED_HEIGHT - STEREO_MARGIN, toX - fromX - BAND_SPACING, STEREO_MARGIN / 2);
+
+          // Draw band label
+
+          ctx.fillStyle = "white";
+          ctx.font = "10px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            band.label,
+            fromX + (toX - fromX - BAND_SPACING) / 2,
+            SCALED_HEIGHT - STEREO_MARGIN + STEREO_MARGIN / 4 + 5,
+          );
+
+          ctx.restore();
+        });
+
+        // Draw stereo width lines
+        ctx.strokeStyle = "#8a8a8a";
+        ctx.beginPath();
+        ctx.moveTo(0, STEREO_MARGIN);
+        ctx.lineTo(SCALED_WIDTH, STEREO_MARGIN);
+        ctx.moveTo(0, SCALED_HEIGHT - STEREO_MARGIN);
+        ctx.lineTo(SCALED_WIDTH, SCALED_HEIGHT - STEREO_MARGIN);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      function updateAndDrawParticles() {
+        const cutoffX = toCanvasX(freq);
+        const kneeWidth = (knee * SCALED_WIDTH) / 16;
+
+        ctx.fillStyle = `rgba(95, 242, 255, ${mix / 100})`;
+        // ctx.fillStyle = `white`;
+        particles.forEach((p) => {
+          p.x += p.speedX;
+          p.y += p.speedY;
+
+          if (p.x < 0 || p.x > SCALED_WIDTH) p.speedX *= -1;
+          if (p.y < STEREO_MARGIN || p.y > SCALED_HEIGHT - STEREO_MARGIN) p.speedY *= -1;
+
+          p.x = Math.max(0, Math.min(SCALED_WIDTH, p.x));
+          p.y = Math.max(STEREO_MARGIN, Math.min(SCALED_HEIGHT - STEREO_MARGIN, p.y));
+
+          let size = p.size;
+          if (p.x < cutoffX) {
+            const distFromCutoff = cutoffX - p.x;
+            const kneeEffect = Math.min(1, distFromCutoff / kneeWidth);
+            const centerY = SCALED_HEIGHT / 2;
+            p.y = centerY + (p.y - centerY) * (1 - kneeEffect) * 0.2;
+            size *= 1 - kneeEffect * 0.5;
+            p.speedY *= 1 * kneeEffect;
+          }
+
+          // Draw particle circle
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      function logScale(value) {
+        const minp = Math.log(MIN_FREQ);
+        const maxp = Math.log(MAX_FREQ);
+        const minv = Math.log(20);
+        const maxv = Math.log(20000);
+
+        const scale = (maxv - minv) / (maxp - minp);
+        return Math.exp(minv + scale * (Math.log(value) - minp));
+      }
+
+      function drawCutoffLine() {
+        ctx.save();
+        const cutoffX = toCanvasX(freq);
+
+        // Draw cutoff line
+        ctx.strokeStyle = "#ff5f5f";
+        ctx.beginPath();
+        ctx.moveTo(cutoffX, STEREO_MARGIN);
+        ctx.lineTo(cutoffX, SCALED_HEIGHT - STEREO_MARGIN);
+        ctx.stroke();
+
+        // Draw knee area
+        const kneeWidth = (knee * SCALED_WIDTH) / 2;
+
+        const controlPointX = cutoffX - kneeWidth;
+        const controlPointY = SCALED_HEIGHT / 2;
+
+        // debug, draw control point
+        ctx.fillStyle = "#bf5fff";
+        ctx.fillRect(controlPointX - 8, controlPointY - 8, 16, 16);
+
+        ctx.strokeStyle = "rgba(255, 95, 95, 0.5)";
+        ctx.beginPath();
+        ctx.moveTo(Math.max(0, cutoffX - kneeWidth), SCALED_HEIGHT / 2);
+        ctx.quadraticCurveTo(controlPointX, controlPointY, cutoffX, STEREO_MARGIN);
+        ctx.lineTo(cutoffX, SCALED_HEIGHT - STEREO_MARGIN);
+        ctx.quadraticCurveTo(controlPointX, controlPointY, Math.max(0, cutoffX - kneeWidth), SCALED_HEIGHT / 2);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function toCanvasX(originalX) {
+        return ((originalX - MIN_FREQ) * SCALED_WIDTH) / (MAX_FREQ - MIN_FREQ);
+      }
+
+      function scale(value, inMin, inMax, outMin, outMax) {
+        return outMin + ((value - inMin) * (outMax - outMin)) / (inMax - inMin);
+      }
+
+      document.getElementById("freq").addEventListener("input", (e) => {
+        freq = parseFloat(e.target.value);
+        document.getElementById("freqValue").textContent = Math.round(freq);
+      });
+
+      document.getElementById("knee").addEventListener("input", (e) => {
+        knee = parseFloat(e.target.value);
+        document.getElementById("kneeValue").textContent = knee.toFixed(2);
+      });
+
+      document.getElementById("mix").addEventListener("input", (e) => {
+        mix = parseFloat(e.target.value);
+        document.getElementById("mixValue").textContent = mix;
+      });
+
+      init();
+    </script>
+  </body>
+</html>

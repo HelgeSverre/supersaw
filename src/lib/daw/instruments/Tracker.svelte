@@ -302,6 +302,159 @@
       .map((_, i) => createEmptyPattern(`Empty Pattern ${i + 5}`, i + 5)),
   ];
 
+  let currentFocus = { row: 0, channel: 0, field: 0 };
+  let isEditing = false;
+  let editValue = "";
+
+  function getFieldColor(field: number, value: any) {
+    const colors = [
+      "text-yellow-400", // Note
+      "text-teal-500", // Instrument
+      "text-sky-400", // Volume
+      "text-red-500", // Effect
+      "text-red-500", // Effect Parameter
+    ];
+    return value != null ? colors[field] : `${colors[field]}/20`;
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (isEditing) {
+      handleEditingKeydown(event);
+    } else {
+      handleNavigationKeydown(event);
+    }
+  }
+
+  function handleNavigationKeydown(event: KeyboardEvent) {
+    const { key } = event;
+    const { row, channel, field } = currentFocus;
+    const pattern = patterns[currentPatternIndex];
+
+    switch (key) {
+      case "ArrowUp":
+        currentFocus.row = Math.max(0, row - 1);
+        break;
+      case "ArrowDown":
+        currentFocus.row = Math.min(pattern.rows.length - 1, row + 1);
+        break;
+      case "ArrowLeft":
+        if (field > 0) {
+          currentFocus.field--;
+        } else if (channel > 0) {
+          currentFocus.channel--;
+          currentFocus.field = 4; // Move to the last field of the previous channel
+        }
+        break;
+      case "ArrowRight":
+        if (field < 4) {
+          currentFocus.field++;
+        } else if (channel < pattern.channels - 1) {
+          currentFocus.channel++;
+          currentFocus.field = 0; // Move to the first field of the next channel
+        }
+        break;
+      case "Enter":
+        startEditing();
+        break;
+
+      // TODO: Delete row
+      case "d":
+      case "D":
+        duplicateValueFromAbove(event.shiftKey);
+        currentFocus.row = Math.min(pattern.rows.length - 1, row + 1);
+        break;
+    }
+    event.preventDefault();
+  }
+
+  function duplicateValueFromAbove(wholeRow = false) {
+    const { row, channel, field } = currentFocus;
+    if (row > 0) {
+      const currentPattern = patterns[currentPatternIndex];
+      const currentCell = currentPattern.rows[row].channels[channel];
+      const cellAbove = currentPattern.rows[row - 1].channels[channel];
+
+      if (wholeRow) {
+        currentCell.note = cellAbove.note;
+        currentCell.instrument = cellAbove.instrument;
+        currentCell.volume = cellAbove.volume;
+        currentCell.effect = cellAbove.effect;
+        currentCell.effectParam = cellAbove.effectParam;
+      } else {
+        /* @formatter:off */
+        /* prettier-ignore */
+        switch (field) {
+          case 0: currentCell.note = cellAbove.note; break;
+          case 1: currentCell.instrument = cellAbove.instrument; break;
+          case 2: currentCell.volume = cellAbove.volume; break;
+          case 3: currentCell.effect = cellAbove.effect; break;
+          case 4: currentCell.effectParam = cellAbove.effectParam; break;
+        }
+        /* @formatter:on */
+      }
+
+      // Force a re-render
+      patterns = [...patterns];
+    }
+  }
+
+  function handleEditingKeydown(event: KeyboardEvent) {
+    const { key } = event;
+
+    if (key === "Enter") {
+      commitEdit();
+    } else if (key === "Escape") {
+      cancelEdit();
+    } else if (key === "Backspace") {
+      editValue = editValue.slice(0, -1);
+    } else if (key.length === 1) {
+      editValue += key.toUpperCase();
+    }
+
+    event.preventDefault();
+  }
+
+  function startEditing() {
+    isEditing = true;
+    const { row, channel, field } = currentFocus;
+    const cell = patterns[currentPatternIndex].rows[row].channels[channel];
+
+    /* @formatter:off */
+    /* prettier-ignore */
+    switch (field) {
+      case 0: editValue = cell.note || ""; break;
+      case 1: editValue = cell.instrument !== null ? cell.instrument.toString() : ""; break;
+      case 2: editValue = cell.volume !== null ? cell.volume.toString() : ""; break;
+      case 3: editValue = cell.effect || ""; break;
+      case 4: editValue = cell.effectParam !== null ? cell.effectParam.toString(16).toUpperCase() : ""; break;
+    }
+    /* @formatter:on */
+  }
+
+  function commitEdit() {
+    const { row, channel, field } = currentFocus;
+    const cell = patterns[currentPatternIndex].rows[row].channels[channel];
+
+    /* @formatter:off */
+    /* prettier-ignore */
+    switch (field) {
+      case 0: cell.note = editValue || null; break;
+      case 1: cell.instrument = editValue ? parseInt(editValue) : null; break;
+      case 2: cell.volume = editValue ? parseInt(editValue) : null; break;
+      case 3: cell.effect = editValue || null; break;
+      case 4: cell.effectParam = editValue ? parseInt(editValue, 16) : null; break;
+    }
+    /* @formatter:on */
+
+    isEditing = false;
+    editValue = "";
+  }
+
+  function cancelEdit() {
+    isEditing = false;
+    editValue = "";
+  }
+
   function togglePlay() {
     if (isPlaying) {
       stopPlayback();
@@ -373,6 +526,55 @@
       clearInterval(playbackInterval);
     }
   });
+
+  function formatValue(value: any, field: number): string {
+    switch (field) {
+      case 0: // Note
+        return formatNote(value);
+      case 1: // Instrument
+        return formatInstrument(value);
+      case 2: // Volume
+        return formatVolume(value);
+      case 3: // Effect
+        return formatEffect(value);
+      case 4: // Effect Parameter
+        return formatEffectParam(value);
+      default:
+        return "---";
+    }
+  }
+
+  function formatNote(note: string | null): string {
+    if (note === null) return "---";
+    // Assuming notes are in the format "C-4", "F#5", etc.
+    return note.padEnd(3, "-");
+  }
+
+  function formatInstrument(instrument: number | null): string {
+    if (instrument === null) return "--";
+    return instrument.toString().padStart(2, "0");
+  }
+
+  function formatVolume(volume: number | null): string {
+    if (volume === null) return "--";
+    return volume.toString(16).toUpperCase().padStart(2, "0");
+  }
+
+  function formatEffect(effect: string | null): string {
+    if (effect === null) return "-";
+    return effect;
+  }
+
+  function formatEffectParam(param: number | null): string {
+    if (param === null) return "--";
+    return param.toString(16).toUpperCase().padStart(2, "0");
+  }
+
+  function selectCell(row, channel, field) {
+    currentFocus.row = row;
+    currentFocus.channel = channel;
+    currentFocus.field = field;
+  }
 </script>
 
 <div class="absolute inset-0 size-full p-2 text-light">
@@ -448,7 +650,8 @@
                 <span class="w-60 px-2 py-1 text-left">Ch{i + 1}</span>
               {/each}
             </div>
-            <div class="flex flex-col overflow-y-scroll">
+
+            <div class="flex flex-col overflow-y-scroll focus:outline-none" tabindex="0" on:keydown={handleKeydown}>
               {#each patterns[currentPatternIndex].rows as row, i}
                 <div
                   class={classNames(
@@ -462,50 +665,36 @@
                 >
                   <span class="w-12 px-2 text-light-soft">{i}</span>
 
-                  {#each row.channels as cell}
-                    <div class="flex h-full w-60 flex-row gap-4 px-2 py-1 text-left">
-                      <div
-                        class={classNames({
-                          "text-yellow-400": cell.note != null,
-                          "text-yellow-400/20": cell.note == null,
-                        })}
-                      >
-                        {cell.note || "---"}
-                      </div>
-                      <div
-                        class={classNames({
-                          "text-sky-400": cell.volume != null,
-                          "text-sky-400/20": cell.volume == null,
-                        })}
-                        title={`Vol ${cell.volume}`}
-                      >
-                        {formatHex(cell.volume)}
-                      </div>
-                      <div
-                        class={classNames({
-                          "text-teal-500": cell.instrument != null,
-                          "text-teal-500/20": cell.instrument == null,
-                        })}
-                        title={`Instrument ${cell.instrument}`}
-                      >
-                        {formatHex(cell.instrument)}
-                      </div>
-                      <div
-                        class={classNames({
-                          "text-red-500": cell.effect != null,
-                          "text-red-500/20": cell.effect == null,
-                        })}
-                      >
-                        {cell.effect || "----"}
-                      </div>
-                      <div
-                        class={classNames({
-                          "text-red-500": cell.effectParam != null,
-                          "text-red-500/20": cell.effectParam == null,
-                        })}
-                      >
-                        {formatHex(cell.effectParam)}
-                      </div>
+                  {#each row.channels as cell, j}
+                    <div class="flex h-full w-60 flex-row gap-4 whitespace-nowrap px-2 py-1 text-left">
+                      {#each [cell.note, cell.instrument, cell.volume, cell.effect, cell.effectParam] as value, k}
+                        <div
+                          on:click={() => selectCell(i, j, k)}
+                          class={classNames(getFieldColor(k, value), "cursor-pointer", {
+                            "outline outline-blue-500":
+                              currentFocus.row === i &&
+                              currentFocus.channel === j &&
+                              currentFocus.field === k &&
+                              !isEditing,
+                            "outline outline-green-500":
+                              currentFocus.row === i &&
+                              currentFocus.channel === j &&
+                              currentFocus.field === k &&
+                              isEditing,
+                          })}
+                        >
+                          {#if isEditing && currentFocus.row === i && currentFocus.channel === j && currentFocus.field === k}
+                            <input
+                              type="text"
+                              bind:value={editValue}
+                              class="m-0 mr-auto inline w-10 border-none bg-transparent p-0 leading-none outline-none"
+                              on:blur={commitEdit}
+                            />
+                          {:else}
+                            {formatValue(value, k)}
+                          {/if}
+                        </div>
+                      {/each}
                     </div>
                   {/each}
                 </div>
