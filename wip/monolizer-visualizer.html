@@ -250,9 +250,11 @@
 
       // Audio generator
       let audioCtx;
-      let analyzerNode;
       let bufferLength;
-      let dataArray;
+      let analyserLeft;
+      let analyserRight;
+      let dataArrayLeft;
+      let dataArrayRight;
 
       // Scale factor
       const SCALE_FACTOR = 2;
@@ -356,8 +358,8 @@
         // Create analyzers for left and right channels
         analyserLeft = audioCtx.createAnalyser();
         analyserRight = audioCtx.createAnalyser();
-        analyserLeft.fftSize = 2048;
-        analyserRight.fftSize = 2048;
+        analyserLeft.fftSize = 128;
+        analyserRight.fftSize = 128;
 
         bufferLength = analyserLeft.fftSize;
         dataArrayLeft = new Uint8Array(bufferLength);
@@ -406,26 +408,71 @@
 
       function drawStereoSpectrum() {
         ctx.save();
-        analyserLeft.getByteTimeDomainData(dataArrayLeft);
-        analyserRight.getByteTimeDomainData(dataArrayRight);
+        analyserLeft.getByteFrequencyData(dataArrayLeft);
+        analyserRight.getByteFrequencyData(dataArrayRight);
 
         ctx.clearRect(0, 0, SCALED_WIDTH, SCALED_HEIGHT);
 
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        const barWidth = SCALED_WIDTH / bufferLength;
+        let x = 0;
 
-        ctx.beginPath();
         for (let i = 0; i < bufferLength; i++) {
-          const x = ((dataArrayLeft[i] / 128.0) * SCALED_WIDTH) / 2;
-          const y = ((dataArrayRight[i] / 128.0) * SCALED_HEIGHT) / 2;
+          const leftBarHeight = (dataArrayLeft[i] / 255) * (SCALED_HEIGHT / 2 - STEREO_MARGIN);
+          const rightBarHeight = (dataArrayRight[i] / 255) * (SCALED_HEIGHT / 2 - STEREO_MARGIN);
 
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
+          // Exaggerate the bar heights
+          const exaggerationFactor = 2.5;
+          const exaggeratedLeftHeight = Math.min(leftBarHeight * exaggerationFactor, SCALED_HEIGHT / 2 - STEREO_MARGIN);
+          const exaggeratedRightHeight = Math.min(
+            rightBarHeight * exaggerationFactor,
+            SCALED_HEIGHT / 2 - STEREO_MARGIN,
+          );
+
+          // Create gradient for left channel
+          const leftGradient = ctx.createLinearGradient(
+            x,
+            SCALED_HEIGHT / 2,
+            x,
+            SCALED_HEIGHT / 2 - exaggeratedLeftHeight,
+          );
+          leftGradient.addColorStop(0, "rgba(255, 0, 0, 0.8)");
+          leftGradient.addColorStop(0.5, "rgba(255, 255, 0, 0.8)");
+          leftGradient.addColorStop(1, "rgba(0, 255, 0, 0.1)");
+
+          // Create gradient for right channel
+          const rightGradient = ctx.createLinearGradient(
+            x,
+            SCALED_HEIGHT / 2,
+            x,
+            SCALED_HEIGHT / 2 + exaggeratedRightHeight,
+          );
+          rightGradient.addColorStop(0, "rgba(255, 0, 0, 0.8)");
+          rightGradient.addColorStop(0.5, "rgba(255, 255, 0, 0.8)");
+          rightGradient.addColorStop(1, "rgba(0, 255, 0, 0.1)");
+
+          // Draw left channel bar
+          ctx.fillStyle = leftGradient;
+          ctx.fillRect(x, SCALED_HEIGHT / 2 - exaggeratedLeftHeight, barWidth, exaggeratedLeftHeight);
+
+          // Draw right channel bar
+          ctx.fillStyle = rightGradient;
+          ctx.fillRect(x, SCALED_HEIGHT / 2, barWidth, exaggeratedRightHeight);
+
+          // Add glow effect
+          // ctx.shadowBlur = 1;
+          // ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
+
+          x += barWidth + 10; // Add a small gap between bars
         }
+
+        // Draw center line
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, SCALED_HEIGHT / 2);
+        ctx.lineTo(SCALED_WIDTH, SCALED_HEIGHT / 2);
         ctx.stroke();
+
         ctx.restore();
       }
 
